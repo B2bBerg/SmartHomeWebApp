@@ -1,0 +1,245 @@
+.overview-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1.5rem 0 1rem;
+}
+
+#content h2 {
+    color: #cdd6f4;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+#edit-mode-btn {
+    background: none;
+    border: 1px solid #3a3a52;
+    border-radius: 6px;
+    color: #6c6c8a;
+    font-size: 0.8rem;
+    padding: 3px 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+#edit-mode-btn img {
+    width: 12px;
+    height: 12px;
+    filter: invert(0.5);
+}
+
+#edit-mode-btn:hover, #edit-mode-btn.active {
+    color: #cdd6f4;
+    border-color: #cdd6f4;
+}
+
+#edit-mode-btn.active img {
+    filter: invert(1);
+}
+
+.overview-container {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-auto-rows: minmax(100px, auto);
+    gap: 1rem;
+}
+
+.overview-container.edit-mode {
+    user-select: none;
+}
+
+.dynamic-tile {
+    z-index: 5;
+    position: relative;    cursor: grab;
+}
+
+.dynamic-tile.dragging {
+    opacity: 0.4;
+    z-index: 100;
+    pointer-events: none;
+}
+
+.ghost-tile {
+    background: transparent;
+    border: 1px dashed transparent;
+    border-radius: 8px;
+    min-height: 100px;
+    z-index: 1; /* Hinter den Kacheln */
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.edit-mode .ghost-tile {
+    border-color: #3a3a52;
+    pointer-events: all;
+}
+
+.ghost-tile.drag-over {
+    background: #2a2a3e66;
+    border-color: #a6e3a1 !important;
+}
+
+
+.dynamic-tile.drag-over {
+    border-color: #cdd6f4;
+}
+
+.tile-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: auto;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+
+.edit-mode .tile-controls {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.tile-resize {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.tile-resize button, .tile-remove {
+    background: none;
+    border: none;
+    color: #6c6c8a;
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 2px 5px;
+    border-radius: 4px;
+    line-height: 1;
+}
+
+.tile-resize button:hover {
+    background: #3a3a52;
+    color: #cdd6f4;
+}
+
+.tile-remove {
+    font-size: 0.8rem;
+}
+
+.tile-remove:hover {
+    color: #f38ba8;
+}
+
+.swap-error {
+    position: absolute;
+    inset: 0;
+    background: rgba(243,139,168,0.15);
+    border: 1px solid #f38ba8;
+    border-radius: 8px;
+    color: #f38ba8;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0.5rem;
+    pointer-events: none;
+    animation: fadeout 2s forwards;
+}
+
+@keyframes fadeout {
+    0% { opacity: 1; }
+    70% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+#add-tile-btn {
+    background: none;
+    border: 1px solid #3a3a52;
+    border-radius: 6px;
+    color: #6c6c8a;
+    font-size: 0.8rem;
+    padding: 3px 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+#add-tile-btn img {
+    width: 12px;
+    height: 12px;
+    filter: invert(0.5);
+}
+
+#add-tile-btn:hover {
+    color: #cdd6f4;
+    border-color: #cdd6f4;
+}
+
+#add-tile-btn:hover img {
+    filter: invert(1);
+}
+
+.tile-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+}
+
+.tile-modal.hidden {
+    display: none;
+}
+
+.tile-modal-box {
+    background: #2a2a3e;
+    border: 1px solid #3a3a52;
+    border-radius: 8px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 260px;
+}
+
+.tile-modal-box p {
+    color: #cdd6f4;
+    font-size: 0.95rem;
+}
+
+.tile-modal-box input {
+    background: #1e1e2e;
+    border: 1px solid #3a3a52;
+    border-radius: 6px;
+    color: #cdd6f4;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.9rem;
+    outline: none;
+}
+
+.tile-modal-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.tile-modal-actions button {
+    background: #33334a;
+    border: 1px solid #3a3a52;
+    border-radius: 6px;
+    color: #cdd6f4;
+    padding: 0.4rem 0.8rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.tile-modal-actions button:hover {
+    background: #3a3a52;
+}

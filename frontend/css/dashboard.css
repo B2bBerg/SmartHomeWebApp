@@ -1,0 +1,23 @@
+#content h1 {
+    color: #cdd6f4;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+}
+
+.dashboard-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.dashboard-tile {
+    align-items: center;
+}
+
+.dashboard-tile img {
+    width: 20px;
+    height: 20px;
+    filter: invert(0.8);
+    flex-shrink: 0;
+}

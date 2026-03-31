@@ -1,0 +1,42 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+.tile {
+    background: #2a2a3e;
+    color: #cdd6f4;
+    border: 1px solid #3a3a52;
+    border-radius: 8px;
+    padding: 1.5rem 1rem;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    min-height: 100px;
+    display: flex;
+    gap: 0.75rem;
+}
+
+.tile:hover {
+    background: #33334a;
+}
+
+body {
+    display: flex;
+    min-height: 100vh;
+    font-family: sans-serif;
+    padding-top: 52px;
+    background: #161621;
+}
+
+#sidebar {
+    position: fixed;
+    top: 52px;
+    left: 0;
+    height: calc(100vh - 52px);
+    min-height: unset;
+}
+
+#content {
+    flex: 1;
+    padding: 2rem 2rem 2rem 32px;
+    margin-left: var(--sidebar-width, 200px);
+    transition: margin-left 0.25s ease;
+}

@@ -1,0 +1,46 @@
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 52px;
+    background: #1e1e2e;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1rem;
+    z-index: 100;
+    border-bottom: 1px solid #2a2a3e;
+}
+
+.header-left .logo {
+    width: 20px;
+    height: 20px;
+    filter: invert(1);
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.header-icon {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.header-icon:hover {
+    background: #2a2a3e;
+}
+
+.header-icon img {
+    width: 20px;
+    height: 20px;
+    filter: invert(1);
+}
