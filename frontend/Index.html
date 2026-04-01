@@ -44,6 +44,7 @@
         <h1>Dashboard</h1>
         <div class="dashboard-container">
             <div class="tile dashboard-tile"><img src="assets/icons/house-chimney-user-svgrepo-com.svg" alt="">Apartment</div>
+            <div class="tile dashboard-tile"><img src="assets/icons/sensor-svgrepo-com.svg" alt="">Sensors</div>
             <div class="tile dashboard-tile"><img src="assets/icons/mobile-signal-svgrepo-com.svg" alt="">Actuators</div>
             <div class="tile dashboard-tile"><img src="assets/icons/code-branch-svgrepo-com.svg" alt="">Rules</div>
             <div class="tile dashboard-tile"><img src="assets/icons/user-pen-svgrepo-com.svg" alt="">Users</div>
@@ -60,15 +61,79 @@
 
         <div id="tile-modal" class="tile-modal hidden">
             <div class="tile-modal-box">
-                <p>Tile Name</p>
-                <input id="tile-modal-input" type="text" placeholder="e.g. Humidity">
+                <h3>Add Tile</h3>
+
+                <div class="settings-group">
+                    <label>Name</label>
+                    <input id="tile-modal-input" type="text" placeholder="e.g. Humidity">
+                </div>
+
+                <div class="settings-group">
+                    <label>Size</label>
+                    <div class="tile-resize-cross">
+                        <button id="add-btn-row-minus">−◀</button>
+                        <button id="add-btn-row-plus">+▶</button>
+                        <button id="add-btn-col-minus">−▲</button>
+                        <button id="add-btn-col-plus">+▼</button>
+                    </div>
+                    <span id="add-size-display" class="size-display">1 &times; 1</span>
+                </div>
+
                 <div class="tile-modal-actions">
                     <button id="tile-modal-confirm">Add</button>
                     <button id="tile-modal-cancel">Cancel</button>
                 </div>
             </div>
         </div>
-    </main>
+            <div id="tile-settings-modal" class="tile-modal hidden">
+                <div class="tile-modal-box">
+                    <h3>Tile Configuration</h3>
+
+                    <div class="settings-row">
+                        <div class="settings-col">
+                            <label>Name</label>
+                            <input id="settings-tile-label" type="text">
+                            <label style="margin-top:0.5rem">Datapoint</label>
+                            <!-- API: Populate this select with datapoints from DB via fetchDatapoints() -->
+                            <select id="settings-tile-datapoint">
+                                <option value="">&mdash; None &mdash;</option>
+                                <option value="sensor.temp.living">Temp &ndash; Living Room</option>
+                                <option value="sensor.temp.bedroom">Temp &ndash; Bedroom</option>
+                                <option value="sensor.energy.main">Energy &ndash; Main Meter</option>
+                                <option value="sensor.energy.solar">Energy &ndash; Solar</option>
+                            </select>
+                        </div>
+                        <div class="settings-col settings-col--size">
+                            <label>Size</label>
+                            <div class="tile-resize-cross">
+                                <button id="btn-row-minus">−◀</button>
+                                <button id="btn-row-plus">+▶</button>
+                                <button id="btn-col-minus">−▲</button>
+                                <button id="btn-col-plus">+▼</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-group">
+                        <!-- API: Filter content options based on selected datapoint type -->
+                        <label>Content</label>
+                        <select id="settings-tile-content">
+                            <option value="">&mdash; None &mdash;</option>
+                            <option value="temp-current">Temperature &ndash; Current Value</option>
+                            <option value="temp-graph">Temperature &ndash; Graph</option>
+                            <option value="energy-current">Energy &ndash; Current Value</option>
+                            <option value="energy-graph">Energy &ndash; Graph</option>
+                        </select>
+                    </div>
+
+                    <div class="tile-modal-actions">
+                        <button id="tile-settings-delete" class="btn-danger">Delete</button>
+                        <div style="flex-grow:1"></div>
+                        <button id="tile-settings-close">Close</button>
+                    </div>
+                </div>
+            </div>
+        </main>
 
     <script src="js/main.js"></script>
     <script src="js/overview.js"></script>
