@@ -82,6 +82,18 @@
     border-color: #a6e3a1 !important;
 }
 
+.ghost-tile.resize-target {
+    background: #2a2a3e99;
+    border-color: #cdd6f4 !important;
+}
+
+.resize-overlay {
+    position: absolute;
+    inset: 0;
+    cursor: crosshair;
+    z-index: 50;
+}
+
 
 .dynamic-tile.drag-over {
     border-color: #cdd6f4;
@@ -111,6 +123,9 @@
     pointer-events: none;
     transition: opacity 0.2s;
     z-index: 10;
+    display: flex;
+    gap: 4px;
+    align-items: center;
 }
 
 .edit-mode .tile-config-wrapper {
@@ -131,6 +146,67 @@
     width: 14px;
     height: 14px;
     filter: invert(0.8);
+}
+
+.tile-remove-btn {
+    background: rgba(42, 42, 62, 0.9);
+    border: 1px solid #3a3a52;
+    border-radius: 6px;
+    padding: 3px 6px;
+    cursor: pointer;
+    color: #eba0ac;
+    font-size: 0.75rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+}
+
+.tile-remove-btn:hover {
+    background: #e64553;
+    border-color: #e64553;
+    color: #fff;
+}
+
+/* Resize handles on tile edges */
+.tile-resize-handle {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 10;
+    background: #3a3a52;
+    border-radius: 3px;
+}
+
+.edit-mode .tile-resize-handle {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.tile-resize-handle:hover {
+    background: #cdd6f4;
+}
+
+/* Right edge – col resize */
+.tile-resize-col {
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 32px;
+    cursor: ew-resize;
+    border-radius: 3px 0 0 3px;
+}
+
+/* Bottom edge – row resize */
+.tile-resize-row {
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    height: 6px;
+    width: 32px;
+    cursor: ns-resize;
+    border-radius: 3px 3px 0 0;
 }
 
 /* Steuerkreuz im Modal */

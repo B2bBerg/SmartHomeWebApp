@@ -7,6 +7,7 @@ const GridManager = {
     MAX_ROW: 3,
     COLS: 6,
     dragSrc: null,
+    resizeSrc: null,
     editMode: false,
     hoveredGhost: null,
     activeSettingsTile: null,
@@ -57,7 +58,10 @@ const GridManager = {
             });
         }
 
-        document.getElementById('tile-modal-confirm').onclick = () => this.addNewTile();
+        document.getElementById('tile-modal-confirm').onclick = () => {
+            if (!this.modalInput.value.trim()) { this.modalInput.focus(); return; }
+            this.addNewTile();
+        };
         document.getElementById('tile-modal-cancel').onclick  = () => this.modal.classList.add('hidden');
 
         // Add-modal size buttons
@@ -82,11 +86,7 @@ const GridManager = {
             this.saveDashboard();
         };
 
-        // Settings size buttons (intuitive: +▶ wider, −◀ narrower, +▼ taller, −▲ shorter)
-        document.getElementById('btn-col-plus').onclick  = () => this.resizeActiveTile('col-plus');
-        document.getElementById('btn-col-minus').onclick = () => this.resizeActiveTile('col-minus');
-        document.getElementById('btn-row-plus').onclick  = () => this.resizeActiveTile('row-plus');
-        document.getElementById('btn-row-minus').onclick = () => this.resizeActiveTile('row-minus');
+        // Settings size buttons removed – resize via handles on tile edges
 
         // Live name update
         document.getElementById('settings-tile-label').oninput = (e) => {
@@ -209,10 +209,32 @@ const GridManager = {
             this.openSettings(tile);
         });
 
+        tile.querySelector('.tile-remove-btn')?.addEventListener('click', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            tile.remove();
+            this.refreshGhosts();
+            this.saveDashboard();
+        });
+
+        // Resize handle – right edge (col): mousedown drag to snap to grid columns
+        const colHandle = tile.querySelector('.tile-resize-col');
+        colHandle?.addEventListener('mousedown', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            this.startResize(e, tile, 'col');
+        });
+
+        // Resize handle – bottom edge (row): mousedown drag to snap to grid rows
+        const rowHandle = tile.querySelector('.tile-resize-row');
+        rowHandle?.addEventListener('mousedown', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            this.startResize(e, tile, 'row');
+        });
+
         tile.addEventListener('dragstart', (e) => {
+            if (this.resizeSrc) return; // handle drag takes priority
             this.dragSrc = tile;
             setTimeout(() => tile.classList.add('dragging'), 0);
-            e.dataTransfer.setData('text/plain', '');
+            e.dataTransfer.setData('text/plain', 'move');
         });
         tile.addEventListener('dragend', () => {
             tile.classList.remove('dragging');
@@ -299,37 +321,21 @@ const GridManager = {
     },
 
     resizeActiveTile(direction) {
-        if (!this.activeSettingsTile) return;
-        const t = this.activeSettingsTile;
-        const c = +t.dataset.gridCol, r = +t.dataset.gridRow;
-        const cs = +t.dataset.colSpan, rs = +t.dataset.rowSpan;
-
-        if      (direction === 'col-plus'  && cs < this.MAX_COL && !this.isAreaOccupied(r, c + cs, rs, 1, t)) t.dataset.colSpan = cs + 1;
-        else if (direction === 'col-minus' && cs > 1)                                                          t.dataset.colSpan = cs - 1;
-        else if (direction === 'row-plus'  && rs < this.MAX_ROW && !this.isAreaOccupied(r + rs, c, 1, cs, t)) t.dataset.rowSpan = rs + 1;
-        else if (direction === 'row-minus' && rs > 1)                                                          t.dataset.rowSpan = rs - 1;
-
-        this.applyPosition(t);
-        this.refreshGhosts();
-        this.updateModalButtons();
+        // Resize via handles on tile edges – this method is no longer used
     },
 
     updateModalButtons() {
-        const t = this.activeSettingsTile;
-        if (!t) return;
-        const c = +t.dataset.gridCol, r = +t.dataset.gridRow;
-        const cs = +t.dataset.colSpan, rs = +t.dataset.rowSpan;
-        document.getElementById('btn-col-plus').disabled  = !(cs < this.MAX_COL && !this.isAreaOccupied(r, c + cs, rs, 1, t));
-        document.getElementById('btn-col-minus').disabled = !(cs > 1);
-        document.getElementById('btn-row-plus').disabled  = !(rs < this.MAX_ROW && !this.isAreaOccupied(r + rs, c, 1, cs, t));
-        document.getElementById('btn-row-minus').disabled = !(rs > 1);
+        // Size buttons removed from config modal – resize via handles on tile edges
     },
 
     createTileHTML(label) {
         return `<span class="tile-label">${label}</span>
             <div class="tile-config-wrapper">
+                <button class="tile-remove-btn" title="Remove">✕</button>
                 <button class="tile-edit-btn" title="Configure"><img src="assets/icons/gear-svgrepo-com.svg"></button>
-            </div>`;
+            </div>
+            <div class="tile-resize-handle tile-resize-col" title="Drag to resize width"></div>
+            <div class="tile-resize-handle tile-resize-row" title="Drag to resize height"></div>`;
     },
 
     applyPosition(el) {
@@ -367,9 +373,116 @@ const GridManager = {
                 g.className = 'ghost-tile';
                 g.dataset.gridCol = c; g.dataset.gridRow = r;
                 g.style.gridColumn = `${c} / span 1`; g.style.gridRow = `${r} / span 1`;
+                g.addEventListener('dragover', (e) => { e.preventDefault(); g.classList.add('drag-over'); });
+                g.addEventListener('dragleave', (e) => { if (!g.contains(e.relatedTarget)) g.classList.remove('drag-over'); });
+                g.addEventListener('drop', (e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    g.classList.remove('drag-over');
+                    if (this.resizeSrc) {
+                        this.applyResizeDrop(g);
+                    } else if (this.dragSrc) {
+                        this.applyMoveDrop(g);
+                    }
+                });
                 this.container.appendChild(g);
             }
         }
+    },
+
+    startResize(e, tile, type) {
+        this.resizeSrc = { tile, type };
+        let lastSnap = null;
+
+        const onMove = (ev) => {
+            const els = document.elementsFromPoint(ev.clientX, ev.clientY);
+            const ghost = els.find(el => el.classList.contains('ghost-tile'));
+
+            this.container.querySelectorAll('.ghost-tile.resize-target').forEach(g => g.classList.remove('resize-target'));
+
+            if (!ghost) return;
+            const tc = +tile.dataset.gridCol, tr = +tile.dataset.gridRow;
+            const gc = +ghost.dataset.gridCol, gr = +ghost.dataset.gridRow;
+
+            if (type === 'col' && gc >= tc) {
+                const newCs = gc - tc + 1;
+                if (newCs !== lastSnap) {
+                    lastSnap = newCs;
+                    // live preview
+                    tile.style.gridColumn = `${tc} / span ${newCs}`;
+                    ghost.classList.add('resize-target');
+                }
+            } else if (type === 'row' && gr >= tr) {
+                const newRs = gr - tr + 1;
+                if (newRs !== lastSnap) {
+                    lastSnap = newRs;
+                    tile.style.gridRow = `${tr} / span ${newRs}`;
+                    ghost.classList.add('resize-target');
+                }
+            }
+        };
+
+        const onUp = (ev) => {
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+            this.container.querySelectorAll('.ghost-tile.resize-target').forEach(g => g.classList.remove('resize-target'));
+
+            const els = document.elementsFromPoint(ev.clientX, ev.clientY);
+            const ghost = els.find(el => el.classList.contains('ghost-tile'));
+            if (ghost) {
+                this.applyResizeDrop(ghost);
+            } else {
+                // revert preview
+                this.applyPosition(tile);
+                this.resizeSrc = null;
+            }
+        };
+
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+    },
+
+    applyResizeDrop(g) {
+        const { tile, type } = this.resizeSrc;
+        const tc = +tile.dataset.gridCol, tr = +tile.dataset.gridRow;
+        const tcs = +tile.dataset.colSpan, trs = +tile.dataset.rowSpan;
+        const gc = +g.dataset.gridCol, gr = +g.dataset.gridRow;
+        if (type === 'col') {
+            const newCs = gc - tc + 1;
+            if (newCs >= 1 && newCs <= this.MAX_COL) {
+                const extra = newCs - tcs;
+                if (extra <= 0 || !this.isAreaOccupied(tr, tc + tcs, trs, extra, tile)) {
+                    tile.dataset.colSpan = newCs;
+                    this.applyPosition(tile);
+                    this.saveDashboard();
+                }
+            }
+        } else {
+            const newRs = gr - tr + 1;
+            if (newRs >= 1 && newRs <= this.MAX_ROW) {
+                const extra = newRs - trs;
+                if (extra <= 0 || !this.isAreaOccupied(tr + trs, tc, extra, tcs, tile)) {
+                    tile.dataset.rowSpan = newRs;
+                    this.applyPosition(tile);
+                    this.saveDashboard();
+                }
+            }
+        }
+        this.resizeSrc = null;
+        this.refreshGhosts();
+    },
+
+    applyMoveDrop(g) {
+        const c = +g.dataset.gridCol, r = +g.dataset.gridRow;
+        const cs = +this.dragSrc.dataset.colSpan, rs = +this.dragSrc.dataset.rowSpan;
+        if (c + cs - 1 <= this.COLS && !this.isAreaOccupied(r, c, rs, cs, this.dragSrc)) {
+            this.dragSrc.dataset.gridCol = c;
+            this.dragSrc.dataset.gridRow = r;
+            this.applyPosition(this.dragSrc);
+            this.saveDashboard();
+        } else {
+            this.showError(this.dragSrc, 'Tile does not fit here');
+        }
+        this.refreshGhosts();
     },
 
     handleContainerDragOver(e) {
@@ -390,21 +503,9 @@ const GridManager = {
 
     handleContainerDrop(e) {
         e.preventDefault();
-        const g = document.elementsFromPoint(e.clientX, e.clientY).find(el => el.classList.contains('ghost-tile'));
-        if (!this.dragSrc || !g) return;
-        const c = +g.dataset.gridCol, r = +g.dataset.gridRow;
-        const cs = +this.dragSrc.dataset.colSpan, rs = +this.dragSrc.dataset.rowSpan;
-        if (c + cs - 1 <= this.COLS && !this.isAreaOccupied(r, c, rs, cs, this.dragSrc)) {
-            this.dragSrc.dataset.gridCol = c;
-            this.dragSrc.dataset.gridRow = r;
-            this.applyPosition(this.dragSrc);
-            this.saveDashboard();
-        } else {
-            this.showError(this.dragSrc, 'Tile does not fit here');
-        }
+        // Drop logic is handled directly on ghost-tile elements
         if (this.hoveredGhost) this.hoveredGhost.classList.remove('drag-over');
         this.hoveredGhost = null;
-        this.refreshGhosts();
     },
 
     showError(target, msg) {
