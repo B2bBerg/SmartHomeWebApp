@@ -449,23 +449,19 @@ const GridManager = {
         if (type === 'col') {
             const newCs = gc - tc + 1;
             if (newCs >= 1 && newCs <= this.MAX_COL) {
-                const extra = newCs - tcs;
-                if (extra <= 0 || !this.isAreaOccupied(tr, tc + tcs, trs, extra, tile)) {
-                    tile.dataset.colSpan = newCs;
-                    this.applyPosition(tile);
-                    this.saveDashboard();
-                }
-            }
+                // check only the newly added columns (right of current span)
+                const ok = newCs <= tcs || !this.isAreaOccupied(tr, tc + tcs, trs, newCs - tcs, tile);
+                if (ok) { tile.dataset.colSpan = newCs; this.applyPosition(tile); this.saveDashboard(); }
+                else { this.applyPosition(tile); } // revert preview
+            } else { this.applyPosition(tile); }
         } else {
             const newRs = gr - tr + 1;
             if (newRs >= 1 && newRs <= this.MAX_ROW) {
-                const extra = newRs - trs;
-                if (extra <= 0 || !this.isAreaOccupied(tr + trs, tc, extra, tcs, tile)) {
-                    tile.dataset.rowSpan = newRs;
-                    this.applyPosition(tile);
-                    this.saveDashboard();
-                }
-            }
+                // check only the newly added rows (below current span)
+                const ok = newRs <= trs || !this.isAreaOccupied(tr + trs, tc, newRs - trs, tcs, tile);
+                if (ok) { tile.dataset.rowSpan = newRs; this.applyPosition(tile); this.saveDashboard(); }
+                else { this.applyPosition(tile); } // revert preview
+            } else { this.applyPosition(tile); }
         }
         this.resizeSrc = null;
         this.refreshGhosts();

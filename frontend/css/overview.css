@@ -187,24 +187,22 @@
     background: #cdd6f4;
 }
 
-/* Right edge – col resize */
+/* Right edge – col resize: bottom-right corner */
 .tile-resize-col {
     right: 0;
-    top: 50%;
-    transform: translateY(-50%);
+    bottom: 0;
     width: 6px;
-    height: 32px;
+    height: 24px;
     cursor: ew-resize;
     border-radius: 3px 0 0 3px;
 }
 
-/* Bottom edge – row resize */
+/* Bottom edge – row resize: bottom-right corner */
 .tile-resize-row {
     bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
+    right: 0;
     height: 6px;
-    width: 32px;
+    width: 24px;
     cursor: ns-resize;
     border-radius: 3px 3px 0 0;
 }
