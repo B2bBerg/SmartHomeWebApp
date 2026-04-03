@@ -1,0 +1,8 @@
+/* actuators.css */
+.actuators-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* OPEN: actuator cards, toggle controls */

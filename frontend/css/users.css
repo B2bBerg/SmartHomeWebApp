@@ -1,0 +1,8 @@
+/* users.css */
+.users-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* OPEN: user list, role management */
