@@ -36,11 +36,34 @@ sidebar.classList.add('collapsed');
 setSidebarWidth(collapsedWidth);
 toggleImg.src = ICON_COLLAPSED;
 
+// Dashboard tiles navigation ────────────────────────────────────────────────────────────
+const DASHBOARD_TILE_MAP = {
+    'Sensors':   'sensors',
+    'Apartment': 'apartment',
+    'Actuators': 'actuators',
+    'Rules':     'rules',
+    'Users':     'users',
+    'Settings':  'settings'
+};
+
+function initDashboardTiles() {
+    Object.keys(DASHBOARD_TILE_MAP).forEach(id => {
+        const button = document.getElementById(id);
+        if (button) {
+            button.addEventListener('click', () => {
+                navigate(DASHBOARD_TILE_MAP[id]);
+            });
+        }
+    });
+}
+
+initDashboardTiles();
+
 // ── SPA Navigation ────────────────────────────────────────────────────────────
 const content = document.getElementById('content');
 
 // Views registry – add new views here
-const VIEWS = {
+const SIDEBAR_VIEWS_MAP = {
     dashboard: renderDashboard,
     sensors:   renderSensors,
     apartment: renderApartment,
@@ -48,24 +71,25 @@ const VIEWS = {
     rules:     renderRules,
     users:     renderUsers,
     settings:  renderSettings,
-};
+}
 
 function navigate(view) {
     sidebar.querySelectorAll('li').forEach(li => li.classList.remove('active'));
     const li = sidebar.querySelector(`li[title="${view.charAt(0).toUpperCase() + view.slice(1)}"]`);
     if (li) li.classList.add('active');
-    (VIEWS[view] || renderDashboard)();
-}
+    (SIDEBAR_VIEWS_MAP[view] || renderDashboard)();
+};
 
 sidebar.querySelectorAll('li[title]').forEach(li => {
     li.addEventListener('click', () => navigate(li.title.toLowerCase()));
 });
 
 // ── Dashboard view (existing content) ────────────────────────────────────────
-const dashboardHTML = content.innerHTML;
+const dashboardHTML = document.getElementById('content').innerHTML;
 
 function renderDashboard() {
     content.innerHTML = dashboardHTML;
+    initDashboardTiles();
     // re-init overview grid after DOM swap
     if (typeof GridManager !== 'undefined') GridManager.init();
 }

@@ -3,7 +3,7 @@
  */
 
 const GridManager = {
-    MAX_COL: 6,
+    MAX_COL: 3,
     MAX_ROW: 3,
     COLS: 6,
     dragSrc: null,
