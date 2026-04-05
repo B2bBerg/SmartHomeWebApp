@@ -21,7 +21,7 @@ class DataTable {
     }
 
     // ── API: call setData() with rows from DB ────────────────────────────────
-    // e.g. fetch('/api/sensors').then(r => r.json()).then(data => table.setData(data));
+    // e.g. window.API.getSensors().then(data => table.setData(data));
     setData(rows) {
         this.data     = rows;
         this.filtered = [...rows];
