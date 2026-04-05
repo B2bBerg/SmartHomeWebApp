@@ -45,6 +45,7 @@
     display: grid;
     grid-template-columns: repeat(6, 1fr);
     grid-auto-rows: minmax(100px, auto);
+    grid-auto-rows: 100px;
     gap: 1rem;
 }
 
@@ -99,8 +100,24 @@
     border-color: #cdd6f4;
 }
 
+.tile-label {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: calc(100% - 60px); /* Garantiert, dass der Text nicht in die Edit-Buttons läuft */
+    font-weight: 600;
+    line-height: 24px;
+    flex-shrink: 0;
+}
+
 .tile {
     position: relative; /* Wichtig für absolute Positionierung der Controls */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 12px;
+    box-sizing: border-box;
 }
 
 .tile-controls.top-right-controls {
@@ -119,6 +136,8 @@
     position: absolute;
     top: 8px;
     right: 8px;
+    top: 12px;
+    right: 12px;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s;
@@ -434,11 +453,13 @@
 }
 
 .tile-content {
-    margin-top: 0.5rem;
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 100%;
+    min-height: 0;
+    box-sizing: border-box;
 }
 
 .tile-value {

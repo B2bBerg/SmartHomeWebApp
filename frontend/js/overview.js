@@ -25,7 +25,9 @@ const GridManager = {
         this.setupEventListeners();
 
         // API: Load saved dashboard layout from DB on init
-        // this.loadDashboard(await fetchDashboardLayout());
+        window.API.getDashboard().then(data => {
+            if (data && data.length > 0) this.loadDashboard(data);
+        }).catch(err => console.error("Dashboard Ladefehler:", err));
 
         this.refreshGhosts();
     },
@@ -52,6 +54,13 @@ const GridManager = {
                 this.addColSpan = 1;
                 this.addRowSpan = 1;
                 this.modalInput.value = '';
+                
+                const addDp = document.getElementById('add-tile-datapoint');
+                const addCt = document.getElementById('add-tile-content');
+                if (addDp) addDp.value = '';
+                if (addCt) addCt.value = '';
+                this.filterContentByDatapoint('', 'add-tile-content');
+                
                 this.updateAddSizeDisplay();
                 this.modal.classList.remove('hidden');
                 this.modalInput.focus();
@@ -99,8 +108,23 @@ const GridManager = {
         document.getElementById('settings-tile-datapoint').onchange = (e) => {
             if (!this.activeSettingsTile) return;
             this.activeSettingsTile.dataset.datapoint = e.target.value;
-            this.filterContentByDatapoint(e.target.value);
+            this.filterContentByDatapoint(e.target.value, 'settings-tile-content');
             this.saveDashboard();
+        };
+
+        document.getElementById('add-tile-datapoint').onchange = (e) => {
+            this.filterContentByDatapoint(e.target.value, 'add-tile-content');
+        };
+
+        document.getElementById('add-tile-content').onchange = (e) => {
+            if (e.target.value.includes('graph')) {
+                this.addColSpan = 3;
+                this.addRowSpan = 3;
+            } else if (this.addColSpan === 3 && this.addRowSpan === 3) {
+                this.addColSpan = 1;
+                this.addRowSpan = 1;
+            }
+            this.updateAddSizeDisplay();
         };
 
         // API: On content type change – fetch initial data for this tile from DB
@@ -120,10 +144,20 @@ const GridManager = {
 
     updateAddSizeDisplay() {
         document.getElementById('add-size-display').innerHTML = `${this.addColSpan} &times; ${this.addRowSpan}`;
-        document.getElementById('add-btn-col-plus').disabled  = this.addColSpan >= this.MAX_COL;
-        document.getElementById('add-btn-col-minus').disabled = this.addColSpan <= 1;
-        document.getElementById('add-btn-row-plus').disabled  = this.addRowSpan >= this.MAX_ROW;
-        document.getElementById('add-btn-row-minus').disabled = this.addRowSpan <= 1;
+        
+        const isGraph = document.getElementById('add-tile-content')?.value.includes('graph');
+        
+        if (isGraph) {
+            document.getElementById('add-btn-col-plus').disabled  = true;
+            document.getElementById('add-btn-col-minus').disabled = true;
+            document.getElementById('add-btn-row-plus').disabled  = true;
+            document.getElementById('add-btn-row-minus').disabled = true;
+        } else {
+            document.getElementById('add-btn-col-plus').disabled  = this.addColSpan >= this.MAX_COL;
+            document.getElementById('add-btn-col-minus').disabled = this.addColSpan <= 1;
+            document.getElementById('add-btn-row-plus').disabled  = this.addRowSpan >= this.MAX_ROW;
+            document.getElementById('add-btn-row-minus').disabled = this.addRowSpan <= 1;
+        }
     },
 
     // ── DB interface ─────────────────────────────────────────────────────────
@@ -150,7 +184,7 @@ const GridManager = {
     saveDashboard() {
         const state = this.getDashboardState();
         // API: Persist dashboard layout to DB
-        // fetch('/api/dashboard', { method: 'POST', body: JSON.stringify(state) });
+        window.API.saveDashboard(state);
         console.log('Dashboard state:', JSON.stringify(state, null, 2));
         return state;
     },
@@ -188,11 +222,17 @@ const GridManager = {
             }
             tile.dataset.colSpan = this.addColSpan;
             tile.dataset.rowSpan = this.addRowSpan;
+
+            // Hier holen wir die Werte mit Fallback || null
+            const addDp = document.getElementById('add-tile-datapoint')?.value || null;
+            const addCt = document.getElementById('add-tile-content')?.value || null;
+            if (addDp) tile.dataset.datapoint = addDp;
+            if (addCt) tile.dataset.contentType = addCt;
         }
 
         this.container.appendChild(tile);
         this.initTile(tile);
-        if (config?.contentType) this.renderTileContent(tile);
+        if (tile.dataset.contentType) this.renderTileContent(tile);
         if (this.editMode) tile.draggable = true;
 
         this.modal.classList.add('hidden');
@@ -268,7 +308,7 @@ const GridManager = {
         this.activeSettingsTile = tile;
         document.getElementById('settings-tile-label').value    = tile.querySelector('.tile-label').textContent;
         document.getElementById('settings-tile-datapoint').value = tile.dataset.datapoint || '';
-        this.filterContentByDatapoint(tile.dataset.datapoint || '');
+        this.filterContentByDatapoint(tile.dataset.datapoint || '', 'settings-tile-content');
         document.getElementById('settings-tile-content').value  = tile.dataset.contentType || '';
         this.updateModalButtons();
         this.settingsModal.classList.remove('hidden');
@@ -279,21 +319,40 @@ const GridManager = {
     // Each render() will later receive live data from fetchTileData(datapoint, type)
     CONTENT_TYPES: {
         'temp-current':   { render: () => `<div class="tile-value">-- °C</div>` },
-        'temp-graph':     { render: () => `<div class="tile-graph-placeholder">📈 Temp Graph</div>` },
+        'temp-graph':     { 
+            init: (container, datapoint) => new Graph(container, datapoint, { metrics: ['temperature', 'humidity'] }) 
+        },
         'energy-current': { render: () => `<div class="tile-value">-- kWh</div>` },
-        'energy-graph':   { render: () => `<div class="tile-graph-placeholder">📈 Energy Graph</div>` },
+        'energy-graph':   { 
+            init: (container, datapoint) => new Graph(container, datapoint, { metrics: ['power', 'voltage', 'current'] }) 
+        },
+        'switch-light':   { render: () => `<div class="tile-control-placeholder">Switch Control</div>` },
     },
 
     renderTileContent(tile) {
         tile.querySelector('.tile-content')?.remove();
         const type = tile.dataset.contentType;
         if (!type || !this.CONTENT_TYPES[type]) return;
-        // API: Replace static render with live data:
-        // fetchTileData(tile.dataset.datapoint, type).then(data => { div.innerHTML = ...; tile.appendChild(div); });
+
+        // Erzwinge 3x3 für alle Graph-Tiles
+        if (type.includes('graph')) {
+            tile.dataset.colSpan = 3;
+            tile.dataset.rowSpan = 3;
+            this.applyPosition(tile);
+        }
+
         const div = document.createElement('div');
         div.className = 'tile-content';
-        div.innerHTML = this.CONTENT_TYPES[type].render();
         tile.appendChild(div);
+
+        if (typeof this.CONTENT_TYPES[type].render === 'function') {
+            const html = this.CONTENT_TYPES[type].render();
+            if (html) div.innerHTML = html;
+        }
+        
+        if (typeof this.CONTENT_TYPES[type].init === 'function') {
+            this.CONTENT_TYPES[type].init(div, tile.dataset.datapoint);
+        }
     },
 
     // API: Populate datapoint dropdown from DB
@@ -307,17 +366,22 @@ const GridManager = {
     DATAPOINT_CONTENT_MAP: {
         'sensor.temp':   ['temp-current',   'temp-graph'],
         'sensor.energy': ['energy-current', 'energy-graph'],
+        'switch.light':  ['switch-light'],
     },
 
-    filterContentByDatapoint(datapoint) {
-        const select  = document.getElementById('settings-tile-content');
+    filterContentByDatapoint(datapoint, selectId = 'settings-tile-content') {
+        const select  = document.getElementById(selectId);
+        if (!select) return;
         const allowed = Object.entries(this.DATAPOINT_CONTENT_MAP)
-            .filter(([prefix]) => datapoint.startsWith(prefix))
+            .filter(([prefix]) => (datapoint || '').startsWith(prefix))
             .flatMap(([, types]) => types);
         [...select.options].forEach(opt => {
             opt.hidden = opt.value !== '' && allowed.length > 0 && !allowed.includes(opt.value);
         });
-        if (allowed.length > 0 && !allowed.includes(select.value)) select.value = '';
+        if (allowed.length > 0 && !allowed.includes(select.value)) {
+            select.value = '';
+            select.dispatchEvent(new Event('change')); // Event feuern, damit Größenanzeige resettet
+        }
     },
 
     resizeActiveTile(direction) {
@@ -513,4 +577,5 @@ const GridManager = {
     }
 };
 
+window.GridManager = GridManager;
 document.addEventListener('DOMContentLoaded', () => GridManager.init());

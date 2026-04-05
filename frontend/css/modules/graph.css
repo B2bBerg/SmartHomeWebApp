@@ -1,0 +1,122 @@
+/* Prototype */
+
+.chart-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    padding: 10px 12px;
+    box-sizing: border-box;
+    background: rgba(30, 30, 46, 0.4);
+    border: 1px solid #3a3a52;
+    border-radius: 8px;
+    color: #cdd6f4;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #3a3a52;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.chart-dates {
+    display: flex;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: #cdd6f4;
+    align-items: center;
+}
+
+.chart-dates span:not(.chart-date-sep) {
+    background: rgba(42, 42, 62, 0.5);
+    padding: 3px 6px;
+    border-radius: 4px;
+    border: 1px solid #3a3a52;
+}
+
+.chart-controls {
+    display: flex;
+    gap: 4px;
+}
+
+.chart-controls button {
+    background: #1e1e2e;
+    border: 1px solid #3a3a52;
+    color: #cdd6f4;
+    font-size: 0.65rem;
+    padding: 2px 5px;
+    border-radius: 4px;
+    cursor: pointer;
+    flex: 1;
+}
+
+.chart-controls button.active {
+    background: #a6e3a1;
+    color: #1e1e2e;
+    border-color: #a6e3a1;
+}
+
+.chart-metric-select {
+    background: #1e1e2e;
+    border: 1px solid #3a3a52;
+    color: #cdd6f4;
+    font-size: 0.7rem;
+    border-radius: 4px;
+    padding: 2px 4px;
+    outline: none;
+}
+
+.chart-body {
+    position: relative;
+    flex-grow: 1;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+}
+
+.chart-svg {
+    width: 100%;
+    height: 100%;
+    min-height: 60px;
+    transition: opacity 0.3s ease;
+    filter: drop-shadow(0 0 2px rgba(166, 227, 161, 0.4));
+}
+
+.chart-path {
+    fill: none;
+    stroke: #a6e3a1;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.chart-error-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #e64553;
+    font-size: 1rem;
+    font-weight: 600;
+    text-align: center;
+    background: rgba(30, 30, 46, 0.85);
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid #e64553;
+}
+
+.chart-error-message.hidden {
+    display: none;
+}
+
+/* Verstecke Controls wenn nicht im Edit-Mode (optional) */
+.overview-container:not(.edit-mode) .chart-nav-btn {
+    opacity: 0.5;
+}
