@@ -1,0 +1,94 @@
+/* --- Toggle Switch --- */
+.switch-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.ui-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 30px;
+}
+
+.ui-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background-color: #313244;
+    transition: .4s;
+    border-radius: 34px;
+    border: 1px solid #45475a;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 4px;
+    bottom: 3px;
+    background-color: #cdd6f4;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #a6e3a1;
+}
+
+input:checked + .slider:before {
+    transform: translateX(30px);
+    background-color: #1e1e2e;
+}
+
+.switch-status {
+    font-size: 0.75rem;
+    color: #6c6c8a;
+    font-weight: bold;
+}
+
+/* --- Shutter Controls --- */
+.shutter-container {
+    display: flex;
+    gap: 10px;
+}
+
+.shutter-btn {
+    background: #313244;
+    border: 1px solid #45475a;
+    border-radius: 8px;
+    width: 45px;
+    height: 45px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.shutter-btn:hover {
+    background: #45475a;
+    border-color: #cdd6f4;
+}
+
+.shutter-btn img {
+    width: 20px;
+    height: 20px;
+    filter: invert(0.9);
+}
+
+.stop-icon {
+    width: 14px;
+    height: 14px;
+    background: #f38ba8;
+    border-radius: 2px;
+}
