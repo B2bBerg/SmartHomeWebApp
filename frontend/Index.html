@@ -16,6 +16,9 @@
     <link rel="stylesheet" href="css/rules.css">
     <link rel="stylesheet" href="css/users.css">
     <link rel="stylesheet" href="css/settings.css">
+
+    <!-- MODULES -->
+    <link rel="stylesheet" href="css/modules/graph.css">
 </head>
 <body>
     <header class="header">
@@ -82,6 +85,26 @@
                     </div>
                     <span id="add-size-display" class="size-display">1 &times; 1</span>
                 </div>
+                <div class="settings-group">
+                    <label>Datapoint</label>
+                    <select id="add-tile-datapoint">
+                        <option value="">&mdash; None &mdash;</option>
+                        <option value="sensor.temp.living">Temp &ndash; Living Room</option>
+                        <option value="sensor.temp.bedroom">Temp &ndash; Bedroom</option>
+                        <option value="sensor.energy.main">Energy &ndash; Main Meter</option>
+                        <option value="sensor.energy.solar">Energy &ndash; Solar</option>
+                    </select>
+                </div>
+                <div class="settings-group">
+                    <label>Content</label>
+                    <select id="add-tile-content">
+                        <option value="">&mdash; None &mdash;</option>
+                        <option value="temp-current">Temperature &ndash; Current Value</option>
+                        <option value="temp-graph">Temperature &ndash; Graph</option>
+                        <option value="energy-current">Energy &ndash; Current Value</option>
+                        <option value="energy-graph">Energy &ndash; Graph</option>
+                    </select>
+                </div>
                 <div class="tile-modal-actions">
                     <button id="tile-modal-confirm">Add</button>
                     <button id="tile-modal-cancel">Cancel</button>
@@ -127,7 +150,15 @@
         </div>
         </main>
 
+    <!-- API (Load first) -->
+    <script src="js/api.js"></script>
+
+    <!-- MAIN -->
     <script src="js/main.js"></script>
+    <!-- MODULES -->
+    <script src="js/modules/graph.js"></script>
+
+    <!-- SUB-MAINS -->
     <script src="js/data-table.js"></script>
     <script src="js/overview.js"></script>
 </body>
