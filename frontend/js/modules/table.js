@@ -1,22 +1,25 @@
 /**
- * data-table.js – Erweiterte Version mit Add/Delete/Edit
- * Offen: Integration der data-tabele.js und evtl. teil in die overview.js intergieren für klare modularitäts abgrenzung
- * automatische spaltenaufbau anhand der übergebenen spalten offen
- * übergabe erfolgt über haupt.js (overview.js) API call handeling
+ * table.js – Generische Tabellen-Komponente mit Add/Delete/Edit Funktionalität
+ * Ersetzt die alte data-table.js komplett.
  */
 class DataTable {
     constructor(container, columns, options = {}) {
         this.container = container;
-        // Wir fügen automatisch eine "Actions" Spalte hinzu, wenn gewünscht
-        this.columns   = [...columns, { 
-            key: 'actions', 
-            label: 'Aktionen', 
-            render: (v, row) => `
-                <button class="btn-icon btn-edit" title="Name bearbeiten">✎</button>
-                <button class="btn-icon btn-delete" title="Löschen">🗑</button>
-            ` 
-        }];
         this.options   = options;
+        
+        this.columns = [...columns];
+        // Füge "Actions" Spalte nur hinzu, wenn nicht explizit deaktiviert
+        if (this.options.hasActions !== false) {
+            this.columns.push({ 
+                key: 'actions', 
+                label: 'Aktionen', 
+                render: (v, row) => `
+                    <button class="btn-icon btn-edit" title="Name bearbeiten">✎</button>
+                    <button class="btn-icon btn-delete" title="Löschen">🗑</button>
+                ` 
+            });
+        }
+        
         this.data      = [];
         this.filtered  = [];
         this.sortKey   = null;
@@ -38,12 +41,14 @@ class DataTable {
         const toolbar = document.createElement('div');
         toolbar.className = 'data-table-toolbar';
 
-        // ADD BUTTON
-        const addBtn = document.createElement('button');
-        addBtn.className = 'btn-add';
-        addBtn.innerHTML = '<span>+</span> Hinzufügen';
-        addBtn.onclick = () => this._showAddModal();
-        toolbar.appendChild(addBtn);
+        if (this.options.hasAdd !== false) {
+            // ADD BUTTON
+            const addBtn = document.createElement('button');
+            addBtn.className = 'btn-add';
+            addBtn.innerHTML = '<span>+</span> Hinzufügen';
+            addBtn.onclick = () => this._showAddModal();
+            toolbar.appendChild(addBtn);
+        }
 
         if (this.options.searchable !== false) {
             this.searchInput = document.createElement('input');
@@ -149,8 +154,10 @@ class DataTable {
                 
                 // Event Delegation für Actions
                 if(col.key === 'actions') {
-                    td.querySelector('.btn-delete').onclick = () => this._onDelete(row.id);
-                    td.querySelector('.btn-edit').onclick = () => this._onRename(row);
+                    const btnDel = td.querySelector('.btn-delete');
+                    const btnEdit = td.querySelector('.btn-edit');
+                    if (btnDel) btnDel.onclick = () => this._onDelete(row.id);
+                    if (btnEdit) btnEdit.onclick = () => this._onRename(row);
                 }
                 tr.appendChild(td);
             });
@@ -177,10 +184,12 @@ class DataTable {
         // update header classes
         this.table.querySelectorAll('th').forEach(t => {
             t.classList.remove('sorted');
-            t.querySelector('.sort-icon').textContent = '⇅';
+            const icon = t.querySelector('.sort-icon');
+            if (icon) icon.textContent = '⇅';
         });
         th.classList.add('sorted');
-        th.querySelector('.sort-icon').textContent = this.sortAsc ? '▲' : '▼';
+        const thIcon = th.querySelector('.sort-icon');
+        if (thIcon) thIcon.textContent = this.sortAsc ? '▲' : '▼';
         this._applySort();
         this._render();
     }

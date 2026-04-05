@@ -97,7 +97,9 @@ function renderDashboard() {
 // ── Sensors view ──────────────────────────────────────────────────────────────
 function renderSensors() {
     content.innerHTML = `
-        <h1>Sensors</h1>
+        <div class="page-header">
+            <h1>Sensors</h1>
+        </div>
         <div id="sensor-table-container"></div>
     `;
 
