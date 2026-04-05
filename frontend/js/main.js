@@ -119,14 +119,9 @@ function renderSensors() {
         { searchable: true }
     );
 
-    // API: Replace mock data with fetch('/api/sensors').then(r => r.json()).then(data => table.setData(data))
-    table.setData([
-        { name: 'Temp Living',   type: 'Temperature', location: 'Living Room', value: '21.4', unit: '\u00b0C',  status: 'active',   updated: '2025-01-01 10:00' },
-        { name: 'Temp Bedroom',  type: 'Temperature', location: 'Bedroom',     value: '19.8', unit: '\u00b0C',  status: 'active',   updated: '2025-01-01 10:01' },
-        { name: 'Energy Main',   type: 'Energy',      location: 'Main Meter',  value: '3.2',  unit: 'kWh', status: 'active',   updated: '2025-01-01 10:02' },
-        { name: 'Energy Solar',  type: 'Energy',      location: 'Roof',        value: '1.1',  unit: 'kWh', status: 'warning',  updated: '2025-01-01 09:55' },
-        { name: 'Motion Hall',   type: 'Motion',      location: 'Hallway',     value: '0',    unit: '',    status: 'inactive', updated: '2025-01-01 08:30' },
-    ]);
+    window.API.getSensors()
+        .then(data => table.setData(data))
+        .catch(err => console.error("Fehler beim Laden der Sensoren:", err));
 }
 
 // ── Apartment view ───────────────────────────────────────────────────────────
@@ -150,7 +145,7 @@ function renderActuators() {
         </div>
         <div class="actuators-content">
             <!-- OPEN: actuator list / controls injected here -->
-            <!-- API: fetch('/api/actuators').then(r => r.json()).then(data => ...) -->
+            <!-- window.API.getActuators().then(data => ...) -->
             <p class="page-placeholder">Actuators view – coming soon</p>
         </div>
     `;
@@ -164,7 +159,7 @@ function renderRules() {
         </div>
         <div class="rules-content">
             <!-- OPEN: rule list / editor injected here -->
-            <!-- API: fetch('/api/rules').then(r => r.json()).then(data => ...) -->
+            <!-- window.API.getRules().then(data => ...) -->
             <p class="page-placeholder">Rules view – coming soon</p>
         </div>
     `;
@@ -178,7 +173,7 @@ function renderUsers() {
         </div>
         <div class="users-content">
             <!-- OPEN: user list / management injected here -->
-            <!-- API: fetch('/api/users').then(r => r.json()).then(data => ...) -->
+            <!-- window.API.getUsers().then(data => ...) -->
             <p class="page-placeholder">Users view – coming soon</p>
         </div>
     `;
