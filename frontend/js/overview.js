@@ -24,10 +24,13 @@ const GridManager = {
 
         this.setupEventListeners();
 
-        // API: Load saved dashboard layout from DB on init
-        window.API.getDashboard().then(data => {
-            if (data && data.length > 0) this.loadDashboard(data);
-        }).catch(err => console.error("Dashboard Ladefehler:", err));
+        // Dropdowns dynamisch aus derselben Datenquelle laden wie die Tabellen
+        this.populateDatapoints().then(() => {
+            // API: Load saved dashboard layout from DB on init
+            window.API.getDashboard().then(data => {
+                if (data && data.length > 0) this.loadDashboard(data);
+            }).catch(err => console.error("Dashboard Ladefehler:", err));
+        });
 
         this.refreshGhosts();
     },
@@ -108,12 +111,14 @@ const GridManager = {
         document.getElementById('settings-tile-datapoint').onchange = (e) => {
             if (!this.activeSettingsTile) return;
             this.activeSettingsTile.dataset.datapoint = e.target.value;
-            this.filterContentByDatapoint(e.target.value, 'settings-tile-content');
+            const selectedOpt = e.target.options[e.target.selectedIndex];
+            this.filterContentByDatapoint(selectedOpt?.dataset.type || '', 'settings-tile-content');
             this.saveDashboard();
         };
 
         document.getElementById('add-tile-datapoint').onchange = (e) => {
-            this.filterContentByDatapoint(e.target.value, 'add-tile-content');
+            const selectedOpt = e.target.options[e.target.selectedIndex];
+            this.filterContentByDatapoint(selectedOpt?.dataset.type || '', 'add-tile-content');
         };
 
         document.getElementById('add-tile-content').onchange = (e) => {
@@ -143,6 +148,38 @@ const GridManager = {
         this.container.addEventListener('dragover',  e => this.handleContainerDragOver(e));
         this.container.addEventListener('dragleave', e => this.handleContainerDragLeave(e));
         this.container.addEventListener('drop',      e => this.handleContainerDrop(e));
+    },
+
+    async populateDatapoints() {
+        try {
+            // Gleiche API-Aufrufe wie bei den Listenansichten (Tabellen)
+            const sensors = await window.API.getSensors();
+            const actuators = await window.API.getActuators(); 
+            const allDevices = [...sensors, ...actuators]; // Beide Listen zusammenführen
+
+            // Generiere dynamisches HTML für die <option> Tags
+            const optionsHTML = `<option value="" data-type="">&mdash; None &mdash;</option>` + 
+                allDevices.map(device => {
+                    let dpType = '';
+                    const t = (device.type || '').toLowerCase();
+                    
+                    // Mapping des Datenbank-Typs auf die Dashboard-Präfixe
+                    if (t === 'temperature') dpType = 'sensor.temp';
+                    else if (t === 'energy') dpType = 'sensor.energy';
+                    else if (t === 'switch') dpType = 'switch.light';
+                    else if (t === 'shutter') dpType = 'switch.shutter';
+                    
+                    return `<option value="${device.id}" data-type="${dpType}">${device.name} (${device.location})</option>`;
+                }).join('');
+
+            const addSelect = document.getElementById('add-tile-datapoint');
+            const settingsSelect = document.getElementById('settings-tile-datapoint');
+            
+            if (addSelect) addSelect.innerHTML = optionsHTML;
+            if (settingsSelect) settingsSelect.innerHTML = optionsHTML;
+        } catch (err) {
+            console.error("Fehler beim Laden der Datenpunkte fürs Dashboard:", err);
+        }
     },
 
     updateAddSizeDisplay() {
@@ -312,7 +349,9 @@ const GridManager = {
         this.activeSettingsTile = tile;
         document.getElementById('settings-tile-label').value    = tile.querySelector('.tile-label').textContent;
         document.getElementById('settings-tile-datapoint').value = tile.dataset.datapoint || '';
-        this.filterContentByDatapoint(tile.dataset.datapoint || '', 'settings-tile-content');
+        const dpSelect = document.getElementById('settings-tile-datapoint');
+        const selectedOpt = dpSelect.options[dpSelect.selectedIndex];
+        this.filterContentByDatapoint(selectedOpt?.dataset.type || '', 'settings-tile-content');
         document.getElementById('settings-tile-content').value  = tile.dataset.contentType || '';
         this.updateModalButtons();
         this.settingsModal.classList.remove('hidden');

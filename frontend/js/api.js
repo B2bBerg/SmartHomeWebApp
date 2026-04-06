@@ -30,9 +30,7 @@ const API = {
     getSensorData: async (datapoint) => {
         // Später: return await fetchApi(`/sensors/${datapoint}/history`);
         try {
-            // Dateiname und Pfad korrigiert (liegt laut System in frontend/js/)
-            // Der ?t= Parameter verhindert aggressives Browser-Caching
-            const response = await fetch('js/dashboard_sensor_data.json?t=' + Date.now());
+            const response = await fetch('../testing/sensors/sensordata.json?t=' + Date.now());
             if (!response.ok) throw new Error("HTTP Fehler " + response.status);
             const allData = await response.json();
             return allData[datapoint] || [];

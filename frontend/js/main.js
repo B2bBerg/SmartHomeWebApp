@@ -104,6 +104,9 @@ function renderSensors() {
     `;
 
     const columns = [
+        { key: 'id',       label: 'UUID', render: (val) => 
+            `<span title="${val}" style="font-family: monospace; font-size: 0.85em; color: #6c6c8a;">${val ? val.split('-')[0] + '...' : '—'}</span>` 
+        },
         { key: 'name',     label: 'Name' },
         { key: 'type',     label: 'Type' },
         { key: 'location', label: 'Location' },

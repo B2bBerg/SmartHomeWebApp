@@ -16,7 +16,6 @@
     <link rel="stylesheet" href="css/rules.css">
     <link rel="stylesheet" href="css/users.css">
     <link rel="stylesheet" href="css/settings.css">
-    <link rel="stylesheet" href="css/sensor.css">
 
     <!-- MODULES -->
     <link rel="stylesheet" href="css/modules/table.css">
@@ -91,15 +90,7 @@
                 <div class="settings-group">
                     <label>Datapoint</label>
                     <select id="add-tile-datapoint">
-                        <option value="">&mdash; None &mdash;</option>
-                        <option value="sensor.temp.living">Temp &ndash; Living Room</option>
-                        <option value="sensor.temp.bedroom">Temp &ndash; Bedroom</option>
-                        <option value="sensor.energy.main">Energy &ndash; Main Meter</option>
-                        <option value="sensor.energy.solar">Energy &ndash; Solar</option>
-                        <option value="sensor.switch.living">Switch &ndash; Living Room</option>
-                        <option value="sensor.switch.bedroom">Switch &ndash; Bedroom</option>
-                        <option value="sensor.shutter.living">Shutter &ndash; Living Room</option>                        
-                        <option value="sensor.shutter.bedroom">Shutter &ndash; Bedroom</option>                        <option value="sensor.energy.main">Energy &ndash; Main Meter</option>
+                        <!-- API: Options dynamically injected via overview.js -->
                     </select>
                 </div>
                 <div class="settings-group">
@@ -130,16 +121,8 @@
                 </div>
                 <div class="settings-group">
                     <label>Datapoint</label>
-                    <!-- API: Populate this select with datapoints from DB via fetchDatapoints() -->
                     <select id="settings-tile-datapoint">
-                        <option value="">&mdash; None &mdash;</option>
-                        <option value="sensor.temp.living">Temp &ndash; Living Room</option>
-                        <option value="sensor.temp.bedroom">Temp &ndash; Bedroom</option>
-                        <option value="sensor.switch.living">Switch &ndash; Living Room</option>
-                        <option value="sensor.switch.bedroom">Switch &ndash; Bedroom</option>
-                        <option value="sensor.shutter.living">Shutter &ndash; Living Room</option>                        
-                        <option value="sensor.shutter.bedroom">Shutter &ndash; Bedroom</option>                        <option value="sensor.energy.main">Energy &ndash; Main Meter</option>
-                        <option value="sensor.energy.solar">Energy &ndash; Solar</option>
+                        <!-- API: Options dynamically injected via overview.js -->
                     </select>
                 </div>
                 <div class="settings-group">

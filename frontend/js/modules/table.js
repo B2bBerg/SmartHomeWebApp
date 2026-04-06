@@ -91,8 +91,8 @@ class DataTable {
     _showAddModal() {
         // Simulierter Scan nach neuen Sensoren
         const newSensors = [
-            { id: 'sn-99', type: 'Temperatur', name: 'Neuer Sensor Balkon' },
-            { id: 'sn-102', type: 'Licht', name: 'Flur Decke' }
+            { id: '123e4567-e89b-12d3-a456-426614174098', type: 'Temperatur', name: 'Neuer Sensor Balkon' },
+            { id: '123e4567-e89b-12d3-a456-426614174099', type: 'Licht', name: 'Flur Decke' }
         ];
 
         const modal = document.createElement('div');

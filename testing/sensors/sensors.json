@@ -1,7 +1,11 @@
 [
-  { "name": "Temp Living",   "type": "Temperature", "location": "Living Room", "value": "21.4", "unit": "\u00b0C", "status": "active",   "updated": "2025-01-01 10:00" },
-  { "name": "Temp Bedroom",  "type": "Temperature", "location": "Bedroom",     "value": "19.8", "unit": "\u00b0C", "status": "active",   "updated": "2025-01-01 10:01" },
-  { "name": "Energy Main",   "type": "Energy",      "location": "Main Meter",  "value": "3.2",  "unit": "kWh",     "status": "active",   "updated": "2025-01-01 10:02" },
-  { "name": "Energy Solar",  "type": "Energy",      "location": "Roof",        "value": "1.1",  "unit": "kWh",     "status": "warning",  "updated": "2025-01-01 09:55" },
-  { "name": "Motion Hall",   "type": "Motion",      "location": "Hallway",     "value": "0",    "unit": "",        "status": "inactive", "updated": "2025-01-01 08:30" }
+  { "id": "123e4567-e89b-12d3-a456-426614174000", "name": "Temp Living",   "type": "Temperature", "location": "Living Room", "value": "21.4", "unit": "\u00b0C", "status": "active",   "updated": "2025-01-01 10:00" },
+  { "id": "123e4567-e89b-12d3-a456-426614174001", "name": "Temp Bedroom",  "type": "Temperature", "location": "Bedroom",     "value": "19.8", "unit": "\u00b0C", "status": "active",   "updated": "2025-01-01 10:01" },
+  { "id": "123e4567-e89b-12d3-a456-426614174002", "name": "Energy Main",   "type": "Energy",      "location": "Main Meter",  "value": "3.2",  "unit": "kWh",     "status": "active",   "updated": "2025-01-01 10:02" },
+  { "id": "123e4567-e89b-12d3-a456-426614174003", "name": "Energy Solar",  "type": "Energy",      "location": "Roof",        "value": "1.1",  "unit": "kWh",     "status": "warning",  "updated": "2025-01-01 09:55" },
+  { "id": "123e4567-e89b-12d3-a456-426614174004", "name": "Motion Hall",   "type": "Motion",      "location": "Hallway",     "value": "0",    "unit": "",        "status": "inactive", "updated": "2025-01-01 08:30" },
+  { "id": "123e4567-e89b-12d3-a456-426614174010", "name": "Switch Living", "type": "Switch",      "location": "Living Room", "value": "On",   "unit": "",        "status": "active",   "updated": "2025-01-01 10:05" },
+  { "id": "123e4567-e89b-12d3-a456-426614174011", "name": "Switch Bedroom","type": "Switch",      "location": "Bedroom",     "value": "Off",  "unit": "",        "status": "active",   "updated": "2025-01-01 10:05" },
+  { "id": "123e4567-e89b-12d3-a456-426614174020", "name": "Shutter Living","type": "Shutter",     "location": "Living Room", "value": "Open", "unit": "",        "status": "active",   "updated": "2025-01-01 10:06" },
+  { "id": "123e4567-e89b-12d3-a456-426614174021", "name": "Shutter Bedroom","type": "Shutter",     "location": "Bedroom",     "value": "Closed","unit": "",       "status": "active",   "updated": "2025-01-01 10:06" }
 ]

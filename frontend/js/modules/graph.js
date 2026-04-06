@@ -52,7 +52,7 @@ class Graph {
                 </div>
                 <div class="chart-body">
                     <svg class="chart-svg" viewBox="0 0 200 100" preserveAspectRatio="none">
-                        <path class="chart-path" d=""></path>
+                        <path class="chart-path" d="" fill="none" stroke="#4ea8de" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
                     </svg>
                     <div class="chart-error-message hidden">Fehler beim Laden</div>
                 </div>
@@ -103,7 +103,14 @@ class Graph {
             const sensorValues = await window.API.getSensorData(this.datapoint);
 
             // Zeitfenster berechnen
-            const now = new Date();
+            let now = new Date();
+            
+            // FIX: "Jetzt" auf den neuesten Datenpunkt setzen, um Probleme mit Daten aus Zukunft/Vergangenheit zu vermeiden
+            if (sensorValues && sensorValues.length > 0) {
+                const lastEntry = sensorValues[sensorValues.length - 1];
+                if (lastEntry.timestamp) now = new Date(lastEntry.timestamp);
+            }
+
             const endTime = new Date(now.getTime() - (this.offset * 24 * 60 * 60 * 1000));
             const startTime = new Date(endTime.getTime() - (this.range * 24 * 60 * 60 * 1000));
 
