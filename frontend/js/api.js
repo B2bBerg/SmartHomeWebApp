@@ -26,20 +26,6 @@ async function fetchApi(endpoint, options = {}) {
 }
 
 const API = {
-    // Sensor Daten abrufen
-    getSensorData: async (datapoint) => {
-        // Später: return await fetchApi(`/sensors/${datapoint}/history`);
-        try {
-            const response = await fetch('../testing/sensors/sensordata.json?t=' + Date.now());
-            if (!response.ok) throw new Error("HTTP Fehler " + response.status);
-            const allData = await response.json();
-            return allData[datapoint] || [];
-        } catch (error) {
-            console.error(`Fehler beim Laden der Testdaten für ${datapoint}:`, error);
-            return [];
-        }
-    },
-
     // Dashboard Layout laden
     getDashboard: async () => {
         try {
@@ -85,6 +71,20 @@ const API = {
             return await response.json();
         } catch (error) {
             console.error("Fehler beim Laden der Sensorliste:", error);
+            return [];
+        }
+    },
+
+    // Sensor Daten abrufen
+    getSensorData: async (datapoint) => {
+        // Später: return await fetchApi(`/sensors/${datapoint}/history`);
+        try {
+            const response = await fetch('../testing/sensors/sensordata.json?t=' + Date.now());
+            if (!response.ok) throw new Error("HTTP Fehler " + response.status);
+            const allData = await response.json();
+            return allData[datapoint] || [];
+        } catch (error) {
+            console.error(`Fehler beim Laden der Testdaten für ${datapoint}:`, error);
             return [];
         }
     },
