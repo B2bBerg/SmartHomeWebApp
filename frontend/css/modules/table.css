@@ -205,3 +205,28 @@
 .badge--active   { background: #1e3a2e; color: #a6e3a1; }
 .badge--inactive { background: #3a1e1e; color: #f38ba8; }
 .badge--warning  { background: #3a2e1e; color: #fab387; }
+
+/* --- IO-Ports --- */
+.io-port {
+    display: inline-block;
+    padding: 2px 6px;
+    margin: 2px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-family: monospace;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid transparent;
+    cursor: default;
+}
+.io-port--free {
+    color: #a6e3a1;
+    border-color: rgba(166, 227, 161, 0.2);
+}
+.io-port--used {
+    color: #6c6c8a;
+    opacity: 0.8;
+}
+.io-port--assigned {
+    color: #f9e2af;
+    border-color: rgba(249, 226, 175, 0.2);
+}

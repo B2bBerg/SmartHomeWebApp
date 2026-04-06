@@ -89,20 +89,23 @@ class DataTable {
     }
 
     _showAddModal() {
+        const isDev = this.options.isDevice;
         const modal = document.createElement('div');
         modal.className = 'table-modal';
         modal.innerHTML = `
             <div class="table-modal-box">
                 <h3>Neues Objekt erfassen</h3>
-                <p>Suchen Sie das neue Gerät (Sensor/Aktor) im Netzwerk:</p>
+                <p>${isDev ? 'Suchen Sie das neue Hardware-Gerät im Netzwerk:' : 'Geben Sie die Adresse und den IO-Port des Datenpunkts ein:'}</p>
                 <div class="settings-group">
                     <label>MAC- oder Bus-Adresse</label>
                     <input type="text" id="modal-address" placeholder="z.B. AA:BB:CC... oder 0x05">
                 </div>
+                ${!isDev ? `
                 <div class="settings-group">
                     <label>IO-Port (Channel)</label>
                     <input type="text" id="modal-ioport" placeholder="z.B. AI_1 oder DO_1">
                 </div>
+                ` : ''}
                 <div id="modal-msg" class="modal-msg"></div>
                 <div class="table-modal-actions">
                     <button id="modal-cancel">Abbrechen</button>
@@ -122,26 +125,28 @@ class DataTable {
 
         btnSearch.onclick = () => {
             const addr = modal.querySelector('#modal-address').value.trim();
-            const port = modal.querySelector('#modal-ioport').value.trim();
+            const port = !isDev ? modal.querySelector('#modal-ioport').value.trim() : '';
             
             // Dummy-Backend-Suche: Akzeptiert zum Testen diese zwei Werte
             const mockDatabase = [
-                { macAddress: 'AA:BB:CC:DD:EE:FF', busAddress: '', channel: 'AI_1', type: 'Temperature', name: 'Neues Gerät (Temp)', location: 'Unassigned', busType: 'WIFI' },
-                { macAddress: '', busAddress: '0x05', channel: 'DO_1', type: 'Switch', name: 'Neuer Aktor (Switch)', location: 'Unassigned', busType: 'RS485' }
+                { macAddress: 'AA:BB:CC:DD:EE:FF', busAddress: '', channel: 'AI_1', type: 'Temperature', name: 'WLAN Multisensor', location: 'Unassigned', busType: 'WIFI' },
+                { macAddress: '', busAddress: '0x05', channel: 'DO_1', type: 'Switch', name: 'RS485 Relais', location: 'Unassigned', busType: 'RS485' }
             ];
             
-            foundDevice = mockDatabase.find(d => 
-                (d.macAddress === addr || d.busAddress === addr) && d.channel === port
-            );
+            foundDevice = mockDatabase.find(d => {
+                const addrMatch = d.macAddress === addr || d.busAddress === addr;
+                if (isDev) return addrMatch;
+                return addrMatch && d.channel === port;
+            });
 
             if (foundDevice) {
                 msgEl.className = 'modal-msg success';
-                msgEl.innerHTML = `✔ Gerät gefunden: <strong>${foundDevice.type}</strong>`;
+                msgEl.innerHTML = `✔ Gerät gefunden: <strong>${foundDevice.name}</strong>`;
                 btnSearch.style.display = 'none';
                 btnConfirm.style.display = 'flex';
             } else {
                 msgEl.className = 'modal-msg error';
-                msgEl.innerHTML = `✖ Fehler: Kein Gerät mit dieser Adresse und diesem IO-Port gefunden.<br><small>(Tipp: Teste "0x05" / "DO_1" oder "AA:BB:CC:DD:EE:FF" / "AI_1")</small>`;
+                msgEl.innerHTML = `✖ Fehler: Kein Gerät mit ${isDev ? 'dieser Adresse' : 'dieser Adresse und diesem IO-Port'} gefunden.<br><small>(Tipp: Teste "0x05"${!isDev ? ' / "DO_1"' : ''} oder "AA:BB:CC:DD:EE:FF"${!isDev ? ' / "AI_1"' : ''})</small>`;
                 btnSearch.style.display = 'inline-block';
                 btnConfirm.style.display = 'none';
                 foundDevice = null;
@@ -162,6 +167,14 @@ class DataTable {
                     signal: null,
                     updated: 'jetzt'
                 };
+
+                // Für die Geräte-Tabelle unnötige Datenpunkt-Felder entfernen
+                if (isDev) {
+                    delete newEntry.channel;
+                    delete newEntry.value;
+                    delete newEntry.unit;
+                    delete newEntry.type;
+                }
                 
                 this._addRow(newEntry);
                 modal.remove();

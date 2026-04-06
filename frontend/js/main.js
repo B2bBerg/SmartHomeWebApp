@@ -125,13 +125,46 @@ function renderDevices() {
             }
             return html !== '' ? html : '<span style="color: #6c6c8a;">—</span>';
         }},
+        { key: 'ios',        label: 'IO-Ports', render: (_, row) => {
+            const usedChannels = row.usedChannels || [];
+            const allChannels = row.channels || row.ports || [];
+            let channelsArray = [];
+            
+            if (Array.isArray(allChannels) && allChannels.length > 0) {
+                channelsArray = allChannels;
+            } else if (typeof allChannels === 'number' && allChannels > 0) {
+                for (let i = 1; i <= allChannels; i++) channelsArray.push(i.toString());
+            } else if (usedChannels.length > 0) {
+                channelsArray = usedChannels;
+            }
+
+            if (channelsArray.length === 0) return '<span style="color: #6c6c8a;">—</span>';
+
+            return channelsArray.map(ch => {
+                const isUsed = usedChannels.includes(String(ch));
+                const cssClass = isUsed ? 'io-port io-port--used' : 'io-port io-port--free';
+                return `<span title="${isUsed ? 'Genutzt' : 'Frei'}" class="${cssClass}">${ch}</span>`;
+            }).join('');
+        }},
         { key: 'updated',    label: 'Zuletzt Online' },
     ];
 
-    const table = new DataTable(document.getElementById('device-table-container'), columns, { searchable: true });
+    const table = new DataTable(document.getElementById('device-table-container'), columns, { searchable: true, isDevice: true });
 
-    window.API.getDevices()
-        .then(data => table.setData(data))
+    Promise.all([
+        window.API.getDevices(),
+        window.API.getSensors(),
+        window.API.getActuators()
+    ])
+        .then(([devices, sensors, actuators]) => {
+            const allDatapoints = [...sensors, ...actuators];
+            const mergedDevices = devices.map(device => {
+                const deviceDatapoints = allDatapoints.filter(dp => dp.deviceId === device.id);
+                const usedChannels = deviceDatapoints.filter(dp => dp.channel != null).map(dp => String(dp.channel));
+                return { ...device, usedChannels };
+            });
+            table.setData(mergedDevices);
+        })
         .catch(err => console.error("Fehler beim Laden der Geräte:", err));
 }
 
@@ -155,25 +188,10 @@ function renderSensors() {
         { key: 'type',       label: 'Type' },
         { key: 'location',   label: 'Location' },
         { key: 'channel',  label: 'IO-Port', render: (val) =>
-            val ? `<span style="font-family: monospace; color: #f9e2af; font-weight: bold;">${val}</span>` : '—'
+            val ? `<span class="io-port io-port--assigned">${val}</span>` : '—'
         },
         { key: 'value',    label: 'Value' },
         { key: 'unit',     label: 'Unit' },
-        { key: 'status',   label: 'Status', render: (val) =>
-            `<span class="badge badge--${val === 'active' ? 'active' : val === 'warning' ? 'warning' : 'inactive'}">${val}</span>`
-        },
-        { key: 'health',   label: 'Health', render: (_, row) => {
-            let html = '';
-            if (row.battery !== undefined && row.battery !== null) {
-                const bColor = row.battery <= 20 ? '#e64553' : (row.battery <= 50 ? '#f9e2af' : '#a6e3a1');
-                html += `<span title="Batterie: ${row.battery}%" style="color: ${bColor}; font-size: 0.85em; margin-right: 8px;">🔋 ${row.battery}%</span>`;
-            }
-            if (row.signal !== undefined && row.signal !== null) {
-                const sColor = row.signal <= 40 ? '#e64553' : (row.signal <= 70 ? '#f9e2af' : '#a6e3a1');
-                html += `<span title="Signalstärke: ${row.signal}%" style="color: ${sColor}; font-size: 0.85em;">📶 ${row.signal}%</span>`;
-            }
-            return html !== '' ? html : '<span style="color: #6c6c8a;">—</span>';
-        }},
         { key: 'updated',  label: 'Last Update' },
     ];
 
@@ -227,25 +245,10 @@ function renderActuators() {
         { key: 'type',       label: 'Type' },
         { key: 'location',   label: 'Location' },
         { key: 'channel',  label: 'IO-Port', render: (val) =>
-            val ? `<span style="font-family: monospace; color: #f9e2af; font-weight: bold;">${val}</span>` : '—'
+            val ? `<span class="io-port io-port--assigned">${val}</span>` : '—'
         },
         { key: 'value',    label: 'Value' },
         { key: 'unit',     label: 'Unit' },
-        { key: 'status',   label: 'Status', render: (val) =>
-            `<span class="badge badge--${val === 'active' ? 'active' : val === 'warning' ? 'warning' : 'inactive'}">${val}</span>`
-        },
-        { key: 'health',   label: 'Health', render: (_, row) => {
-            let html = '';
-            if (row.battery !== undefined && row.battery !== null) {
-                const bColor = row.battery <= 20 ? '#e64553' : (row.battery <= 50 ? '#f9e2af' : '#a6e3a1');
-                html += `<span title="Batterie: ${row.battery}%" style="color: ${bColor}; font-size: 0.85em; margin-right: 8px;">🔋 ${row.battery}%</span>`;
-            }
-            if (row.signal !== undefined && row.signal !== null) {
-                const sColor = row.signal <= 40 ? '#e64553' : (row.signal <= 70 ? '#f9e2af' : '#a6e3a1');
-                html += `<span title="Signalstärke: ${row.signal}%" style="color: ${sColor}; font-size: 0.85em;">📶 ${row.signal}%</span>`;
-            }
-            return html !== '' ? html : '<span style="color: #6c6c8a;">—</span>';
-        }},
         { key: 'updated',  label: 'Last Update' },
     ];
 
