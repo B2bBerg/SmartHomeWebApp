@@ -89,35 +89,83 @@ class DataTable {
     }
 
     _showAddModal() {
-        // Simulierter Scan nach neuen Sensoren
-        const newSensors = [
-            { id: '123e4567-e89b-12d3-a456-426614174098', type: 'Temperatur', name: 'Neuer Sensor Balkon' },
-            { id: '123e4567-e89b-12d3-a456-426614174099', type: 'Licht', name: 'Flur Decke' }
-        ];
-
         const modal = document.createElement('div');
         modal.className = 'table-modal';
         modal.innerHTML = `
             <div class="table-modal-box">
                 <h3>Neues Objekt erfassen</h3>
-                <p>Gefundene Geräte im System:</p>
-                <select id="modal-sensor-select">
-                    ${newSensors.map(s => `<option value="${s.id}">${s.name} (${s.type})</option>`).join('')}
-                </select>
+                <p>Suchen Sie das neue Gerät (Sensor/Aktor) im Netzwerk:</p>
+                <div class="settings-group">
+                    <label>MAC- oder Bus-Adresse</label>
+                    <input type="text" id="modal-address" placeholder="z.B. AA:BB:CC... oder 0x05">
+                </div>
+                <div class="settings-group">
+                    <label>IO-Port (Channel)</label>
+                    <input type="text" id="modal-ioport" placeholder="z.B. AI_1 oder DO_1">
+                </div>
+                <div id="modal-msg" class="modal-msg"></div>
                 <div class="table-modal-actions">
                     <button id="modal-cancel">Abbrechen</button>
-                    <button id="modal-confirm" class="btn-primary">Add</button>
+                    <button id="modal-search" class="btn-primary">Suchen</button>
+                    <button id="modal-confirm" class="btn-add" style="display: none;">Hinzufügen</button>
                 </div>
             </div>
         `;
         document.body.appendChild(modal);
 
         modal.querySelector('#modal-cancel').onclick = () => modal.remove();
+        
+        const msgEl = modal.querySelector('#modal-msg');
+        const btnSearch = modal.querySelector('#modal-search');
+        const btnConfirm = modal.querySelector('#modal-confirm');
+        let foundDevice = null;
+
+        btnSearch.onclick = () => {
+            const addr = modal.querySelector('#modal-address').value.trim();
+            const port = modal.querySelector('#modal-ioport').value.trim();
+            
+            // Dummy-Backend-Suche: Akzeptiert zum Testen diese zwei Werte
+            const mockDatabase = [
+                { macAddress: 'AA:BB:CC:DD:EE:FF', busAddress: '', channel: 'AI_1', type: 'Temperature', name: 'Neues Gerät (Temp)', location: 'Unassigned', busType: 'WIFI' },
+                { macAddress: '', busAddress: '0x05', channel: 'DO_1', type: 'Switch', name: 'Neuer Aktor (Switch)', location: 'Unassigned', busType: 'RS485' }
+            ];
+            
+            foundDevice = mockDatabase.find(d => 
+                (d.macAddress === addr || d.busAddress === addr) && d.channel === port
+            );
+
+            if (foundDevice) {
+                msgEl.className = 'modal-msg success';
+                msgEl.innerHTML = `✔ Gerät gefunden: <strong>${foundDevice.type}</strong>`;
+                btnSearch.style.display = 'none';
+                btnConfirm.style.display = 'flex';
+            } else {
+                msgEl.className = 'modal-msg error';
+                msgEl.innerHTML = `✖ Fehler: Kein Gerät mit dieser Adresse und diesem IO-Port gefunden.<br><small>(Tipp: Teste "0x05" / "DO_1" oder "AA:BB:CC:DD:EE:FF" / "AI_1")</small>`;
+                btnSearch.style.display = 'inline-block';
+                btnConfirm.style.display = 'none';
+                foundDevice = null;
+            }
+        };
+
         modal.querySelector('#modal-confirm').onclick = () => {
-            const select = modal.querySelector('#modal-sensor-select');
-            const sensor = newSensors.find(s => s.id === select.value);
-            this._addRow(sensor);
-            modal.remove();
+            if (foundDevice) {
+                // Neue UUID erstellen (Fallback, falls Funktion nicht geladen wurde)
+                const newId = typeof generateUUID === 'function' ? generateUUID() : '00000000-0000-0000-0000-000000000000';
+                
+                const newEntry = {
+                    id: newId,
+                    ...foundDevice,
+                    value: '-',
+                    unit: '',
+                    battery: null,
+                    signal: null,
+                    updated: 'jetzt'
+                };
+                
+                this._addRow(newEntry);
+                modal.remove();
+            }
         };
     }
 

@@ -82,6 +82,37 @@
 
 .btn-primary { background: #a6e3a1 !important; color: #11111b !important; }
 
+/* --- Table Modal Form Elements --- */
+.table-modal-box .settings-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.table-modal-box label {
+    font-size: 0.85rem;
+    color: #a6adc8;
+}
+
+.table-modal-box input {
+    background: #181825;
+    border: 1px solid #3a3a52;
+    color: #cdd6f4;
+    padding: 0.5rem;
+    border-radius: 6px;
+    outline: none;
+}
+
+.modal-msg {
+    font-size: 0.85rem;
+    min-height: 1.5rem;
+    margin-top: 0.5rem;
+    line-height: 1.3;
+}
+
+.modal-msg.error { color: #f38ba8; }
+.modal-msg.success { color: #a6e3a1; }
+
 /* --- Table Base Styles (aus alter data-table.css) --- */
 .data-table-wrapper {
     width: 100%;
