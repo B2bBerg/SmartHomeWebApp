@@ -64,8 +64,9 @@ class Graph {
                                 <div class="grid-line"></div>
                             </div>
                             <svg class="chart-svg" viewBox="0 0 200 100" preserveAspectRatio="none">
-                                <path class="chart-path" d="" fill="none" stroke="#4ea8de" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                                <path class="chart-path" d="" fill="none" stroke="#4ea8de" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
                             </svg>
+                            <div class="chart-points-container"></div>
                             <div class="chart-error-message hidden">Fehler beim Laden</div>
                         </div>
                         <div class="chart-x-axis">
@@ -163,7 +164,10 @@ class Graph {
                     const dTime = new Date(entry.timestamp);
                     return dTime >= startTime && dTime <= endTime;
                 })
-                .map(entry => entry[this.activeMetric] !== undefined ? entry[this.activeMetric] : entry.value);
+                .map(entry => ({
+                    val: entry[this.activeMetric] !== undefined ? entry[this.activeMetric] : entry.value,
+                    timestamp: entry.timestamp
+                }));
 
             // Header Beschriftung (exakte Tage ohne Überhang)
             const displayEnd = new Date(exactEnd.getTime() - 1);
@@ -265,15 +269,19 @@ class Graph {
 
     drawPath(data) {
         const pathEl = this.container.querySelector('.chart-path');
+        const pointsContainer = this.container.querySelector('.chart-points-container');
         if (!pathEl) return;
+        if (pointsContainer) pointsContainer.innerHTML = '';
+
         if (!data || !data.length) {
             pathEl.setAttribute('d', '');
             return;
         }
         
         const width = 200, height = 100;
-        const max = Math.max(...data);
-        const min = Math.min(...data);
+        const vals = data.map(d => d.val);
+        const max = Math.max(...vals);
+        const min = Math.min(...vals);
         
         // Dynamisches Padding von 10% (oder mind. 1, falls min==max)
         const padding = (max - min) * 0.1 || 1; 
@@ -291,13 +299,32 @@ class Graph {
         if (yMidEl) yMidEl.textContent = ((renderMax + renderMin) / 2).toFixed(1) + u;
         if (yMinEl) yMinEl.textContent = renderMin.toFixed(1) + u;
 
-        const points = data.map((val, i) => {
+        const pathPoints = data.map((d, i) => {
             const x = (i / Math.max(1, data.length - 1)) * width;
-            const y = height - ((val - renderMin) / valRange) * height;
+            const y = height - ((d.val - renderMin) / valRange) * height;
+            
+            // HTML Hover-Punkte generieren
+            if (pointsContainer) {
+                const px = (i / Math.max(1, data.length - 1)) * 100;
+                const py = ((d.val - renderMin) / valRange) * 100;
+                
+                const pt = document.createElement('div');
+                pt.className = 'chart-data-point';
+                pt.style.left = `${px}%`;
+                pt.style.bottom = `${py}%`;
+
+                const dTime = new Date(d.timestamp);
+                const dateStr = dTime.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric' });
+                const timeStr = dTime.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+                
+                pt.title = `${dateStr} ${timeStr}\nWert: ${d.val}${u}`;
+                pointsContainer.appendChild(pt);
+            }
+
             return `${x},${y}`;
         });
 
-        pathEl.setAttribute('d', `M ${points.join(' L ')}`);
+        pathEl.setAttribute('d', `M ${pathPoints.join(' L ')}`);
     }
 }
 
