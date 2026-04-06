@@ -76,15 +76,97 @@
     flex-grow: 1;
     width: 100%;
     display: flex;
+    min-height: 0;
+    gap: 8px; /* Abstand zwischen Y-Achse und Graph */
+}
+
+.chart-y-axis {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-end;
+    font-size: 0.65rem;
+    color: #6c6c8a;
+    font-family: monospace;
+    padding-bottom: 18px; /* Optischer Ausgleich, damit die Null-Linie mit der X-Achse bündig bleibt */
+}
+
+.chart-main {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.chart-x-axis {
+    position: relative;
+    width: 100%;
+    height: 24px;
+    margin-top: 2px;
+    z-index: 10; /* Ebene nach oben holen, damit der Hover-Tooltip immer funktioniert */
+}
+
+.x-tick {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.65rem;
+    color: #6c6c8a;
+    font-family: monospace;
+    white-space: nowrap;
+    cursor: default;
+    gap: 2px;
+}
+
+.tick-time {
+    color: #6c6c8a;
+}
+
+.tick-midnight .tick-date {
+    color: #cdd6f4;
+    font-weight: 700;
+}
+
+.x-tick::before {
+    content: '';
+    width: 1px;
+    height: 5px;
+    background: #6c6c8a;
+    margin-bottom: 2px;
+}
+
+.chart-graph-area {
+    position: relative;
+    flex-grow: 1;
+    width: 100%;
+    display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 0;
+}
+
+.chart-grid-h {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    pointer-events: none; /* Klicks gehen durch das Raster auf das SVG */
+}
+
+.chart-grid-h .grid-line {
+    height: 1px;
+    background: rgba(58, 58, 82, 0.5); /* Dezentes Raster */
+    width: 100%;
 }
 
 .chart-svg {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
-    min-height: 60px;
     transition: opacity 0.3s ease;
     filter: drop-shadow(0 0 2px rgba(166, 227, 161, 0.4));
 }
@@ -114,9 +196,4 @@
 
 .chart-error-message.hidden {
     display: none;
-}
-
-/* Verstecke Controls wenn nicht im Edit-Mode (optional) */
-.overview-container:not(.edit-mode) .chart-nav-btn {
-    opacity: 0.5;
 }
