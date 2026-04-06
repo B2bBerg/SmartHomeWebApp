@@ -153,15 +153,18 @@ const GridManager = {
     async populateDatapoints() {
         try {
             // Gleiche API-Aufrufe wie bei den Listenansichten (Tabellen)
-            const sensors = await window.API.getSensors();
-            const actuators = await window.API.getActuators(); 
-            const allDevices = [...sensors, ...actuators]; // Beide Listen zusammenführen
+            const [sensors, actuators, devices] = await Promise.all([
+                window.API.getSensors(),
+                window.API.getActuators(),
+                window.API.getDevices()
+            ]);
+            const allDatapoints = [...sensors, ...actuators]; // Beide Listen zusammenführen
 
             // Generiere dynamisches HTML für die <option> Tags
             const optionsHTML = `<option value="" data-type="">&mdash; None &mdash;</option>` + 
-                allDevices.map(device => {
+                allDatapoints.map(dp => {
                     let dpType = '';
-                    const t = (device.type || '').toLowerCase();
+                    const t = (dp.type || '').toLowerCase();
                     
                     // Mapping des Datenbank-Typs auf die Dashboard-Präfixe
                     if (t === 'temperature') dpType = 'sensor.temp';
@@ -169,7 +172,10 @@ const GridManager = {
                     else if (t === 'switch') dpType = 'switch.light';
                     else if (t === 'shutter') dpType = 'switch.shutter';
                     
-                    return `<option value="${device.id}" data-type="${dpType}">${device.name} (${device.location})</option>`;
+                    const dev = devices.find(d => d.id === dp.deviceId) || {};
+                    const loc = dev.location ? ` (${dev.location})` : '';
+                    
+                    return `<option value="${dp.id}" data-type="${dpType}">${dp.name}${loc}</option>`;
                 }).join('');
 
             const addSelect = document.getElementById('add-tile-datapoint');
