@@ -120,6 +120,9 @@ const GridManager = {
             if (e.target.value.includes('graph')) {
                 this.addColSpan = 3;
                 this.addRowSpan = 3;
+            } else if (e.target.value.includes('switch')) {
+                this.addColSpan = 1;
+                this.addRowSpan = 1;
             } else if (this.addColSpan === 3 && this.addRowSpan === 3) {
                 this.addColSpan = 1;
                 this.addRowSpan = 1;
@@ -146,8 +149,9 @@ const GridManager = {
         document.getElementById('add-size-display').innerHTML = `${this.addColSpan} &times; ${this.addRowSpan}`;
         
         const isGraph = document.getElementById('add-tile-content')?.value.includes('graph');
+        const isSwitch = document.getElementById('add-tile-content')?.value.includes('switch');
         
-        if (isGraph) {
+        if (isGraph || isSwitch) {
             document.getElementById('add-btn-col-plus').disabled  = true;
             document.getElementById('add-btn-col-minus').disabled = true;
             document.getElementById('add-btn-row-plus').disabled  = true;
@@ -318,15 +322,46 @@ const GridManager = {
     // API: Extend CONTENT_TYPES to add new tile renderers.
     // Each render() will later receive live data from fetchTileData(datapoint, type)
     CONTENT_TYPES: {
-        'temp-current':   { render: () => `<div class="tile-value">-- °C</div>` },
+        'temp-current':   { 
+            render: () => `<div class="tile-value">-- °C</div>`,
+            init: async (container, datapoint) => {
+                if (!datapoint) return;
+                try {
+                    const data = await window.API.getSensorData(datapoint);
+                    if (data && data.length > 0) {
+                        const latest = data[data.length - 1]; // Letzter Wert im Array
+                        const val = latest.temperature !== undefined ? latest.temperature : latest.value;
+                        container.querySelector('.tile-value').textContent = `${val} °C`;
+                    }
+                } catch (e) { console.error("Fehler beim Laden von", datapoint, e); }
+            }
+        },
         'temp-graph':     { 
             init: (container, datapoint) => new Graph(container, datapoint, { metrics: ['temperature', 'humidity'] }) 
         },
-        'energy-current': { render: () => `<div class="tile-value">-- kWh</div>` },
+        'energy-current': { 
+            render: () => `<div class="tile-value">-- kWh</div>`,
+            init: async (container, datapoint) => {
+                if (!datapoint) return;
+                try {
+                    const data = await window.API.getSensorData(datapoint);
+                    if (data && data.length > 0) {
+                        const latest = data[data.length - 1]; // Letzter Wert im Array
+                        const val = latest.power !== undefined ? latest.power : latest.value;
+                        container.querySelector('.tile-value').textContent = `${val} kWh`;
+                    }
+                } catch (e) { console.error("Fehler beim Laden von", datapoint, e); }
+            }
+        },
         'energy-graph':   { 
             init: (container, datapoint) => new Graph(container, datapoint, { metrics: ['power', 'voltage', 'current'] }) 
         },
-        'switch-light':   { render: () => `<div class="tile-control-placeholder">Switch Control</div>` },
+        'switch-light':   { 
+            init: (container, datapoint) => SwitchRenderer.render(container, 'switch-light') 
+        },
+        'switch-shutter': {
+            init: (container, datapoint) => SwitchRenderer.render(container, 'switch-shutter')
+        }
     },
 
     renderTileContent(tile) {
@@ -334,12 +369,26 @@ const GridManager = {
         const type = tile.dataset.contentType;
         if (!type || !this.CONTENT_TYPES[type]) return;
 
+        let isFixedSize = false;
+
         // Erzwinge 3x3 für alle Graph-Tiles
         if (type.includes('graph')) {
             tile.dataset.colSpan = 3;
             tile.dataset.rowSpan = 3;
             this.applyPosition(tile);
+            isFixedSize = true;
+        } else if (type.includes('switch')) {
+            tile.dataset.colSpan = 1;
+            tile.dataset.rowSpan = 1;
+            this.applyPosition(tile);
+            isFixedSize = true;
         }
+
+        // Resize-Handles ausblenden, falls die Kachel eine feste Größe haben muss
+        const colHandle = tile.querySelector('.tile-resize-col');
+        const rowHandle = tile.querySelector('.tile-resize-row');
+        if (colHandle) colHandle.style.display = isFixedSize ? 'none' : '';
+        if (rowHandle) rowHandle.style.display = isFixedSize ? 'none' : '';
 
         const div = document.createElement('div');
         div.className = 'tile-content';
@@ -367,6 +416,7 @@ const GridManager = {
         'sensor.temp':   ['temp-current',   'temp-graph'],
         'sensor.energy': ['energy-current', 'energy-graph'],
         'switch.light':  ['switch-light'],
+        'switch.shutter':['switch-shutter'],
     },
 
     filterContentByDatapoint(datapoint, selectId = 'settings-tile-content') {

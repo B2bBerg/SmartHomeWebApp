@@ -29,39 +29,79 @@ const API = {
     // Sensor Daten abrufen
     getSensorData: async (datapoint) => {
         // Später: return await fetchApi(`/sensors/${datapoint}/history`);
-        const response = await fetch('sensor_data_test.json');
-        if (!response.ok) throw new Error("HTTP Fehler " + response.status);
-        const allData = await response.json();
-        return allData[datapoint] || [];
+        try {
+            // Dateiname und Pfad korrigiert (liegt laut System in frontend/js/)
+            // Der ?t= Parameter verhindert aggressives Browser-Caching
+            const response = await fetch('js/dashboard_sensor_data.json?t=' + Date.now());
+            if (!response.ok) throw new Error("HTTP Fehler " + response.status);
+            const allData = await response.json();
+            return allData[datapoint] || [];
+        } catch (error) {
+            console.error(`Fehler beim Laden der Testdaten für ${datapoint}:`, error);
+            return [];
+        }
     },
 
     // Dashboard Layout laden
     getDashboard: async () => {
-        // Später: return await fetchApi('/dashboard');
-        return null; // Gibt aktuell noch "null" zurück, bis ein Backend existiert
+        try {
+            // 1. Zuerst prüfen, ob es bereits lokal im Browser gespeicherte Anpassungen gibt
+            const savedState = localStorage.getItem('smartHomeDashboard');
+            if (savedState) {
+                console.log("Dashboard Layout aus localStorage geladen.");
+                return JSON.parse(savedState);
+            }
+
+            // 2. Falls nicht, initiale Konfiguration aus der Datei laden
+            const response = await fetch('../testing/dashboard/dashboard.json?t=' + Date.now());
+            if (!response.ok) throw new Error("HTTP Fehler " + response.status);
+            const data = await response.json();
+            
+            // Initiale Daten im localStorage ablegen
+            localStorage.setItem('smartHomeDashboard', JSON.stringify(data));
+            return data;
+        } catch (error) {
+            console.error("Fehler beim Laden des Dashboards:", error);
+            return [];
+        }
     },
 
     // Dashboard Layout speichern
     saveDashboard: async (dashboardState) => {
-        // Später: return await fetchApi('/dashboard', { method: 'POST', body: JSON.stringify(dashboardState) });
-        console.log('API Call: saveDashboard', dashboardState);
+        try {
+            // Solange kein Backend existiert, speichern wir das Layout im localStorage des Browsers.
+            // So bleibt es auch nach einem F5 / Seiten-Refresh erhalten.
+            localStorage.setItem('smartHomeDashboard', JSON.stringify(dashboardState));
+            console.log('Dashboard Layout im localStorage gespeichert (Fallback ohne Backend)');
+        } catch (error) {
+            console.error("Fehler beim Speichern des Dashboards:", error);
+        }
     },
 
     // Alle Sensoren für die Tabelle abrufen
     getSensors: async () => {
         // Später: return await fetchApi('/sensors');
-        return [
-            { name: 'Temp Living',   type: 'Temperature', location: 'Living Room', value: '21.4', unit: '\u00b0C',  status: 'active',   updated: '2025-01-01 10:00' },
-            { name: 'Temp Bedroom',  type: 'Temperature', location: 'Bedroom',     value: '19.8', unit: '\u00b0C',  status: 'active',   updated: '2025-01-01 10:01' },
-            { name: 'Energy Main',   type: 'Energy',      location: 'Main Meter',  value: '3.2',  unit: 'kWh', status: 'active',   updated: '2025-01-01 10:02' },
-            { name: 'Energy Solar',  type: 'Energy',      location: 'Roof',        value: '1.1',  unit: 'kWh', status: 'warning',  updated: '2025-01-01 09:55' },
-            { name: 'Motion Hall',   type: 'Motion',      location: 'Hallway',     value: '0',    unit: '',    status: 'inactive', updated: '2025-01-01 08:30' },
-        ];
+        try {
+            const response = await fetch('../testing/sensors/sensors.json?t=' + Date.now());
+            if (!response.ok) throw new Error("HTTP Fehler " + response.status);
+            return await response.json();
+        } catch (error) {
+            console.error("Fehler beim Laden der Sensorliste:", error);
+            return [];
+        }
     },
 
     getActuators: async () => {
         return []; // return await fetchApi('/actuators');
     },
+
+    // Status eines Aktors (Schalter, Rollladen) ans Backend senden
+    setActuatorState: async (datapoint, state) => {
+        // Später: return await fetchApi(`/actuators/${datapoint}`, { method: 'POST', body: JSON.stringify({ state }) });
+        console.log(`API Call: setActuatorState für ${datapoint} ->`, state);
+        return { success: true };
+    },
+
     getRules: async () => {
         return []; // return await fetchApi('/rules');
     },

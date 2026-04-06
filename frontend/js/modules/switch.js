@@ -51,14 +51,21 @@ const SwitchRenderer = {
             input.onchange = (e) => {
                 const newState = e.target.checked;
                 statusText.textContent = newState ? 'AN' : 'AUS';
-                console.log(`API Call: Set ${datapoint} to ${newState}`);
-                // API: fetch(`/api/set/${datapoint}`, { method: 'POST', body: JSON.stringify({ state: newState }) });
+                if (window.API && window.API.setActuatorState) {
+                    window.API.setActuatorState(datapoint, newState);
+                } else {
+                    console.log(`API Call Fallback: Set ${datapoint} to ${newState}`);
+                }
             };
         } else if (type === 'switch-shutter') {
             container.querySelectorAll('.shutter-btn').forEach(btn => {
                 btn.onclick = () => {
                     const action = btn.dataset.action;
-                    console.log(`API Call: Shutter ${datapoint} -> ${action}`);
+                    if (window.API && window.API.setActuatorState) {
+                        window.API.setActuatorState(datapoint, action);
+                    } else {
+                        console.log(`API Call Fallback: Shutter ${datapoint} -> ${action}`);
+                    }
                 };
             });
         }
