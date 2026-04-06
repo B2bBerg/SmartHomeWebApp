@@ -28,13 +28,13 @@ const SwitchRenderer = {
         container.innerHTML = `
             <div class="shutter-container">
                 <button class="shutter-btn btn-up" data-action="up">
-                    <img src="assets/icons/arrow-narrow-up-svgrepo-com.svg" alt="Up">
+                    &#9650;
                 </button>
                 <button class="shutter-btn btn-stop" data-action="stop">
                     <div class="stop-icon"></div>
                 </button>
                 <button class="shutter-btn btn-down" data-action="down">
-                    <img src="assets/icons/arrow-narrow-down-svgrepo-com.svg" alt="Down">
+                    &#9660;
                 </button>
             </div>
         `;

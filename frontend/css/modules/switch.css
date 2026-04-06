@@ -73,17 +73,13 @@ input:checked + .slider:before {
     align-items: center;
     justify-content: center;
     transition: background 0.2s;
+    color: #cdd6f4;
+    font-size: 1.2rem;
 }
 
 .shutter-btn:hover {
     background: #45475a;
     border-color: #cdd6f4;
-}
-
-.shutter-btn img {
-    width: 20px;
-    height: 20px;
-    filter: invert(0.9);
 }
 
 .stop-icon {
