@@ -1,0 +1,7 @@
+[
+  { "name": "Temp Living",   "type": "Temperature", "location": "Living Room", "value": "21.4", "unit": "\u00b0C", "status": "active",   "updated": "2025-01-01 10:00" },
+  { "name": "Temp Bedroom",  "type": "Temperature", "location": "Bedroom",     "value": "19.8", "unit": "\u00b0C", "status": "active",   "updated": "2025-01-01 10:01" },
+  { "name": "Energy Main",   "type": "Energy",      "location": "Main Meter",  "value": "3.2",  "unit": "kWh",     "status": "active",   "updated": "2025-01-01 10:02" },
+  { "name": "Energy Solar",  "type": "Energy",      "location": "Roof",        "value": "1.1",  "unit": "kWh",     "status": "warning",  "updated": "2025-01-01 09:55" },
+  { "name": "Motion Hall",   "type": "Motion",      "location": "Hallway",     "value": "0",    "unit": "",        "status": "inactive", "updated": "2025-01-01 08:30" }
+]
