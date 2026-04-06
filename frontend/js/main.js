@@ -39,6 +39,7 @@ toggleImg.src = ICON_COLLAPSED;
 // Dashboard tiles navigation ────────────────────────────────────────────────────────────
 const DASHBOARD_TILE_MAP = {
     'Sensors':   'sensors',
+    'Devices':   'devices',
     'Apartment': 'apartment',
     'Actuators': 'actuators',
     'Rules':     'rules',
@@ -65,6 +66,7 @@ const content = document.getElementById('content');
 // Views registry – add new views here
 const SIDEBAR_VIEWS_MAP = {
     dashboard: renderDashboard,
+    devices:   renderDevices,
     sensors:   renderSensors,
     apartment: renderApartment,
     actuators: renderActuators,
@@ -94,6 +96,45 @@ function renderDashboard() {
     if (typeof GridManager !== 'undefined') GridManager.init();
 }
 
+// ── Devices view ──────────────────────────────────────────────────────────────
+function renderDevices() {
+    content.innerHTML = `
+        <div class="page-header">
+            <h1>Devices (Hardware)</h1>
+        </div>
+        <div id="device-table-container"></div>
+    `;
+
+    const columns = [
+        { key: 'id',         label: 'Device-ID', render: (val) => `<span title="${val}" style="font-family: monospace; font-size: 0.85em; color: #6c6c8a;">${val}</span>` },
+        { key: 'name',       label: 'Gerätename' },
+        { key: 'location',   label: 'Standort' },
+        { key: 'busType',    label: 'Netzwerk' },
+        { key: 'macAddress', label: 'MAC Adresse', render: (val) => val ? `<span style="font-family: monospace;">${val}</span>` : '—' },
+        { key: 'busAddress', label: 'Bus Adresse', render: (val) => val ? `<span style="font-family: monospace;">${val}</span>` : '—' },
+        { key: 'status',     label: 'Status', render: (val) => `<span class="badge badge--${val === 'active' ? 'active' : val === 'warning' ? 'warning' : 'inactive'}">${val}</span>` },
+        { key: 'health',     label: 'Health', render: (_, row) => {
+            let html = '';
+            if (row.battery !== undefined && row.battery !== null) {
+                const bColor = row.battery <= 20 ? '#e64553' : (row.battery <= 50 ? '#f9e2af' : '#a6e3a1');
+                html += `<span title="Batterie: ${row.battery}%" style="color: ${bColor}; font-size: 0.85em; margin-right: 8px;">🔋 ${row.battery}%</span>`;
+            }
+            if (row.signal !== undefined && row.signal !== null) {
+                const sColor = row.signal <= 40 ? '#e64553' : (row.signal <= 70 ? '#f9e2af' : '#a6e3a1');
+                html += `<span title="Signalstärke: ${row.signal}%" style="color: ${sColor}; font-size: 0.85em;">📶 ${row.signal}%</span>`;
+            }
+            return html !== '' ? html : '<span style="color: #6c6c8a;">—</span>';
+        }},
+        { key: 'updated',    label: 'Zuletzt Online' },
+    ];
+
+    const table = new DataTable(document.getElementById('device-table-container'), columns, { searchable: true });
+
+    window.API.getDevices()
+        .then(data => table.setData(data))
+        .catch(err => console.error("Fehler beim Laden der Geräte:", err));
+}
+
 // ── Sensors view ──────────────────────────────────────────────────────────────
 function renderSensors() {
     content.innerHTML = `
@@ -107,16 +148,12 @@ function renderSensors() {
         { key: 'id',       label: 'UUID', render: (val) => 
             `<span title="${val}" style="font-family: monospace; font-size: 0.85em; color: #6c6c8a;">${val ? val.split('-')[0] + '...' : '—'}</span>` 
         },
-        { key: 'name',     label: 'Name' },
-        { key: 'type',     label: 'Type' },
-        { key: 'location', label: 'Location' },
-        { key: 'busType',  label: 'Bus Typ' },
-        { key: 'macAddress', label: 'MAC Adresse', render: (val) =>
-            val ? `<span style="font-family: monospace;">${val}</span>` : '—'
+        { key: 'name',       label: 'Datenpunkt' },
+        { key: 'deviceName', label: 'Gerät (Hardware)', render: (val) => 
+            val ? `<span style="color: #89b4fa;">${val}</span>` : '—'
         },
-        { key: 'busAddress', label: 'Bus Adresse', render: (val) =>
-            val ? `<span style="font-family: monospace;">${val}</span>` : '—'
-        },
+        { key: 'type',       label: 'Type' },
+        { key: 'location',   label: 'Location' },
         { key: 'channel',  label: 'IO-Port', render: (val) =>
             val ? `<span style="font-family: monospace; color: #f9e2af; font-weight: bold;">${val}</span>` : '—'
         },
@@ -146,9 +183,15 @@ function renderSensors() {
         { searchable: true }
     );
 
-    window.API.getSensors()
-        .then(data => table.setData(data))
-        .catch(err => console.error("Fehler beim Laden der Sensoren:", err));
+    // Join Devices & Sensors
+    Promise.all([window.API.getSensors(), window.API.getDevices()])
+        .then(([sensors, devices]) => {
+            const mergedData = sensors.map(s => {
+                const dev = devices.find(d => d.id === s.deviceId) || {};
+                return { ...dev, ...s, id: s.id, deviceName: dev.name };
+            });
+            table.setData(mergedData);
+        }).catch(err => console.error("Fehler beim Laden der Sensoren:", err));
 }
 
 // ── Apartment view ───────────────────────────────────────────────────────────
@@ -177,16 +220,12 @@ function renderActuators() {
         { key: 'id',       label: 'UUID', render: (val) => 
             `<span title="${val}" style="font-family: monospace; font-size: 0.85em; color: #6c6c8a;">${val ? val.split('-')[0] + '...' : '—'}</span>` 
         },
-        { key: 'name',     label: 'Name' },
-        { key: 'type',     label: 'Type' },
-        { key: 'location', label: 'Location' },
-        { key: 'busType',  label: 'Bus Typ' },
-        { key: 'macAddress', label: 'MAC Adresse', render: (val) =>
-            val ? `<span style="font-family: monospace;">${val}</span>` : '—'
+        { key: 'name',       label: 'Datenpunkt' },
+        { key: 'deviceName', label: 'Gerät (Hardware)', render: (val) => 
+            val ? `<span style="color: #89b4fa;">${val}</span>` : '—'
         },
-        { key: 'busAddress', label: 'Bus Adresse', render: (val) =>
-            val ? `<span style="font-family: monospace;">${val}</span>` : '—'
-        },
+        { key: 'type',       label: 'Type' },
+        { key: 'location',   label: 'Location' },
         { key: 'channel',  label: 'IO-Port', render: (val) =>
             val ? `<span style="font-family: monospace; color: #f9e2af; font-weight: bold;">${val}</span>` : '—'
         },
@@ -216,9 +255,15 @@ function renderActuators() {
         { searchable: true }
     );
 
-    window.API.getActuators()
-        .then(data => table.setData(data))
-        .catch(err => console.error("Fehler beim Laden der Aktoren:", err));
+    // Join Devices & Actuators
+    Promise.all([window.API.getActuators(), window.API.getDevices()])
+        .then(([actuators, devices]) => {
+            const mergedData = actuators.map(a => {
+                const dev = devices.find(d => d.id === a.deviceId) || {};
+                return { ...dev, ...a, id: a.id, deviceName: dev.name };
+            });
+            table.setData(mergedData);
+        }).catch(err => console.error("Fehler beim Laden der Aktoren:", err));
 }
 
 // ── Rules view ──────────────────────────────────────────────────────────────

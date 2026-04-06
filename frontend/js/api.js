@@ -101,6 +101,18 @@ const API = {
         }
     },
 
+    // Geräte Metadaten (Hardware) abrufen
+    getDevices: async () => {
+        try {
+            const response = await fetch('../testing/devices/devices.json?t=' + Date.now());
+            if (!response.ok) throw new Error("HTTP Fehler " + response.status);
+            return await response.json();
+        } catch (error) {
+            console.error("Fehler beim Laden der Geräteliste:", error);
+            return [];
+        }
+    },
+
     // Status eines Aktors (Schalter, Rollladen) ans Backend senden
     setActuatorState: async (datapoint, state) => {
         // Später: return await fetchApi(`/actuators/${datapoint}`, { method: 'POST', body: JSON.stringify({ state }) });

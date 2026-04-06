@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="css/dashboard.css">
     <link rel="stylesheet" href="css/overview.css">
     <link rel="stylesheet" href="css/sensor.css">
+    <link rel="stylesheet" href="css/devices.css">
     <link rel="stylesheet" href="css/page.css">
     <link rel="stylesheet" href="css/apartment.css">
     <link rel="stylesheet" href="css/actuators.css">
@@ -46,7 +47,8 @@
                 <span class="icon"><img src="assets/icons/house-chimney-user-svgrepo-com.svg" alt=""></span><a href="#">Apartment</a>
                 <!-- OPEN - dynamic floor sub-items injected by main.js -->
             </li>
-            <li title="Sensors"><span class="icon"><img src="assets/icons/sensor-svgrepo-com.svg" alt=""></span><a href="#">Sensors</a></li>
+            <li title="Devices"><span class="icon"><img src="assets/icons/mobile-alt-svgrepo-com.svg" alt="D"></span><a href="#">Devices</a></li>
+            <li title="Sensors"><span class="icon"><img src="assets/icons/mobile-signal-out-svgrepo-com.svg" alt=""></span><a href="#">Sensors</a></li>
             <li title="Actuators"><span class="icon"><img src="assets/icons/mobile-signal-svgrepo-com.svg" alt=""></span><a href="#">Actuators</a></li>
             <li title="Rules" class="not-implemented"><span class="icon"><img src="assets/icons/code-branch-svgrepo-com.svg" alt=""></span><a href="#">Rules</a></li>
             <li title="Users" class="not-implemented"><span class="icon"><img src="assets/icons/user-pen-svgrepo-com.svg" alt=""></span><a href="#">Users</a></li>
@@ -62,7 +64,8 @@
         <h1>Dashboard</h1>
         <div class="dashboard-container">
             <button id="Apartment" class="tile dashboard-tile not-implemented"><img src="assets/icons/house-chimney-user-svgrepo-com.svg" alt="">Apartment</button>
-            <button id="Sensors" class="tile dashboard-tile"><img src="assets/icons/sensor-svgrepo-com.svg" alt="">Sensors</button>
+            <button id="Devices" class="tile dashboard-tile"><img src="assets/icons/mobile-alt-svgrepo-com.svg" alt="D">Devices</button>
+            <button id="Sensors" class="tile dashboard-tile"><img src="assets/icons/mobile-signal-out-svgrepo-com.svg" alt="">Sensors</button>
             <button id="Actuators" class="tile dashboard-tile"><img src="assets/icons/mobile-signal-svgrepo-com.svg" alt="">Actuators</button>
             <button id="Rules" class="tile dashboard-tile not-implemented"><img src="assets/icons/code-branch-svgrepo-com.svg" alt="">Rules</button>
             <button id="Users" class="tile dashboard-tile not-implemented"><img src="assets/icons/user-pen-svgrepo-com.svg" alt="">Users</button>
@@ -158,6 +161,7 @@
     <!-- MAIN -->
     <script src="js/main.js"></script>
     <!-- MODULES -->
+    <script src="js/modules/uuid.js"></script>
     <script src="js/modules/graph.js"></script>
     <script src="js/modules/table.js"></script>
     <script src="js/modules/switch.js"></script>

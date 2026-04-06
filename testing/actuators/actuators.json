@@ -1,6 +1,6 @@
 [
-  { "id": "123e4567-e89b-12d3-a456-426614174010", "name": "Switch Living", "type": "Switch",      "location": "Living Room", "busType": "Thread",   "macAddress": "A1:B2:C3:D4:E5:10", "busAddress": "",     "channel": "DO_1", "value": "On",   "unit": "",        "battery": 90,   "signal": 88,   "status": "active",   "updated": "2025-01-01 10:05" },
-  { "id": "123e4567-e89b-12d3-a456-426614174011", "name": "Switch Bedroom","type": "Switch",      "location": "Bedroom",     "busType": "Thread",   "macAddress": "A1:B2:C3:D4:E5:11", "busAddress": "",     "channel": "DO_1", "value": "Off",  "unit": "",        "battery": 45,   "signal": 60,   "status": "active",   "updated": "2025-01-01 10:05" },
-  { "id": "123e4567-e89b-12d3-a456-426614174020", "name": "Shutter Living","type": "Shutter",     "location": "Living Room", "busType": "RS485",    "macAddress": "",                  "busAddress": "0x02", "channel": "DO_1", "value": "Open", "unit": "",        "battery": null, "signal": null, "status": "active",   "updated": "2025-01-01 10:06" },
-  { "id": "123e4567-e89b-12d3-a456-426614174021", "name": "Shutter Bedroom","type": "Shutter",     "location": "Bedroom",     "busType": "RS485",    "macAddress": "",                  "busAddress": "0x03", "channel": "DO_1", "value": "Closed","unit": "",       "battery": null, "signal": null, "status": "active",   "updated": "2025-01-01 10:06" }
+  { "id": "123e4567-e89b-12d3-a456-426614174010", "deviceId": "dev-010", "name": "Switch Living", "type": "Switch",  "channel": "DO_1", "value": "On",     "unit": "" },
+  { "id": "123e4567-e89b-12d3-a456-426614174011", "deviceId": "dev-011", "name": "Switch Bedroom","type": "Switch",  "channel": "DO_1", "value": "Off",    "unit": "" },
+  { "id": "123e4567-e89b-12d3-a456-426614174020", "deviceId": "dev-020", "name": "Shutter Living","type": "Shutter", "channel": "DO_1", "value": "Open",   "unit": "" },
+  { "id": "123e4567-e89b-12d3-a456-426614174021", "deviceId": "dev-021", "name": "Shutter Bedroom","type": "Shutter", "channel": "DO_1", "value": "Closed", "unit": "" }
 ]
