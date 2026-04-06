@@ -110,11 +110,33 @@ function renderSensors() {
         { key: 'name',     label: 'Name' },
         { key: 'type',     label: 'Type' },
         { key: 'location', label: 'Location' },
+        { key: 'busType',  label: 'Bus Typ' },
+        { key: 'macAddress', label: 'MAC Adresse', render: (val) =>
+            val ? `<span style="font-family: monospace;">${val}</span>` : '—'
+        },
+        { key: 'busAddress', label: 'Bus Adresse', render: (val) =>
+            val ? `<span style="font-family: monospace;">${val}</span>` : '—'
+        },
+        { key: 'channel',  label: 'IO-Port', render: (val) =>
+            val ? `<span style="font-family: monospace; color: #f9e2af; font-weight: bold;">${val}</span>` : '—'
+        },
         { key: 'value',    label: 'Value' },
         { key: 'unit',     label: 'Unit' },
         { key: 'status',   label: 'Status', render: (val) =>
             `<span class="badge badge--${val === 'active' ? 'active' : val === 'warning' ? 'warning' : 'inactive'}">${val}</span>`
         },
+        { key: 'health',   label: 'Health', render: (_, row) => {
+            let html = '';
+            if (row.battery !== undefined && row.battery !== null) {
+                const bColor = row.battery <= 20 ? '#e64553' : (row.battery <= 50 ? '#f9e2af' : '#a6e3a1');
+                html += `<span title="Batterie: ${row.battery}%" style="color: ${bColor}; font-size: 0.85em; margin-right: 8px;">🔋 ${row.battery}%</span>`;
+            }
+            if (row.signal !== undefined && row.signal !== null) {
+                const sColor = row.signal <= 40 ? '#e64553' : (row.signal <= 70 ? '#f9e2af' : '#a6e3a1');
+                html += `<span title="Signalstärke: ${row.signal}%" style="color: ${sColor}; font-size: 0.85em;">📶 ${row.signal}%</span>`;
+            }
+            return html !== '' ? html : '<span style="color: #6c6c8a;">—</span>';
+        }},
         { key: 'updated',  label: 'Last Update' },
     ];
 
@@ -148,12 +170,55 @@ function renderActuators() {
         <div class="page-header">
             <h1>Actuators</h1>
         </div>
-        <div class="actuators-content">
-            <!-- OPEN: actuator list / controls injected here -->
-            <!-- window.API.getActuators().then(data => ...) -->
-            <p class="page-placeholder">Actuators view – coming soon</p>
-        </div>
+        <div id="actuator-table-container"></div>
     `;
+
+    const columns = [
+        { key: 'id',       label: 'UUID', render: (val) => 
+            `<span title="${val}" style="font-family: monospace; font-size: 0.85em; color: #6c6c8a;">${val ? val.split('-')[0] + '...' : '—'}</span>` 
+        },
+        { key: 'name',     label: 'Name' },
+        { key: 'type',     label: 'Type' },
+        { key: 'location', label: 'Location' },
+        { key: 'busType',  label: 'Bus Typ' },
+        { key: 'macAddress', label: 'MAC Adresse', render: (val) =>
+            val ? `<span style="font-family: monospace;">${val}</span>` : '—'
+        },
+        { key: 'busAddress', label: 'Bus Adresse', render: (val) =>
+            val ? `<span style="font-family: monospace;">${val}</span>` : '—'
+        },
+        { key: 'channel',  label: 'IO-Port', render: (val) =>
+            val ? `<span style="font-family: monospace; color: #f9e2af; font-weight: bold;">${val}</span>` : '—'
+        },
+        { key: 'value',    label: 'Value' },
+        { key: 'unit',     label: 'Unit' },
+        { key: 'status',   label: 'Status', render: (val) =>
+            `<span class="badge badge--${val === 'active' ? 'active' : val === 'warning' ? 'warning' : 'inactive'}">${val}</span>`
+        },
+        { key: 'health',   label: 'Health', render: (_, row) => {
+            let html = '';
+            if (row.battery !== undefined && row.battery !== null) {
+                const bColor = row.battery <= 20 ? '#e64553' : (row.battery <= 50 ? '#f9e2af' : '#a6e3a1');
+                html += `<span title="Batterie: ${row.battery}%" style="color: ${bColor}; font-size: 0.85em; margin-right: 8px;">🔋 ${row.battery}%</span>`;
+            }
+            if (row.signal !== undefined && row.signal !== null) {
+                const sColor = row.signal <= 40 ? '#e64553' : (row.signal <= 70 ? '#f9e2af' : '#a6e3a1');
+                html += `<span title="Signalstärke: ${row.signal}%" style="color: ${sColor}; font-size: 0.85em;">📶 ${row.signal}%</span>`;
+            }
+            return html !== '' ? html : '<span style="color: #6c6c8a;">—</span>';
+        }},
+        { key: 'updated',  label: 'Last Update' },
+    ];
+
+    const table = new DataTable(
+        document.getElementById('actuator-table-container'),
+        columns,
+        { searchable: true }
+    );
+
+    window.API.getActuators()
+        .then(data => table.setData(data))
+        .catch(err => console.error("Fehler beim Laden der Aktoren:", err));
 }
 
 // ── Rules view ──────────────────────────────────────────────────────────────

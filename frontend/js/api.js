@@ -90,7 +90,15 @@ const API = {
     },
 
     getActuators: async () => {
-        return []; // return await fetchApi('/actuators');
+        // Später: return await fetchApi('/actuators');
+        try {
+            const response = await fetch('../testing/actuators/actuators.json?t=' + Date.now());
+            if (!response.ok) throw new Error("HTTP Fehler " + response.status);
+            return await response.json();
+        } catch (error) {
+            console.error("Fehler beim Laden der Aktorenliste:", error);
+            return [];
+        }
     },
 
     // Status eines Aktors (Schalter, Rollladen) ans Backend senden
