@@ -123,41 +123,56 @@ class DataTable {
         const btnConfirm = modal.querySelector('#modal-confirm');
         let foundDevice = null;
 
-        btnSearch.onclick = () => {
+        btnSearch.onclick = async () => {
             const addr = modal.querySelector('#modal-address').value.trim();
             const port = !isDev ? modal.querySelector('#modal-ioport').value.trim() : '';
             
-            // Dummy-Backend-Suche: Akzeptiert zum Testen diese zwei Werte
-            const mockDatabase = [
-                { macAddress: 'AA:BB:CC:DD:EE:FF', busAddress: '', channel: 'AI_1', type: 'Temperature', name: 'WLAN Multisensor', location: 'Unassigned', busType: 'WIFI' },
-                { macAddress: '', busAddress: '0x05', channel: 'DO_1', type: 'Switch', name: 'RS485 Relais', location: 'Unassigned', busType: 'RS485' }
-            ];
+            if (!addr) return;
             
-            foundDevice = mockDatabase.find(d => {
-                const addrMatch = d.macAddress === addr || d.busAddress === addr;
-                if (isDev) return addrMatch;
-                return addrMatch && d.channel === port;
-            });
+            btnSearch.disabled = true;
+            msgEl.className = 'modal-msg';
+            msgEl.innerHTML = 'Suchen...';
 
-            if (foundDevice) {
-                msgEl.className = 'modal-msg success';
-                msgEl.innerHTML = `✔ Gerät gefunden: <strong>${foundDevice.name}</strong>`;
-                btnSearch.style.display = 'none';
-                btnConfirm.style.display = 'flex';
-            } else {
+            try {
+                // Echte API-Suche im Netzwerk/Bussystem starten
+                const scannedDevice = await window.API.scanDevice(addr);
+                
+                if (scannedDevice) {
+                    if (!isDev) {
+                        // Prüfen, ob der Datenpunkt/Port am Gerät existiert
+                        const channels = scannedDevice.channels || [];
+                        if (!channels.includes(port)) {
+                            msgEl.className = 'modal-msg error';
+                            msgEl.innerHTML = `✖ Fehler: Gerät gefunden, aber IO-Port <strong>${port}</strong> existiert nicht.`;
+                            btnSearch.disabled = false;
+                            foundDevice = null;
+                            return;
+                        }
+                        scannedDevice.channel = port;
+                    }
+                    
+                    foundDevice = scannedDevice;
+                    msgEl.className = 'modal-msg success';
+                    msgEl.innerHTML = `✔ Gerät gefunden: <strong>${foundDevice.name}</strong>`;
+                    btnSearch.style.display = 'none';
+                    btnConfirm.style.display = 'flex';
+                } else {
+                    msgEl.className = 'modal-msg error';
+                    msgEl.innerHTML = `✖ Fehler: Kein Gerät mit dieser Adresse gefunden.<br><small>(Tipp: Teste "0x05" oder "AA:BB:CC:DD:EE:FF")</small>`;
+                    btnSearch.disabled = false;
+                    foundDevice = null;
+                }
+            } catch (err) {
                 msgEl.className = 'modal-msg error';
-                msgEl.innerHTML = `✖ Fehler: Kein Gerät mit ${isDev ? 'dieser Adresse' : 'dieser Adresse und diesem IO-Port'} gefunden.<br><small>(Tipp: Teste "0x05"${!isDev ? ' / "DO_1"' : ''} oder "AA:BB:CC:DD:EE:FF"${!isDev ? ' / "AI_1"' : ''})</small>`;
-                btnSearch.style.display = 'inline-block';
-                btnConfirm.style.display = 'none';
+                msgEl.innerHTML = `✖ Netzwerkfehler bei der Suche.`;
+                btnSearch.disabled = false;
                 foundDevice = null;
             }
         };
 
-        modal.querySelector('#modal-confirm').onclick = () => {
+        modal.querySelector('#modal-confirm').onclick = async () => {
             if (foundDevice) {
-                // Neue UUID erstellen (Fallback, falls Funktion nicht geladen wurde)
                 const newId = typeof generateUUID === 'function' ? generateUUID() : '00000000-0000-0000-0000-000000000000';
-                
                 const newEntry = {
                     id: newId,
                     ...foundDevice,
@@ -168,7 +183,6 @@ class DataTable {
                     updated: 'jetzt'
                 };
 
-                // Für die Geräte-Tabelle unnötige Datenpunkt-Felder entfernen
                 if (isDev) {
                     delete newEntry.channel;
                     delete newEntry.value;
@@ -176,30 +190,60 @@ class DataTable {
                     delete newEntry.type;
                 }
                 
-                this._addRow(newEntry);
-                modal.remove();
+                try {
+                    // An die API übermitteln
+                    if (isDev) {
+                        await window.API.addDevice(newEntry);
+                    } else if (this.options.isActuator) {
+                        await window.API.addActuator(newEntry);
+                    } else {
+                        await window.API.addSensor(newEntry);
+                    }
+                    this._addRow(newEntry);
+                    modal.remove();
+                } catch (err) {
+                    msgEl.className = 'modal-msg error';
+                    msgEl.innerHTML = `✖ Fehler beim Speichern im System.`;
+                }
             }
         };
     }
 
     _addRow(obj) {
-        // In echtem System: API Call hier
         this.data.push({ ...obj, status: 'active' });
         this.setData(this.data);
     }
 
-    _onDelete(rowId) {
+    async _onDelete(rowId) {
         if(confirm('Möchten Sie diesen Eintrag wirklich löschen?')) {
-            this.data = this.data.filter(r => r.id !== rowId);
-            this.setData(this.data);
+            try {
+                if (this.options.isDevice) await window.API.deleteDevice(rowId);
+                else if (this.options.isActuator) await window.API.deleteActuator(rowId);
+                else await window.API.deleteSensor(rowId);
+                
+                this.data = this.data.filter(r => r.id !== rowId);
+                this.setData(this.data);
+            } catch (err) {
+                console.error("Fehler beim Löschen:", err);
+                alert("Löschen fehlgeschlagen.");
+            }
         }
     }
 
-    _onRename(row) {
+    async _onRename(row) {
         const newName = prompt('Neuer Name für das Objekt:', row.name);
-        if (newName) {
-            row.name = newName;
-            this._render();
+        if (newName && newName !== row.name) {
+            try {
+                if (this.options.isDevice) await window.API.updateDevice(row.id, { name: newName });
+                else if (this.options.isActuator) await window.API.updateActuator(row.id, { name: newName });
+                else await window.API.updateSensor(row.id, { name: newName });
+                
+                row.name = newName;
+                this._render();
+            } catch (err) {
+                console.error("Fehler beim Umbenennen:", err);
+                alert("Umbenennen fehlgeschlagen.");
+            }
         }
     }
 

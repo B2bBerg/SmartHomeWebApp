@@ -255,7 +255,7 @@ function renderActuators() {
     const table = new DataTable(
         document.getElementById('actuator-table-container'),
         columns,
-        { searchable: true }
+        { searchable: true, isActuator: true }
     );
 
     // Join Devices & Actuators

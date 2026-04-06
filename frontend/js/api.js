@@ -26,10 +26,10 @@ async function fetchApi(endpoint, options = {}) {
 }
 
 const API = {
-    // Dashboard Layout laden
+    // --- DASHBOARD ---
     getDashboard: async () => {
         try {
-            // 1. Zuerst prüfen, ob es bereits lokal im Browser gespeicherte Anpassungen gibt
+            // Zuerst prüfen, ob es bereits lokal im Browser gespeicherte Anpassungen gibt
             const savedState = localStorage.getItem('smartHomeDashboard');
             if (savedState) {
                 console.log("Dashboard Layout aus localStorage geladen.");
@@ -50,7 +50,6 @@ const API = {
         }
     },
 
-    // Dashboard Layout speichern
     saveDashboard: async (dashboardState) => {
         try {
             // Solange kein Backend existiert, speichern wir das Layout im localStorage des Browsers.
@@ -62,7 +61,41 @@ const API = {
         }
     },
 
-    // Alle Sensoren für die Tabelle abrufen
+    // --- GERÄTE (DEVICES) ---
+    getDevices: async () => {
+        try {
+            const response = await fetch('../testing/devices/devices.json?t=' + Date.now());
+            if (!response.ok) throw new Error("HTTP Fehler " + response.status);
+            return await response.json();
+        } catch (error) {
+            console.error("Fehler beim Laden der Geräteliste:", error);
+            return [];
+        }
+    },
+    scanDevice: async (address) => {
+        // Später: return await fetchApi(`/devices/scan?address=${encodeURIComponent(address)}`);
+        console.log(`API Call: scanDevice für Adresse ${address}`);
+        // Dummy-Rückgabe für die Frontend-Entwicklung
+        const mockDatabase = [
+            { macAddress: 'AA:BB:CC:DD:EE:FF', busAddress: '', channels: ["AI_1", "DI_1"], type: 'Temperature', name: 'WLAN Multisensor', location: 'Unassigned', busType: 'WIFI' },
+            { macAddress: '', busAddress: '0x05', channels: ["DO_1"], type: 'Switch', name: 'RS485 Relais', location: 'Unassigned', busType: 'RS485' }
+        ];
+        return mockDatabase.find(d => d.macAddress === address || d.busAddress === address) || null;
+    },
+    addDevice: async (deviceData) => {
+        // Später: return await fetchApi('/devices', { method: 'POST', body: JSON.stringify(deviceData) });
+        return { success: true, id: deviceData.id };
+    },
+    updateDevice: async (id, updateData) => {
+        // Später: return await fetchApi(`/devices/${id}`, { method: 'PUT', body: JSON.stringify(updateData) });
+        return { success: true };
+    },
+    deleteDevice: async (id) => {
+        // Später: return await fetchApi(`/devices/${id}`, { method: 'DELETE' });
+        return { success: true };
+    },
+
+    // --- SENSOREN (SENSORS) ---
     getSensors: async () => {
         // Später: return await fetchApi('/sensors');
         try {
@@ -74,8 +107,6 @@ const API = {
             return [];
         }
     },
-
-    // Sensor Daten abrufen
     getSensorData: async (datapoint) => {
         // Später: return await fetchApi(`/sensors/${datapoint}/history`);
         try {
@@ -88,7 +119,20 @@ const API = {
             return [];
         }
     },
+    addSensor: async (sensorData) => {
+        // Später: return await fetchApi('/sensors', { method: 'POST', body: JSON.stringify(sensorData) });
+        return { success: true };
+    },
+    updateSensor: async (id, updateData) => {
+        // Später: return await fetchApi(`/sensors/${id}`, { method: 'PUT', body: JSON.stringify(updateData) });
+        return { success: true };
+    },
+    deleteSensor: async (id) => {
+        // Später: return await fetchApi(`/sensors/${id}`, { method: 'DELETE' });
+        return { success: true };
+    },
 
+    // --- AKTOREN (ACTUATORS) ---
     getActuators: async () => {
         // Später: return await fetchApi('/actuators');
         try {
@@ -100,31 +144,44 @@ const API = {
             return [];
         }
     },
-
-    // Geräte Metadaten (Hardware) abrufen
-    getDevices: async () => {
-        try {
-            const response = await fetch('../testing/devices/devices.json?t=' + Date.now());
-            if (!response.ok) throw new Error("HTTP Fehler " + response.status);
-            return await response.json();
-        } catch (error) {
-            console.error("Fehler beim Laden der Geräteliste:", error);
-            return [];
-        }
-    },
-
-    // Status eines Aktors (Schalter, Rollladen) ans Backend senden
     setActuatorState: async (datapoint, state) => {
         // Später: return await fetchApi(`/actuators/${datapoint}`, { method: 'POST', body: JSON.stringify({ state }) });
         console.log(`API Call: setActuatorState für ${datapoint} ->`, state);
         return { success: true };
     },
+    addActuator: async (actuatorData) => {
+        // Später: return await fetchApi('/actuators', { method: 'POST', body: JSON.stringify(actuatorData) });
+        return { success: true };
+    },
+    updateActuator: async (id, updateData) => {
+        // Später: return await fetchApi(`/actuators/${id}`, { method: 'PUT', body: JSON.stringify(updateData) });
+        return { success: true };
+    },
+    deleteActuator: async (id) => {
+        // Später: return await fetchApi(`/actuators/${id}`, { method: 'DELETE' });
+        return { success: true };
+    },
 
+    // --- REGELN (RULES) ---
     getRules: async () => {
         return []; // return await fetchApi('/rules');
     },
+    addRule: async (ruleData) => {
+        return { success: true }; // return await fetchApi('/rules', { method: 'POST', body: JSON.stringify(ruleData) });
+    },
+    updateRule: async (id, ruleData) => {
+        return { success: true }; // return await fetchApi(`/rules/${id}`, { method: 'PUT', body: JSON.stringify(ruleData) });
+    },
+    deleteRule: async (id) => {
+        return { success: true }; // return await fetchApi(`/rules/${id}`, { method: 'DELETE' });
+    },
+
+    // --- BENUTZER (USERS) ---
     getUsers: async () => {
         return []; // return await fetchApi('/users');
+    },
+    updateUser: async (id, userData) => {
+        return { success: true }; // return await fetchApi(`/users/${id}`, { method: 'PUT', body: JSON.stringify(userData) });
     }
 };
 
