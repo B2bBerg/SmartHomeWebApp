@@ -103,6 +103,24 @@
     outline: none;
 }
 
+.table-modal-search-row {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.table-modal-search-row input {
+    flex: 1;
+}
+
+.modal-config-area {
+    display: none;
+    flex-direction: column;
+    gap: 1rem;
+    border-top: 1px solid #3a3a52;
+    padding-top: 1rem;
+    margin-top: 0.5rem;
+}
+
 .modal-msg {
     font-size: 0.85rem;
     min-height: 1.5rem;
@@ -205,6 +223,8 @@
 .badge--active   { background: #1e3a2e; color: #a6e3a1; }
 .badge--inactive { background: #3a1e1e; color: #f38ba8; }
 .badge--warning  { background: #3a2e1e; color: #fab387; }
+.badge--searching{ background: rgba(137, 180, 250, 0.2); color: #89b4fa; }
+.badge--error    { background: rgba(243, 139, 168, 0.2); color: #f38ba8; }
 
 /* --- IO-Ports --- */
 .io-port {

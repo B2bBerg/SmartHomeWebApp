@@ -1,7 +1,47 @@
 [
-  { "id": "123e4567-e89b-12d3-a456-426614174000", "deviceId": "dev-000", "name": "Temp Living",   "type": "Temperature", "channel": "AI_1", "value": "21.4", "unit": "\u00b0C" },
-  { "id": "123e4567-e89b-12d3-a456-426614174001", "deviceId": "dev-001", "name": "Temp Bedroom",  "type": "Temperature", "channel": "AI_1", "value": "19.8", "unit": "\u00b0C" },
-  { "id": "123e4567-e89b-12d3-a456-426614174002", "deviceId": "dev-002", "name": "Energy Main",   "type": "Energy",      "channel": "AI_1", "value": "3.2",  "unit": "kWh" },
-  { "id": "123e4567-e89b-12d3-a456-426614174003", "deviceId": "dev-003", "name": "Energy Solar",  "type": "Energy",      "channel": "AI_2", "value": "1.1",  "unit": "kWh" },
-  { "id": "123e4567-e89b-12d3-a456-426614174004", "deviceId": "dev-004", "name": "Motion Hall",   "type": "Motion",      "channel": "DI_1", "value": "0",    "unit": "" }
+  {
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "deviceId": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Temp Living",
+    "type": "Temperature",
+    "channel": "AI_1",
+    "value": "21.4",
+    "unit": "\u00b0C"
+  },
+  {
+    "id": "123e4567-e89b-12d3-a456-426614174001",
+    "deviceId": "550e8400-e29b-41d4-a716-446655440001",
+    "name": "Temp Bedroom",
+    "type": "Temperature",
+    "channel": "AI_1",
+    "value": "19.8",
+    "unit": "\u00b0C"
+  },
+  {
+    "id": "123e4567-e89b-12d3-a456-426614174002",
+    "deviceId": "550e8400-e29b-41d4-a716-446655440002",
+    "name": "Energy Main",
+    "type": "Energy",
+    "channel": "AI_1",
+    "value": "3.2",
+    "unit": "kWh"
+  },
+  {
+    "id": "123e4567-e89b-12d3-a456-426614174003",
+    "deviceId": "550e8400-e29b-41d4-a716-446655440003",
+    "name": "Energy Solar",
+    "type": "Energy",
+    "channel": "AI_2",
+    "value": "1.1",
+    "unit": "kWh"
+  },
+  {
+    "id": "123e4567-e89b-12d3-a456-426614174004",
+    "deviceId": "550e8400-e29b-41d4-a716-446655440004",
+    "name": "Motion Hall",
+    "type": "Motion",
+    "channel": "DI_1",
+    "value": "0",
+    "unit": ""
+  }
 ]
