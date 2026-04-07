@@ -112,7 +112,13 @@ function renderDevices() {
         { key: 'busType',    label: 'Netzwerk' },
         { key: 'macAddress', label: 'MAC Adresse', render: (val) => val ? `<span style="font-family: monospace;">${val}</span>` : '—' },
         { key: 'busAddress', label: 'Bus Adresse', render: (val) => val ? `<span style="font-family: monospace;">${val}</span>` : '—' },
-        { key: 'status',     label: 'Status', render: (val) => `<span class="badge badge--${val === 'active' ? 'active' : val === 'warning' ? 'warning' : 'inactive'}">${val}</span>` },
+        { key: 'status',     label: 'Status', render: (val) => {
+            if (val === 'active') return `<span class="badge badge--active">Active</span>`;
+            if (val === 'searching') return `<span class="badge badge--searching">Searching... ⏳</span>`;
+            if (val === 'not_reachable') return `<span class="badge badge--error">Not Reachable ❌</span>`;
+            if (val === 'warning') return `<span class="badge badge--warning">Warning</span>`;
+            return `<span class="badge badge--inactive">${val || 'Unknown'}</span>`;
+        }},
         { key: 'health',     label: 'Health', render: (_, row) => {
             let html = '';
             if (row.battery !== undefined && row.battery !== null) {
@@ -275,12 +281,10 @@ function renderRules() {
         <div class="page-header">
             <h1>Rules</h1>
         </div>
-        <div class="rules-content">
-            <!-- OPEN: rule list / editor injected here -->
-            <!-- window.API.getRules().then(data => ...) -->
-            <p class="page-placeholder">Rules view – coming soon</p>
-        </div>
+        <div id="rules-table-container"></div>
     `;
+
+    if (typeof RuleManager !== 'undefined') RuleManager.init();
 }
 
 // ── Users view ──────────────────────────────────────────────────────────────
