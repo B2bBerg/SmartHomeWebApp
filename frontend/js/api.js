@@ -72,15 +72,18 @@ const API = {
             return [];
         }
     },
-    scanDevice: async (address) => {
-        // Später: return await fetchApi(`/devices/scan?address=${encodeURIComponent(address)}`);
-        console.log(`API Call: scanDevice für Adresse ${address}`);
-        // Dummy-Rückgabe für die Frontend-Entwicklung
-        const mockDatabase = [
-            { macAddress: 'AA:BB:CC:DD:EE:FF', busAddress: '', channels: ["AI_1", "DI_1"], type: 'Temperature', name: 'WLAN Multisensor', location: 'Unassigned', busType: 'WIFI' },
-            { macAddress: '', busAddress: '0x05', channels: ["DO_1"], type: 'Switch', name: 'RS485 Relais', location: 'Unassigned', busType: 'RS485' }
-        ];
-        return mockDatabase.find(d => d.macAddress === address || d.busAddress === address) || null;
+    scanDevice: async (address, busType) => {
+        // Später: return await fetchApi(`/devices/scan?address=${encodeURIComponent(address)}&bus=${encodeURIComponent(busType)}`);
+        console.log(`API Call: scanDevice für Adresse ${address} auf Bus ${busType}`);
+        
+        // Simuliere echte Netzwerklatenz (Suche dauert ca. 2.5 Sekunden)
+        return new Promise(resolve => setTimeout(() => {
+            const mockDatabase = [
+                { macAddress: 'AA:BB:CC:DD:EE:FF', busAddress: '', channels: ["AI_1", "DI_1"], type: 'Temperature', name: 'WLAN Multisensor', location: 'Unassigned', busType: 'WIFI' },
+                { macAddress: '', busAddress: '0x05', channels: ["DO_1"], type: 'Switch', name: 'RS485 Relais', location: 'Unassigned', busType: 'RS485' }
+            ];
+            resolve(mockDatabase.find(d => (d.macAddress === address || d.busAddress === address) && (!busType || d.busType === busType)) || null);
+        }, 2500));
     },
     addDevice: async (deviceData) => {
         // Später: return await fetchApi('/devices', { method: 'POST', body: JSON.stringify(deviceData) });
@@ -164,7 +167,16 @@ const API = {
 
     // --- REGELN (RULES) ---
     getRules: async () => {
-        return []; // return await fetchApi('/rules');
+        // Später: return await fetchApi('/rules');
+        return [
+            { 
+                id: "rule-1", 
+                name: 'Hitzeschutz Wohnzimmer', 
+                active: true, 
+                logic: 'AND',
+                conditions: [ { datapoint: 'sensor.temp.living', operator: 'grösser als', value: 25 } ]
+            }
+        ];
     },
     addRule: async (ruleData) => {
         return { success: true }; // return await fetchApi('/rules', { method: 'POST', body: JSON.stringify(ruleData) });
@@ -180,8 +192,41 @@ const API = {
     getUsers: async () => {
         return []; // return await fetchApi('/users');
     },
+    addUser: async (userData) => {
+        return { success: true }; // return await fetchApi('/users', { method: 'POST', body: JSON.stringify(userData) });
+    },
     updateUser: async (id, userData) => {
         return { success: true }; // return await fetchApi(`/users/${id}`, { method: 'PUT', body: JSON.stringify(userData) });
+    },
+    deleteUser: async (id) => {
+        return { success: true }; // return await fetchApi(`/users/${id}`, { method: 'DELETE' });
+    },
+
+    // --- APARTMENT / LOCATIONS ---
+    getLocations: async () => {
+        return []; // return await fetchApi('/locations');
+    },
+    addLocation: async (locationData) => {
+        return { success: true }; // return await fetchApi('/locations', { method: 'POST', body: JSON.stringify(locationData) });
+    },
+    updateLocation: async (id, locationData) => {
+        return { success: true }; // return await fetchApi(`/locations/${id}`, { method: 'PUT', body: JSON.stringify(locationData) });
+    },
+    deleteLocation: async (id) => {
+        return { success: true }; // return await fetchApi(`/locations/${id}`, { method: 'DELETE' });
+    },
+
+    // --- SETTINGS ---
+    getSettings: async () => {
+        return {}; // return await fetchApi('/settings');
+    },
+    saveSettings: async (settingsData) => {
+        return { success: true }; // return await fetchApi('/settings', { method: 'POST', body: JSON.stringify(settingsData) });
+    },
+
+    // --- SYSTEM STATUS ---
+    getSystemStatus: async () => {
+        return { status: 'online', cpu: 12, ram: 45, uptime: '24d 12h' }; // return await fetchApi('/system/status');
     }
 };
 

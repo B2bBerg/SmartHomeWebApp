@@ -4,6 +4,7 @@
 const RuleManager = {
     init() {
         const container = document.querySelector('#rules-table-container');
+        if (!container) return;
         
         const columns = [
             { key: 'name', label: 'Regelname' },
@@ -21,18 +22,10 @@ const RuleManager = {
 
         this.table = new DataTable(container, columns, { searchable: true });
         
-        // Testdaten
-        this.table.setData([
-            { 
-                id: 1, 
-                name: 'Hitzeschutz', 
-                active: true, 
-                logic: 'AND',
-                conditions: [
-                    { datapoint: 'sensor.temp.living', operator: 'grösser als', value: 25 }
-                ]
-            }
-        ]);
+        // Regeln dynamisch aus der API laden
+        window.API.getRules().then(rules => {
+            this.table.setData(rules);
+        }).catch(err => console.error("Fehler beim Laden der Regeln:", err));
 
         // "Add"-Event der Tabelle überschreiben für den Regel-Baukasten
         this.table._showAddModal = () => this.showRuleBuilder();
@@ -80,7 +73,7 @@ const RuleManager = {
 
         modal.querySelector('#save-rule').onclick = () => {
             const newRule = {
-                id: Date.now(),
+                id: typeof generateUUID === 'function' ? generateUUID() : Date.now().toString(),
                 name: document.getElementById('rule-name').value,
                 active: true,
                 logic: document.getElementById('rule-logic').value,
@@ -90,8 +83,10 @@ const RuleManager = {
                     value: modal.querySelector('.rule-val').value
                 }]
             };
-            this.table._addRow(newRule);
-            modal.remove();
+            window.API.addRule(newRule).then(() => {
+                this.table._addRow(newRule);
+                modal.remove();
+            }).catch(err => alert("Fehler beim Speichern der Regel."));
         };
     }
 };
