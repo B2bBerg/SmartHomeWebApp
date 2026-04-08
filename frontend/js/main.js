@@ -40,7 +40,7 @@ toggleImg.src = ICON_COLLAPSED;
 const DASHBOARD_TILE_MAP = {
     'Sensors':   'sensors',
     'Devices':   'devices',
-    'Apartment': 'apartment',
+    'Zuhause':   'zuhause',
     'Actuators': 'actuators',
     'Rules':     'rules',
     'Users':     'users',
@@ -68,7 +68,7 @@ const SIDEBAR_VIEWS_MAP = {
     dashboard: renderDashboard,
     devices:   renderDevices,
     sensors:   renderSensors,
-    apartment: renderApartment,
+    zuhause:   renderZuhause,
     actuators: renderActuators,
     rules:     renderRules,
     users:     renderUsers,
@@ -104,74 +104,8 @@ function renderDevices() {
         </div>
         <div id="device-table-container"></div>
     `;
-
-    const columns = [
-        { key: 'id',         label: 'Device-ID', render: (val) => `<span title="${val}" style="font-family: monospace; font-size: 0.85em; color: #6c6c8a;">${val}</span>` },
-        { key: 'name',       label: 'Gerätename' },
-        { key: 'location',   label: 'Standort' },
-        { key: 'busType',    label: 'Netzwerk' },
-        { key: 'macAddress', label: 'MAC Adresse', render: (val) => val ? `<span style="font-family: monospace;">${val}</span>` : '—' },
-        { key: 'busAddress', label: 'Bus Adresse', render: (val) => val ? `<span style="font-family: monospace;">${val}</span>` : '—' },
-        { key: 'status',     label: 'Status', render: (val) => {
-            if (val === 'active') return `<span class="badge badge--active">Active</span>`;
-            if (val === 'searching') return `<span class="badge badge--searching">Searching... ⏳</span>`;
-            if (val === 'not_reachable') return `<span class="badge badge--error">Not Reachable ❌</span>`;
-            if (val === 'warning') return `<span class="badge badge--warning">Warning</span>`;
-            return `<span class="badge badge--inactive">${val || 'Unknown'}</span>`;
-        }},
-        { key: 'health',     label: 'Health', render: (_, row) => {
-            let html = '';
-            if (row.battery !== undefined && row.battery !== null) {
-                const bColor = row.battery <= 20 ? '#e64553' : (row.battery <= 50 ? '#f9e2af' : '#a6e3a1');
-                html += `<span title="Batterie: ${row.battery}%" style="color: ${bColor}; font-size: 0.85em; margin-right: 8px;">🔋 ${row.battery}%</span>`;
-            }
-            if (row.signal !== undefined && row.signal !== null) {
-                const sColor = row.signal <= 40 ? '#e64553' : (row.signal <= 70 ? '#f9e2af' : '#a6e3a1');
-                html += `<span title="Signalstärke: ${row.signal}%" style="color: ${sColor}; font-size: 0.85em;">📶 ${row.signal}%</span>`;
-            }
-            return html !== '' ? html : '<span style="color: #6c6c8a;">—</span>';
-        }},
-        { key: 'ios',        label: 'IO-Ports', render: (_, row) => {
-            const usedChannels = row.usedChannels || [];
-            const allChannels = row.channels || row.ports || [];
-            let channelsArray = [];
-            
-            if (Array.isArray(allChannels) && allChannels.length > 0) {
-                channelsArray = allChannels;
-            } else if (typeof allChannels === 'number' && allChannels > 0) {
-                for (let i = 1; i <= allChannels; i++) channelsArray.push(i.toString());
-            } else if (usedChannels.length > 0) {
-                channelsArray = usedChannels;
-            }
-
-            if (channelsArray.length === 0) return '<span style="color: #6c6c8a;">—</span>';
-
-            return channelsArray.map(ch => {
-                const isUsed = usedChannels.includes(String(ch));
-                const cssClass = isUsed ? 'io-port io-port--used' : 'io-port io-port--free';
-                return `<span title="${isUsed ? 'Genutzt' : 'Frei'}" class="${cssClass}">${ch}</span>`;
-            }).join('');
-        }},
-        { key: 'updated',    label: 'Zuletzt Online' },
-    ];
-
-    const table = new DataTable(document.getElementById('device-table-container'), columns, { searchable: true, isDevice: true });
-
-    Promise.all([
-        window.API.getDevices(),
-        window.API.getSensors(),
-        window.API.getActuators()
-    ])
-        .then(([devices, sensors, actuators]) => {
-            const allDatapoints = [...sensors, ...actuators];
-            const mergedDevices = devices.map(device => {
-                const deviceDatapoints = allDatapoints.filter(dp => dp.deviceId === device.id);
-                const usedChannels = deviceDatapoints.filter(dp => dp.channel != null).map(dp => String(dp.channel));
-                return { ...device, usedChannels };
-            });
-            table.setData(mergedDevices);
-        })
-        .catch(err => console.error("Fehler beim Laden der Geräte:", err));
+    
+    if (typeof DeviceManager !== 'undefined') DeviceManager.init();
 }
 
 // ── Sensors view ──────────────────────────────────────────────────────────────
@@ -183,50 +117,18 @@ function renderSensors() {
         <div id="sensor-table-container"></div>
     `;
 
-    const columns = [
-        { key: 'id',       label: 'UUID', render: (val) => 
-            `<span title="${val}" style="font-family: monospace; font-size: 0.85em; color: #6c6c8a;">${val ? val.split('-')[0] + '...' : '—'}</span>` 
-        },
-        { key: 'name',       label: 'Datenpunkt' },
-        { key: 'deviceName', label: 'Gerät (Hardware)', render: (val) => 
-            val ? `<span style="color: #89b4fa;">${val}</span>` : '—'
-        },
-        { key: 'type',       label: 'Type' },
-        { key: 'location',   label: 'Location' },
-        { key: 'channel',  label: 'IO-Port', render: (val) =>
-            val ? `<span class="io-port io-port--assigned">${val}</span>` : '—'
-        },
-        { key: 'value',    label: 'Value' },
-        { key: 'unit',     label: 'Unit' },
-        { key: 'updated',  label: 'Last Update' },
-    ];
-
-    const table = new DataTable(
-        document.getElementById('sensor-table-container'),
-        columns,
-        { searchable: true }
-    );
-
-    // Join Devices & Sensors
-    Promise.all([window.API.getSensors(), window.API.getDevices()])
-        .then(([sensors, devices]) => {
-            const mergedData = sensors.map(s => {
-                const dev = devices.find(d => d.id === s.deviceId) || {};
-                return { ...dev, ...s, id: s.id, deviceName: dev.name };
-            });
-            table.setData(mergedData);
-        }).catch(err => console.error("Fehler beim Laden der Sensoren:", err));
+    if (typeof SensorManager !== 'undefined') SensorManager.init();
 }
 
-// ── Apartment view ───────────────────────────────────────────────────────────
-function renderApartment() {
+// ── Zuhause view ───────────────────────────────────────────────────────────
+function renderZuhause() {
     content.innerHTML = `
         <div class="page-header">
-            <h1>Apartment</h1>
+            <h1>Zuhause</h1>
         </div>
-        <div class="apartment-content">
-            <!-- OPEN: floor plan / room list injected here -->
-            <p class="page-placeholder">Apartment view – coming soon</p>
+        <div class="zuhause-content" id="zuhause-container">
+            <!-- OPEN: visual room cards will be injected here -->
+            <p class="page-placeholder">Lade Haus-Struktur...</p>
         </div>
     `;
 }
@@ -240,39 +142,7 @@ function renderActuators() {
         <div id="actuator-table-container"></div>
     `;
 
-    const columns = [
-        { key: 'id',       label: 'UUID', render: (val) => 
-            `<span title="${val}" style="font-family: monospace; font-size: 0.85em; color: #6c6c8a;">${val ? val.split('-')[0] + '...' : '—'}</span>` 
-        },
-        { key: 'name',       label: 'Datenpunkt' },
-        { key: 'deviceName', label: 'Gerät (Hardware)', render: (val) => 
-            val ? `<span style="color: #89b4fa;">${val}</span>` : '—'
-        },
-        { key: 'type',       label: 'Type' },
-        { key: 'location',   label: 'Location' },
-        { key: 'channel',  label: 'IO-Port', render: (val) =>
-            val ? `<span class="io-port io-port--assigned">${val}</span>` : '—'
-        },
-        { key: 'value',    label: 'Value' },
-        { key: 'unit',     label: 'Unit' },
-        { key: 'updated',  label: 'Last Update' },
-    ];
-
-    const table = new DataTable(
-        document.getElementById('actuator-table-container'),
-        columns,
-        { searchable: true, isActuator: true }
-    );
-
-    // Join Devices & Actuators
-    Promise.all([window.API.getActuators(), window.API.getDevices()])
-        .then(([actuators, devices]) => {
-            const mergedData = actuators.map(a => {
-                const dev = devices.find(d => d.id === a.deviceId) || {};
-                return { ...dev, ...a, id: a.id, deviceName: dev.name };
-            });
-            table.setData(mergedData);
-        }).catch(err => console.error("Fehler beim Laden der Aktoren:", err));
+    if (typeof ActuatorManager !== 'undefined') ActuatorManager.init();
 }
 
 // ── Rules view ──────────────────────────────────────────────────────────────

@@ -204,7 +204,13 @@ const API = {
 
     // --- APARTMENT / LOCATIONS ---
     getLocations: async () => {
-        return []; // return await fetchApi('/locations');
+        try {
+            const response = await fetch('../testing/locations/locations.json?t=' + Date.now());
+            if (!response.ok) throw new Error("HTTP Fehler " + response.status);
+            return await response.json();
+        } catch (error) {
+            return [];
+        }
     },
     addLocation: async (locationData) => {
         return { success: true }; // return await fetchApi('/locations', { method: 'POST', body: JSON.stringify(locationData) });
