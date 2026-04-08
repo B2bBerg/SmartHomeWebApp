@@ -1,45 +1,4 @@
-.overview-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin: 1.5rem 0 1rem;
-}
-
-#content h2 {
-    color: #cdd6f4;
-    font-size: 1rem;
-    font-weight: 600;
-    margin: 0;
-}
-
-#edit-mode-btn {
-    background: none;
-    border: 1px solid #3a3a52;
-    border-radius: 6px;
-    color: #6c6c8a;
-    font-size: 0.8rem;
-    padding: 3px 8px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    transition: color 0.2s, border-color 0.2s;
-}
-
-#edit-mode-btn img {
-    width: 12px;
-    height: 12px;
-    filter: invert(0.5);
-}
-
-#edit-mode-btn:hover, #edit-mode-btn.active {
-    color: #cdd6f4;
-    border-color: #cdd6f4;
-}
-
-#edit-mode-btn.active img {
-    filter: invert(1);
-}
+/* --- tile.css – Dashboard tile management --- */
 
 .overview-container {
     display: grid;
@@ -105,14 +64,14 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: calc(100% - 60px); /* Garantiert, dass der Text nicht in die Edit-Buttons läuft */
+    max-width: calc(100% - 60px);
     font-weight: 600;
     line-height: 24px;
     flex-shrink: 0;
 }
 
 .tile {
-    position: relative; /* Wichtig für absolute Positionierung der Controls */
+    position: relative;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -125,10 +84,10 @@
     top: 5px;
     right: 5px;
     display: flex;
-    align-items: center; /* Vertikal zentrieren (Kreuz und X auf einer Linie) */
-    gap: 8px; /* Abstand zwischen Kreuz und Löschen-Button */
-    z-index: 10; /* Über dem Kachelinhalt */
-    opacity: 0; /* Standardmäßig unsichtbar */
+    align-items: center;
+    gap: 8px;
+    z-index: 10;
+    opacity: 0;
     transition: opacity 0.2s ease-in-out;
 }
 
@@ -206,7 +165,6 @@
     background: #cdd6f4;
 }
 
-/* Right edge – col resize: bottom-right corner */
 .tile-resize-col {
     right: 0;
     bottom: 0;
@@ -216,7 +174,6 @@
     border-radius: 3px 0 0 3px;
 }
 
-/* Bottom edge – row resize: bottom-right corner */
 .tile-resize-row {
     bottom: 0;
     right: 0;
@@ -226,7 +183,6 @@
     border-radius: 3px 3px 0 0;
 }
 
-/* Steuerkreuz im Modal */
 .tile-resize-cross-large {
     display: flex;
     flex-direction: column;
@@ -258,21 +214,19 @@
     cursor: not-allowed;
 }
 
-/* Die leere Mitte des Kreuzes */
 .resize-spacer {
     width: 22px;
     height: 18px;
 }
 
-/* Der Löschen-Button (Etwas abgesetzt und rot beim Hover) */
 .tile-remove {
     font-weight: bold;
     font-size: 14px;
-    color: #eba0ac; /* Rötlicher Ton */
+    color: #eba0ac;
 }
 
 .tile-remove:hover {
-    background: #e64553 !important; /* Kräftiges Rot */
+    background: #e64553 !important;
     border-color: #e64553 !important;
     color: white !important;
 }
@@ -299,35 +253,6 @@
     0% { opacity: 1; }
     70% { opacity: 1; }
     100% { opacity: 0; }
-}
-
-#add-tile-btn {
-    background: none;
-    border: 1px solid #3a3a52;
-    border-radius: 6px;
-    color: #6c6c8a;
-    font-size: 0.8rem;
-    padding: 3px 8px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    transition: color 0.2s, border-color 0.2s;
-}
-
-#add-tile-btn img {
-    width: 12px;
-    height: 12px;
-    filter: invert(0.5);
-}
-
-#add-tile-btn:hover {
-    color: #cdd6f4;
-    border-color: #cdd6f4;
-}
-
-#add-tile-btn:hover img {
-    filter: invert(1);
 }
 
 .tile-modal {
@@ -476,7 +401,9 @@
     padding: 1rem;
     width: 100%;
     text-align: center;
-}.tile-modal-box input {
+}
+
+.tile-modal-box input {
     background: #1e1e2e;
     border: 1px solid #3a3a52;
     border-radius: 6px;

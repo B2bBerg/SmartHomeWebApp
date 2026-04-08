@@ -1,8 +1,8 @@
 /**
- * overview.js – Dashboard tile grid management
+ * tile.js – Dashboard tile grid management
  */
 
-const GridManager = {
+const TileManager = {
     MAX_COL: 3,
     MAX_ROW: 3,
     COLS: 6,
@@ -38,17 +38,19 @@ const GridManager = {
     setupEventListeners() {
         // ── Edit mode ────────────────────────────────────────────────────────
         const editBtn = document.getElementById('edit-mode-btn');
-        editBtn.addEventListener('click', () => {
-            this.editMode = !this.editMode;
-            editBtn.classList.toggle('active', this.editMode);
-            this.container.classList.toggle('edit-mode', this.editMode);
-            this.container.querySelectorAll('.dynamic-tile').forEach(t => t.draggable = this.editMode);
-            editBtn.querySelector('img').src = this.editMode
-                ? 'assets/icons/circle-exclamation-check-svgrepo-com.svg'
-                : 'assets/icons/gear-svgrepo-com.svg';
-            if (!this.editMode) this.saveDashboard();
-            this.refreshGhosts();
-        });
+        if (editBtn) {
+            editBtn.addEventListener('click', () => {
+                this.editMode = !this.editMode;
+                editBtn.classList.toggle('active', this.editMode);
+                this.container.classList.toggle('edit-mode', this.editMode);
+                this.container.querySelectorAll('.dynamic-tile').forEach(t => t.draggable = this.editMode);
+                editBtn.querySelector('img').src = this.editMode
+                    ? 'assets/icons/circle-exclamation-check-svgrepo-com.svg'
+                    : 'assets/icons/gear-svgrepo-com.svg';
+                if (!this.editMode) this.saveDashboard();
+                this.refreshGhosts();
+            });
+        }
 
         // ── Add tile modal ───────────────────────────────────────────────────
         const addBtn = document.getElementById('add-tile-btn');
@@ -70,84 +72,95 @@ const GridManager = {
             });
         }
 
-        document.getElementById('tile-modal-confirm').onclick = () => {
-            if (!this.modalInput.value.trim()) { this.modalInput.focus(); return; }
-            this.addNewTile();
-        };
-        document.getElementById('tile-modal-cancel').onclick  = () => this.modal.classList.add('hidden');
+        if (document.getElementById('tile-modal-confirm')) {
+            document.getElementById('tile-modal-confirm').onclick = () => {
+                if (!this.modalInput.value.trim()) { this.modalInput.focus(); return; }
+                this.addNewTile();
+            };
+        }
+        if (document.getElementById('tile-modal-cancel')) document.getElementById('tile-modal-cancel').onclick  = () => this.modal.classList.add('hidden');
 
         // Add-modal size buttons
-        document.getElementById('add-btn-col-plus').onclick  = () => { if (this.addColSpan < this.MAX_COL) { this.addColSpan++; this.updateAddSizeDisplay(); } };
-        document.getElementById('add-btn-col-minus').onclick = () => { if (this.addColSpan > 1)           { this.addColSpan--; this.updateAddSizeDisplay(); } };
-        document.getElementById('add-btn-row-plus').onclick  = () => { if (this.addRowSpan < this.MAX_ROW) { this.addRowSpan++; this.updateAddSizeDisplay(); } };
-        document.getElementById('add-btn-row-minus').onclick = () => { if (this.addRowSpan > 1)           { this.addRowSpan--; this.updateAddSizeDisplay(); } };
+        if (document.getElementById('add-btn-col-plus')) document.getElementById('add-btn-col-plus').onclick  = () => { if (this.addColSpan < this.MAX_COL) { this.addColSpan++; this.updateAddSizeDisplay(); } };
+        if (document.getElementById('add-btn-col-minus')) document.getElementById('add-btn-col-minus').onclick = () => { if (this.addColSpan > 1)           { this.addColSpan--; this.updateAddSizeDisplay(); } };
+        if (document.getElementById('add-btn-row-plus')) document.getElementById('add-btn-row-plus').onclick  = () => { if (this.addRowSpan < this.MAX_ROW) { this.addRowSpan++; this.updateAddSizeDisplay(); } };
+        if (document.getElementById('add-btn-row-minus')) document.getElementById('add-btn-row-minus').onclick = () => { if (this.addRowSpan > 1)           { this.addRowSpan--; this.updateAddSizeDisplay(); } };
 
         // ── Settings modal ───────────────────────────────────────────────────
-        document.getElementById('tile-settings-close').onclick = () => {
-            this.settingsModal.classList.add('hidden');
-            this.activeSettingsTile = null;
-            this.saveDashboard();
-        };
+        if (document.getElementById('tile-settings-close')) {
+            document.getElementById('tile-settings-close').onclick = () => {
+                this.settingsModal.classList.add('hidden');
+                this.activeSettingsTile = null;
+                this.saveDashboard();
+            };
+        }
 
-        document.getElementById('tile-settings-delete').onclick = () => {
-            if (!this.activeSettingsTile) return;
-            this.activeSettingsTile.remove();
-            this.settingsModal.classList.add('hidden');
-            this.activeSettingsTile = null;
-            this.refreshGhosts();
-            this.saveDashboard();
-        };
+        if (document.getElementById('tile-settings-delete')) {
+            document.getElementById('tile-settings-delete').onclick = () => {
+                if (!this.activeSettingsTile) return;
+                this.activeSettingsTile.remove();
+                this.settingsModal.classList.add('hidden');
+                this.activeSettingsTile = null;
+                this.refreshGhosts();
+                this.saveDashboard();
+            };
+        }
 
-        // Settings size buttons removed – resize via handles on tile edges
+        if (document.getElementById('settings-tile-label')) {
+            document.getElementById('settings-tile-label').oninput = (e) => {
+                if (this.activeSettingsTile)
+                    this.activeSettingsTile.querySelector('.tile-label').textContent = e.target.value;
+            };
+        }
 
-        // Live name update
-        document.getElementById('settings-tile-label').oninput = (e) => {
-            if (this.activeSettingsTile)
-                this.activeSettingsTile.querySelector('.tile-label').textContent = e.target.value;
-        };
+        if (document.getElementById('settings-tile-datapoint')) {
+            document.getElementById('settings-tile-datapoint').onchange = (e) => {
+                if (!this.activeSettingsTile) return;
+                this.activeSettingsTile.dataset.datapoint = e.target.value;
+                const selectedOpt = e.target.options[e.target.selectedIndex];
+                this.filterContentByDatapoint(selectedOpt?.dataset.type || '', 'settings-tile-content');
+                this.saveDashboard();
+            };
+        }
 
-        // API: On datapoint change – fetch available content types for this datapoint from DB
-        // e.g. fetchContentTypes(datapoint).then(types => this.populateContentSelect(types))
-        document.getElementById('settings-tile-datapoint').onchange = (e) => {
-            if (!this.activeSettingsTile) return;
-            this.activeSettingsTile.dataset.datapoint = e.target.value;
-            const selectedOpt = e.target.options[e.target.selectedIndex];
-            this.filterContentByDatapoint(selectedOpt?.dataset.type || '', 'settings-tile-content');
-            this.saveDashboard();
-        };
+        if (document.getElementById('add-tile-datapoint')) {
+            document.getElementById('add-tile-datapoint').onchange = (e) => {
+                const selectedOpt = e.target.options[e.target.selectedIndex];
+                this.filterContentByDatapoint(selectedOpt?.dataset.type || '', 'add-tile-content');
+            };
+        }
 
-        document.getElementById('add-tile-datapoint').onchange = (e) => {
-            const selectedOpt = e.target.options[e.target.selectedIndex];
-            this.filterContentByDatapoint(selectedOpt?.dataset.type || '', 'add-tile-content');
-        };
+        if (document.getElementById('add-tile-content')) {
+            document.getElementById('add-tile-content').onchange = (e) => {
+                if (e.target.value.includes('graph')) {
+                    this.addColSpan = 3;
+                    this.addRowSpan = 3;
+                } else if (e.target.value.includes('switch')) {
+                    this.addColSpan = 1;
+                    this.addRowSpan = 1;
+                } else if (this.addColSpan === 3 && this.addRowSpan === 3) {
+                    this.addColSpan = 1;
+                    this.addRowSpan = 1;
+                }
+                this.updateAddSizeDisplay();
+            };
+        }
 
-        document.getElementById('add-tile-content').onchange = (e) => {
-            if (e.target.value.includes('graph')) {
-                this.addColSpan = 3;
-                this.addRowSpan = 3;
-            } else if (e.target.value.includes('switch')) {
-                this.addColSpan = 1;
-                this.addRowSpan = 1;
-            } else if (this.addColSpan === 3 && this.addRowSpan === 3) {
-                this.addColSpan = 1;
-                this.addRowSpan = 1;
-            }
-            this.updateAddSizeDisplay();
-        };
-
-        // API: On content type change – fetch initial data for this tile from DB
-        // e.g. fetchTileData(datapoint, contentType).then(data => this.renderTileContent(tile, data))
-        document.getElementById('settings-tile-content').onchange = (e) => {
-            if (!this.activeSettingsTile) return;
-            this.activeSettingsTile.dataset.contentType = e.target.value;
-            this.renderTileContent(this.activeSettingsTile);
-            this.saveDashboard();
-        };
+        if (document.getElementById('settings-tile-content')) {
+            document.getElementById('settings-tile-content').onchange = (e) => {
+                if (!this.activeSettingsTile) return;
+                this.activeSettingsTile.dataset.contentType = e.target.value;
+                this.renderTileContent(this.activeSettingsTile);
+                this.saveDashboard();
+            };
+        }
 
         // ── Drag & drop delegation ───────────────────────────────────────────
-        this.container.addEventListener('dragover',  e => this.handleContainerDragOver(e));
-        this.container.addEventListener('dragleave', e => this.handleContainerDragLeave(e));
-        this.container.addEventListener('drop',      e => this.handleContainerDrop(e));
+        if (this.container) {
+            this.container.addEventListener('dragover',  e => this.handleContainerDragOver(e));
+            this.container.addEventListener('dragleave', e => this.handleContainerDragLeave(e));
+            this.container.addEventListener('drop',      e => this.handleContainerDrop(e));
+        }
     },
 
     async populateDatapoints() {
@@ -166,7 +179,6 @@ const GridManager = {
                     let dpType = '';
                     const t = (dp.type || '').toLowerCase();
                     
-                    // Mapping des Datenbank-Typs auf die Dashboard-Präfixe
                     if (t === 'temperature') dpType = 'sensor.temp';
                     else if (t === 'energy') dpType = 'sensor.energy';
                     else if (t === 'switch') dpType = 'switch.light';
@@ -189,25 +201,25 @@ const GridManager = {
     },
 
     updateAddSizeDisplay() {
-        document.getElementById('add-size-display').innerHTML = `${this.addColSpan} &times; ${this.addRowSpan}`;
-        
-        const isGraph = document.getElementById('add-tile-content')?.value.includes('graph');
-        const isSwitch = document.getElementById('add-tile-content')?.value.includes('switch');
-        
-        if (isGraph || isSwitch) {
-            document.getElementById('add-btn-col-plus').disabled  = true;
-            document.getElementById('add-btn-col-minus').disabled = true;
-            document.getElementById('add-btn-row-plus').disabled  = true;
-            document.getElementById('add-btn-row-minus').disabled = true;
-        } else {
-            document.getElementById('add-btn-col-plus').disabled  = this.addColSpan >= this.MAX_COL;
-            document.getElementById('add-btn-col-minus').disabled = this.addColSpan <= 1;
-            document.getElementById('add-btn-row-plus').disabled  = this.addRowSpan >= this.MAX_ROW;
-            document.getElementById('add-btn-row-minus').disabled = this.addRowSpan <= 1;
+        if (document.getElementById('add-size-display')) {
+            document.getElementById('add-size-display').innerHTML = `${this.addColSpan} &times; ${this.addRowSpan}`;
+            
+            const isGraph = document.getElementById('add-tile-content')?.value.includes('graph');
+            const isSwitch = document.getElementById('add-tile-content')?.value.includes('switch');
+            
+            if (isGraph || isSwitch) {
+                document.getElementById('add-btn-col-plus').disabled  = true;
+                document.getElementById('add-btn-col-minus').disabled = true;
+                document.getElementById('add-btn-row-plus').disabled  = true;
+                document.getElementById('add-btn-row-minus').disabled = true;
+            } else {
+                document.getElementById('add-btn-col-plus').disabled  = this.addColSpan >= this.MAX_COL;
+                document.getElementById('add-btn-col-minus').disabled = this.addColSpan <= 1;
+                document.getElementById('add-btn-row-plus').disabled  = this.addRowSpan >= this.MAX_ROW;
+                document.getElementById('add-btn-row-minus').disabled = this.addRowSpan <= 1;
+            }
         }
     },
-
-    // ── DB interface ─────────────────────────────────────────────────────────
 
     getDashboardState() {
         return Array.from(this.container.querySelectorAll('.dynamic-tile')).map(tile => ({
@@ -230,13 +242,10 @@ const GridManager = {
 
     saveDashboard() {
         const state = this.getDashboardState();
-        // API: Persist dashboard layout to DB
         window.API.saveDashboard(state);
         console.log('Dashboard state:', JSON.stringify(state, null, 2));
         return state;
     },
-
-    // ── Tile management ──────────────────────────────────────────────────────
 
     addNewTile(config = null) {
         const label = config ? config.label : this.modalInput.value.trim();
@@ -255,7 +264,6 @@ const GridManager = {
             if (config.contentType) tile.dataset.contentType = config.contentType;
             if (config.datapoint)   tile.dataset.datapoint   = config.datapoint;
         } else {
-            // Find first free position
             const occupied = this.getOccupied(null);
             let placed = false;
             for (let r = 1; r < 100 && !placed; r++) {
@@ -270,7 +278,6 @@ const GridManager = {
             tile.dataset.colSpan = this.addColSpan;
             tile.dataset.rowSpan = this.addRowSpan;
 
-            // Hier holen wir die Werte mit Fallback || null
             const addDp = document.getElementById('add-tile-datapoint')?.value || null;
             const addCt = document.getElementById('add-tile-content')?.value || null;
             if (addDp) tile.dataset.datapoint = addDp;
@@ -282,7 +289,7 @@ const GridManager = {
         if (tile.dataset.contentType) this.renderTileContent(tile);
         if (this.editMode) tile.draggable = true;
 
-        this.modal.classList.add('hidden');
+        if (this.modal) this.modal.classList.add('hidden');
         this.refreshGhosts();
         this.saveDashboard();
     },
@@ -303,14 +310,12 @@ const GridManager = {
             this.saveDashboard();
         });
 
-        // Resize handle – right edge (col): mousedown drag to snap to grid columns
         const colHandle = tile.querySelector('.tile-resize-col');
         colHandle?.addEventListener('mousedown', (e) => {
             e.preventDefault(); e.stopPropagation();
             this.startResize(e, tile, 'col');
         });
 
-        // Resize handle – bottom edge (row): mousedown drag to snap to grid rows
         const rowHandle = tile.querySelector('.tile-resize-row');
         rowHandle?.addEventListener('mousedown', (e) => {
             e.preventDefault(); e.stopPropagation();
@@ -318,7 +323,7 @@ const GridManager = {
         });
 
         tile.addEventListener('dragstart', (e) => {
-            if (this.resizeSrc) return; // handle drag takes priority
+            if (this.resizeSrc) return;
             this.dragSrc = tile;
             setTimeout(() => tile.classList.add('dragging'), 0);
             e.dataTransfer.setData('text/plain', 'move');
@@ -359,13 +364,9 @@ const GridManager = {
         const selectedOpt = dpSelect.options[dpSelect.selectedIndex];
         this.filterContentByDatapoint(selectedOpt?.dataset.type || '', 'settings-tile-content');
         document.getElementById('settings-tile-content').value  = tile.dataset.contentType || '';
-        this.updateModalButtons();
         this.settingsModal.classList.remove('hidden');
     },
 
-    // ── Content type registry ────────────────────────────────────────────────
-    // API: Extend CONTENT_TYPES to add new tile renderers.
-    // Each render() will later receive live data from fetchTileData(datapoint, type)
     CONTENT_TYPES: {
         'temp-current':   { 
             render: () => `<div class="tile-value">-- °C</div>`,
@@ -374,7 +375,7 @@ const GridManager = {
                 try {
                     const data = await window.API.getSensorData(datapoint);
                     if (data && data.length > 0) {
-                        const latest = data[data.length - 1]; // Letzter Wert im Array
+                        const latest = data[data.length - 1];
                         const val = latest.temperature !== undefined ? latest.temperature : latest.value;
                         container.querySelector('.tile-value').textContent = `${val} °C`;
                     }
@@ -391,7 +392,7 @@ const GridManager = {
                 try {
                     const data = await window.API.getSensorData(datapoint);
                     if (data && data.length > 0) {
-                        const latest = data[data.length - 1]; // Letzter Wert im Array
+                        const latest = data[data.length - 1];
                         const val = latest.power !== undefined ? latest.power : latest.value;
                         container.querySelector('.tile-value').textContent = `${val} kWh`;
                     }
@@ -416,7 +417,6 @@ const GridManager = {
 
         let isFixedSize = false;
 
-        // Erzwinge 3x3 für alle Graph-Tiles
         if (type.includes('graph')) {
             tile.dataset.colSpan = 3;
             tile.dataset.rowSpan = 3;
@@ -429,7 +429,6 @@ const GridManager = {
             isFixedSize = true;
         }
 
-        // Resize-Handles ausblenden, falls die Kachel eine feste Größe haben muss
         const colHandle = tile.querySelector('.tile-resize-col');
         const rowHandle = tile.querySelector('.tile-resize-row');
         if (colHandle) colHandle.style.display = isFixedSize ? 'none' : '';
@@ -449,14 +448,6 @@ const GridManager = {
         }
     },
 
-    // API: Populate datapoint dropdown from DB
-    // fetchDatapoints().then(points => this.populateDatapointSelect(points))
-    // populateDatapointSelect(points) {
-    //     const sel = document.getElementById('settings-tile-datapoint');
-    //     points.forEach(p => { const o = document.createElement('option'); o.value = p.id; o.textContent = p.label; sel.appendChild(o); });
-    // },
-
-    // Maps datapoint prefixes to allowed content types – extend when adding new sensor types
     DATAPOINT_CONTENT_MAP: {
         'sensor.temp':   ['temp-current',   'temp-graph'],
         'sensor.energy': ['energy-current', 'energy-graph'],
@@ -475,16 +466,8 @@ const GridManager = {
         });
         if (allowed.length > 0 && !allowed.includes(select.value)) {
             select.value = '';
-            select.dispatchEvent(new Event('change')); // Event feuern, damit Größenanzeige resettet
+            select.dispatchEvent(new Event('change'));
         }
-    },
-
-    resizeActiveTile(direction) {
-        // Resize via handles on tile edges – this method is no longer used
-    },
-
-    updateModalButtons() {
-        // Size buttons removed from config modal – resize via handles on tile edges
     },
 
     createTileHTML(label) {
@@ -504,6 +487,7 @@ const GridManager = {
 
     getOccupied(skipEl) {
         const occ = new Set();
+        if(!this.container) return occ;
         this.container.querySelectorAll('.dynamic-tile').forEach(el => {
             if (el === skipEl) return;
             const c = +el.dataset.gridCol, r = +el.dataset.gridRow;
@@ -520,6 +504,7 @@ const GridManager = {
     },
 
     refreshGhosts() {
+        if(!this.container) return;
         this.container.querySelectorAll('.ghost-tile').forEach(g => g.remove());
         if (!this.editMode) return;
         let maxR = 1;
@@ -566,7 +551,6 @@ const GridManager = {
                 const newCs = gc - tc + 1;
                 if (newCs !== lastSnap) {
                     lastSnap = newCs;
-                    // live preview
                     tile.style.gridColumn = `${tc} / span ${newCs}`;
                     ghost.classList.add('resize-target');
                 }
@@ -590,7 +574,6 @@ const GridManager = {
             if (ghost) {
                 this.applyResizeDrop(ghost);
             } else {
-                // revert preview
                 this.applyPosition(tile);
                 this.resizeSrc = null;
             }
@@ -608,18 +591,16 @@ const GridManager = {
         if (type === 'col') {
             const newCs = gc - tc + 1;
             if (newCs >= 1 && newCs <= this.MAX_COL) {
-                // check only the newly added columns (right of current span)
                 const ok = newCs <= tcs || !this.isAreaOccupied(tr, tc + tcs, trs, newCs - tcs, tile);
                 if (ok) { tile.dataset.colSpan = newCs; this.applyPosition(tile); this.saveDashboard(); }
-                else { this.applyPosition(tile); } // revert preview
+                else { this.applyPosition(tile); } 
             } else { this.applyPosition(tile); }
         } else {
             const newRs = gr - tr + 1;
             if (newRs >= 1 && newRs <= this.MAX_ROW) {
-                // check only the newly added rows (below current span)
                 const ok = newRs <= trs || !this.isAreaOccupied(tr + trs, tc, newRs - trs, tcs, tile);
                 if (ok) { tile.dataset.rowSpan = newRs; this.applyPosition(tile); this.saveDashboard(); }
-                else { this.applyPosition(tile); } // revert preview
+                else { this.applyPosition(tile); }
             } else { this.applyPosition(tile); }
         }
         this.resizeSrc = null;
@@ -658,7 +639,6 @@ const GridManager = {
 
     handleContainerDrop(e) {
         e.preventDefault();
-        // Drop logic is handled directly on ghost-tile elements
         if (this.hoveredGhost) this.hoveredGhost.classList.remove('drag-over');
         this.hoveredGhost = null;
     },
@@ -672,5 +652,4 @@ const GridManager = {
     }
 };
 
-window.GridManager = GridManager;
-document.addEventListener('DOMContentLoaded', () => GridManager.init());
+window.TileManager = TileManager;

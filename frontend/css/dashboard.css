@@ -21,3 +21,52 @@
     filter: invert(0.8);
     flex-shrink: 0;
 }
+
+.overview-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1.5rem 0 1rem;
+}
+
+#content h2 {
+    color: #cdd6f4;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+    flex-grow: 1;
+}
+
+#edit-mode-btn,
+#add-tile-btn {
+    background: none;
+    border: 1px solid #3a3a52;
+    border-radius: 6px;
+    color: #6c6c8a;
+    font-size: 0.8rem;
+    padding: 3px 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+#edit-mode-btn img,
+#add-tile-btn img {
+    width: 12px;
+    height: 12px;
+    filter: invert(0.5);
+    transition: filter 0.2s;
+}
+
+#edit-mode-btn:hover, #edit-mode-btn.active,
+#add-tile-btn:hover {
+    color: #cdd6f4;
+    border-color: #cdd6f4;
+}
+
+#edit-mode-btn:hover img, #edit-mode-btn.active img,
+#add-tile-btn:hover img {
+    filter: invert(1);
+}

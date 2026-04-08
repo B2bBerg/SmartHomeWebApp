@@ -40,7 +40,7 @@ toggleImg.src = ICON_COLLAPSED;
 const DASHBOARD_TILE_MAP = {
     'Sensors':   'sensors',
     'Devices':   'devices',
-    'Home':      'home',
+    'Locations': 'locations',
     'Actuators': 'actuators',
     'Rules':     'rules',
     'Users':     'users',
@@ -68,7 +68,7 @@ const SIDEBAR_VIEWS_MAP = {
     dashboard: renderDashboard,
     devices:   renderDevices,
     sensors:   renderSensors,
-    home:      renderHome,
+    locations: renderLocations,
     actuators: renderActuators,
     rules:     renderRules,
     users:     renderUsers,
@@ -93,7 +93,8 @@ function renderDashboard() {
     content.innerHTML = dashboardHTML;
     initDashboardTiles();
     // re-init overview grid after DOM swap
-    if (typeof GridManager !== 'undefined') GridManager.init();
+    if (typeof TileManager !== 'undefined') TileManager.init();
+    else if (typeof GridManager !== 'undefined') GridManager.init(); // Fallback
 }
 
 // ── Devices view ──────────────────────────────────────────────────────────────
@@ -120,17 +121,17 @@ function renderSensors() {
     if (typeof SensorManager !== 'undefined') SensorManager.init();
 }
 
-// ── Home view ──────────────────────────────────────────────────────────────
-function renderHome() {
+// ── Locations view ─────────────────────────────────────────────────────────
+function renderLocations() {
     content.innerHTML = `
         <div class="page-header">
-            <h1>Home</h1>
+            <h1>Locations</h1>
         </div>
-        <div class="home-content" id="home-container">
-            <p class="page-placeholder">Lade Haus-Struktur...</p>
+        <div class="locations-content" id="locations-container">
+            <p class="page-placeholder">Lade Locations-Struktur...</p>
         </div>
     `;
-    if (typeof HomeManager !== 'undefined') HomeManager.init();
+    if (typeof LocationsManager !== 'undefined') LocationsManager.init();
 }
 
 // ── Actuators view ──────────────────────────────────────────────────────────

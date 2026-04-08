@@ -8,11 +8,10 @@
     <link rel="stylesheet" href="css/sidebar.css">
     <link rel="stylesheet" href="css/header.css">
     <link rel="stylesheet" href="css/dashboard.css">
-    <link rel="stylesheet" href="css/overview.css">
     <link rel="stylesheet" href="css/sensor.css">
     <link rel="stylesheet" href="css/devices.css">
     <link rel="stylesheet" href="css/page.css">
-    <link rel="stylesheet" href="css/home.css">
+    <link rel="stylesheet" href="css/locations.css">
     <link rel="stylesheet" href="css/actuators.css">
     <link rel="stylesheet" href="css/rules.css">
     <link rel="stylesheet" href="css/users.css">
@@ -22,6 +21,7 @@
     <link rel="stylesheet" href="css/modules/table.css">
     <link rel="stylesheet" href="css/modules/graph.css">
     <link rel="stylesheet" href="css/modules/switch.css">
+    <link rel="stylesheet" href="css/modules/tile.css">
     <style>
         .not-implemented {
             opacity: 0.4;
@@ -43,8 +43,8 @@
     <nav id="sidebar">
         <ul>
             <li title="Dashboard"><span class="icon"><img src="assets/icons/menu-svgrepo-com.svg" alt=""></span><a href="#">Dashboard</a></li>
-            <li title="Home">
-                <span class="icon"><img src="assets/icons/house-chimney-user-svgrepo-com.svg" alt=""></span><a href="#">Home</a>
+            <li title="Locations">
+                <span class="icon"><img src="assets/icons/house-chimney-user-svgrepo-com.svg" alt=""></span><a href="#">Locations</a>
             </li>
             <li title="Devices"><span class="icon"><img src="assets/icons/mobile-alt-svgrepo-com.svg" alt="D"></span><a href="#">Devices</a></li>
             <li title="Sensors"><span class="icon"><img src="assets/icons/mobile-signal-out-svgrepo-com.svg" alt=""></span><a href="#">Sensors</a></li>
@@ -62,7 +62,7 @@
     <main id="content">
         <h1>Dashboard</h1>
         <div class="dashboard-container">
-            <button id="Home" class="tile dashboard-tile"><img src="assets/icons/house-chimney-user-svgrepo-com.svg" alt="">Home</button>
+            <button id="Locations" class="tile dashboard-tile"><img src="assets/icons/house-chimney-user-svgrepo-com.svg" alt="">Locations</button>
             <button id="Devices" class="tile dashboard-tile"><img src="assets/icons/mobile-alt-svgrepo-com.svg" alt="D">Devices</button>
             <button id="Sensors" class="tile dashboard-tile"><img src="assets/icons/mobile-signal-out-svgrepo-com.svg" alt="">Sensors</button>
             <button id="Actuators" class="tile dashboard-tile"><img src="assets/icons/mobile-signal-svgrepo-com.svg" alt="">Actuators</button>
@@ -164,9 +164,10 @@
     <script src="js/modules/graph.js"></script>
     <script src="js/modules/table.js"></script>
     <script src="js/modules/switch.js"></script>
+    <script src="js/modules/tile.js"></script>
     <!-- SUB-MAINS -->
-    <script src="js/overview.js"></script>
-    <script src="js/home.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/locations.js"></script>
     <script src="js/devices.js"></script>
     <script src="js/sensors.js"></script>
     <script src="js/actuators.js"></script>
