@@ -40,7 +40,7 @@ toggleImg.src = ICON_COLLAPSED;
 const DASHBOARD_TILE_MAP = {
     'Sensors':   'sensors',
     'Devices':   'devices',
-    'Zuhause':   'zuhause',
+    'Home':      'home',
     'Actuators': 'actuators',
     'Rules':     'rules',
     'Users':     'users',
@@ -68,7 +68,7 @@ const SIDEBAR_VIEWS_MAP = {
     dashboard: renderDashboard,
     devices:   renderDevices,
     sensors:   renderSensors,
-    zuhause:   renderZuhause,
+    home:      renderHome,
     actuators: renderActuators,
     rules:     renderRules,
     users:     renderUsers,
@@ -120,17 +120,17 @@ function renderSensors() {
     if (typeof SensorManager !== 'undefined') SensorManager.init();
 }
 
-// ── Zuhause view ───────────────────────────────────────────────────────────
-function renderZuhause() {
+// ── Home view ──────────────────────────────────────────────────────────────
+function renderHome() {
     content.innerHTML = `
         <div class="page-header">
-            <h1>Zuhause</h1>
+            <h1>Home</h1>
         </div>
-        <div class="zuhause-content" id="zuhause-container">
-            <!-- OPEN: visual room cards will be injected here -->
+        <div class="home-content" id="home-container">
             <p class="page-placeholder">Lade Haus-Struktur...</p>
         </div>
     `;
+    if (typeof HomeManager !== 'undefined') HomeManager.init();
 }
 
 // ── Actuators view ──────────────────────────────────────────────────────────
