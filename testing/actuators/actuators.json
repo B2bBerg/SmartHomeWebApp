@@ -1,6 +1,34 @@
 [
-  { "id": "123e4567-e89b-12d3-a456-426614174010", "deviceId": "dev-010", "name": "Switch Living", "type": "Switch",  "channel": "DO_1", "value": "On",     "unit": "" },
-  { "id": "123e4567-e89b-12d3-a456-426614174011", "deviceId": "dev-011", "name": "Switch Bedroom","type": "Switch",  "channel": "DO_1", "value": "Off",    "unit": "" },
-  { "id": "123e4567-e89b-12d3-a456-426614174020", "deviceId": "dev-020", "name": "Shutter Living","type": "Shutter", "channel": "DO_1", "value": "Open",   "unit": "" },
-  { "id": "123e4567-e89b-12d3-a456-426614174021", "deviceId": "dev-021", "name": "Shutter Bedroom","type": "Shutter", "channel": "DO_1", "value": "Closed", "unit": "" }
+  {
+    "id": "123e4567-e89b-12d3-a456-426614174010",
+    "name": "Switch Living",
+    "type": "Switch",
+    "channel": "DO_1",
+    "value": "On",
+    "unit": ""
+  },
+  {
+    "id": "123e4567-e89b-12d3-a456-426614174011",
+    "name": "Switch Bedroom",
+    "type": "Switch",
+    "channel": "DO_1",
+    "value": "Off",
+    "unit": ""
+  },
+  {
+    "id": "123e4567-e89b-12d3-a456-426614174020",
+    "name": "Shutter Living",
+    "type": "Shutter",
+    "channel": "DO_1",
+    "value": "Open",
+    "unit": ""
+  },
+  {
+    "id": "123e4567-e89b-12d3-a456-426614174021",
+    "name": "Shutter Bedroom",
+    "type": "Shutter",
+    "channel": "DO_1",
+    "value": "Closed",
+    "unit": ""
+  }
 ]
