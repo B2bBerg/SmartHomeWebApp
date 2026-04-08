@@ -1,13 +1,173 @@
 [
-  { "id": "550e8400-e29b-41d4-a716-446655440000", "name": "Wetterstation Garten",   "location": "Living Room", "busType": "WIFI",     "macAddress": "A1:B2:C3:D4:E5:00", "busAddress": "",     "battery": 85,   "signal": 72,   "status": "active",   "updated": "2025-01-01 10:00", "channels": ["AI_1", "AI_2", "DI_1"] },
-  { "id": "550e8400-e29b-41d4-a716-446655440001", "name": "Multisensor Schlafz.",   "location": "Bedroom",     "busType": "Thread",   "macAddress": "A1:B2:C3:D4:E5:01", "busAddress": "",     "battery": 15,   "signal": 95,   "status": "active",   "updated": "2025-01-01 10:01", "channels": ["AI_1"] },
-  { "id": "550e8400-e29b-41d4-a716-446655440002", "name": "SmartMeter Haus",        "location": "Main Meter",  "busType": "RS485",    "macAddress": "",                  "busAddress": "0x01", "battery": null, "signal": null, "status": "active",   "updated": "2025-01-01 10:02", "channels": ["AI_1", "AI_2", "AI_3"] },
-  { "id": "550e8400-e29b-41d4-a716-446655440003", "name": "SmartMeter PV",          "location": "Roof",        "busType": "Ethernet", "macAddress": "A1:B2:C3:D4:E5:03", "busAddress": "",     "battery": null, "signal": null, "status": "warning",  "updated": "2025-01-01 09:55", "channels": ["AI_1", "AI_2"] },
-  { "id": "550e8400-e29b-41d4-a716-446655440004", "name": "Präsenzmelder Flur",     "location": "Hallway",     "busType": "WIFI",     "macAddress": "A1:B2:C3:D4:E5:04", "busAddress": "",     "battery": 100,  "signal": 35,   "status": "inactive", "updated": "2025-01-01 08:30", "channels": ["DI_1", "DI_2"] },
-  { "id": "550e8400-e29b-41d4-a716-446655440010", "name": "Shelly Aktor Wohnz.",    "location": "Living Room", "busType": "Thread",   "macAddress": "A1:B2:C3:D4:E5:10", "busAddress": "",     "battery": 90,   "signal": 88,   "status": "active",   "updated": "2025-01-01 10:05", "channels": ["DO_1", "DO_2", "DO_3"] },
-  { "id": "550e8400-e29b-41d4-a716-446655440011", "name": "Shelly Aktor Schlafz.",  "location": "Bedroom",     "busType": "Thread",   "macAddress": "A1:B2:C3:D4:E5:11", "busAddress": "",     "battery": 45,   "signal": 60,   "status": "active",   "updated": "2025-01-01 10:05", "channels": ["DO_1"] },
-  { "id": "550e8400-e29b-41d4-a716-446655440020", "name": "KNX Jalousien Wohnz.",   "location": "Living Room", "busType": "RS485",    "macAddress": "",                  "busAddress": "0x02", "battery": null, "signal": null, "status": "active",   "updated": "2025-01-01 10:06", "channels": ["DO_1", "DO_2"] },
-  { "id": "550e8400-e29b-41d4-a716-446655440021", "name": "KNX Jalousien Schlafz.", "location": "Bedroom",     "busType": "RS485",    "macAddress": "",                  "busAddress": "0x03", "battery": null, "signal": null, "status": "active",   "updated": "2025-01-01 10:06", "channels": ["DO_1", "DO_2"] },
-  { "id": "550e8400-e29b-41d4-a716-446655440030", "name": "Temperatur Kueche",      "location": "Küche",       "busType": "WIFI",     "macAddress": "B1:C2:D3:E4:F5:66", "busAddress": "",     "battery": null, "signal": null, "status": "searching", "updated": "jetzt", "channels": [] },
-  { "id": "550e8400-e29b-41d4-a716-446655440031", "name": "Altes Relais Garage",    "location": "Garage",      "busType": "RS485",    "macAddress": "",                  "busAddress": "0x44", "battery": null, "signal": null, "status": "not_reachable", "updated": "gestern", "channels": [] }
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Wetterstation Garten",
+    "location": "Living Room",
+    "busType": "WIFI",
+    "macAddress": "A1:B2:C3:D4:E5:00",
+    "busAddress": "",
+    "battery": 85,
+    "signal": 72,
+    "status": "active",
+    "updated": "2025-01-01 10:00",
+    "channels": [
+      "AI_1",
+      "AI_2",
+      "DI_1"
+    ]
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "name": "Multisensor Schlafz.",
+    "location": "Bedroom",
+    "busType": "Thread",
+    "macAddress": "A1:B2:C3:D4:E5:01",
+    "busAddress": "",
+    "battery": 15,
+    "signal": 95,
+    "status": "active",
+    "updated": "2025-01-01 10:01",
+    "channels": [
+      "AI_1"
+    ]
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440002",
+    "name": "SmartMeter Haus",
+    "location": "Main Meter",
+    "busType": "RS485",
+    "macAddress": "",
+    "busAddress": "0x01",
+    "battery": null,
+    "signal": null,
+    "status": "active",
+    "updated": "2025-01-01 10:02",
+    "channels": [
+      "AI_1",
+      "AI_2",
+      "AI_3"
+    ]
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440003",
+    "name": "SmartMeter PV",
+    "location": "Roof",
+    "busType": "Ethernet",
+    "macAddress": "A1:B2:C3:D4:E5:03",
+    "busAddress": "",
+    "battery": null,
+    "signal": null,
+    "status": "warning",
+    "updated": "2025-01-01 09:55",
+    "channels": [
+      "AI_1",
+      "AI_2"
+    ]
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440004",
+    "name": "Präsenzmelder Flur",
+    "location": "Hallway",
+    "busType": "WIFI",
+    "macAddress": "A1:B2:C3:D4:E5:04",
+    "busAddress": "",
+    "battery": 100,
+    "signal": 35,
+    "status": "inactive",
+    "updated": "2025-01-01 08:30",
+    "channels": [
+      "DI_1",
+      "DI_2"
+    ]
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440010",
+    "name": "Shelly Aktor Wohnz.",
+    "location": "Living Room",
+    "busType": "Thread",
+    "macAddress": "A1:B2:C3:D4:E5:10",
+    "busAddress": "",
+    "battery": 90,
+    "signal": 88,
+    "status": "active",
+    "updated": "2025-01-01 10:05",
+    "channels": [
+      "DO_1",
+      "DO_2",
+      "DO_3"
+    ]
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440011",
+    "name": "Shelly Aktor Schlafz.",
+    "location": "Bedroom",
+    "busType": "Thread",
+    "macAddress": "A1:B2:C3:D4:E5:11",
+    "busAddress": "",
+    "battery": 45,
+    "signal": 60,
+    "status": "active",
+    "updated": "2025-01-01 10:05",
+    "channels": [
+      "DO_1"
+    ]
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440020",
+    "name": "KNX Jalousien Wohnz.",
+    "location": "Living Room",
+    "busType": "RS485",
+    "macAddress": "",
+    "busAddress": "0x02",
+    "battery": null,
+    "signal": null,
+    "status": "active",
+    "updated": "2025-01-01 10:06",
+    "channels": [
+      "DO_1",
+      "DO_2"
+    ]
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440021",
+    "name": "KNX Jalousien Schlafz.",
+    "location": "Bedroom",
+    "busType": "RS485",
+    "macAddress": "",
+    "busAddress": "0x03",
+    "battery": null,
+    "signal": null,
+    "status": "active",
+    "updated": "2025-01-01 10:06",
+    "channels": [
+      "DO_1",
+      "DO_2"
+    ]
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440030",
+    "name": "Temperatur Kueche",
+    "location": "Küche",
+    "busType": "WIFI",
+    "macAddress": "B1:C2:D3:E4:F5:66",
+    "busAddress": "",
+    "battery": null,
+    "signal": null,
+    "status": "searching",
+    "updated": "jetzt",
+    "channels": []
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440031",
+    "name": "Altes Relais Garage",
+    "location": "Garage",
+    "busType": "RS485",
+    "macAddress": "",
+    "busAddress": "0x44",
+    "battery": null,
+    "signal": null,
+    "status": "not_reachable",
+    "updated": "gestern",
+    "channels": []
+  }
 ]
