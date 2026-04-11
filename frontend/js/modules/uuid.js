@@ -13,3 +13,6 @@ function generateUUID() {
         return v.toString(16);
     });
 }
+
+// Explizit global verfügbar machen, damit alle anderen Skripte darauf zugreifen können
+window.generateUUID = generateUUID;

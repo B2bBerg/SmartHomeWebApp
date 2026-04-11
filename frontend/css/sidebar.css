@@ -61,9 +61,12 @@
     white-space: nowrap;
     cursor: pointer;
     padding: 0.6rem 16px 0.6rem 0;
+    transition: all 0.2s ease;
 }
 
-#sidebar li:hover { background: #2a2a3e; }
+#sidebar li:hover { 
+    background: #313244; 
+}
 
 #sidebar a {
     color: #cdd6f4;

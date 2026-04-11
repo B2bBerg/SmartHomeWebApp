@@ -205,12 +205,45 @@ const API = {
     // --- APARTMENT / LOCATIONS ---
     getLocations: async () => {
         try {
+            const savedState = localStorage.getItem('smartHomeLocations_v3');
+            if (savedState) {
+                return JSON.parse(savedState);
+            }
+
             const response = await fetch('../testing/locations/locations.json?t=' + Date.now());
             if (!response.ok) throw new Error("HTTP Fehler " + response.status);
-            return await response.json();
+            const data = await response.json();
+            localStorage.setItem('smartHomeLocations_v3', JSON.stringify(data));
+            return data;
         } catch (error) {
+            console.error("Fehler beim Laden der Locations-Struktur:", error);
             return [];
         }
+    },
+    saveLocations: async (locationsData) => {
+        localStorage.setItem('smartHomeLocations_v3', JSON.stringify(locationsData));
+        return { success: true };
+    },
+    lookupCityByZip: async (zip, country = 'Schweiz') => {
+        const countryMap = {
+            'schweiz': 'ch', 'switzerland': 'ch',
+            'deutschland': 'de', 'germany': 'de',
+            'österreich': 'at', 'austria': 'at',
+            'usa': 'us', 'frankreich': 'fr', 'italien': 'it'
+        };
+        const cCode = countryMap[country.toLowerCase()] || 'ch';
+        
+        try {
+            // Nutzt die freie Zippopotamus API für das Mapping
+            const response = await fetch(`https://api.zippopotam.us/${cCode}/${zip}`);
+            if (response.ok) {
+                const data = await response.json();
+                return data.places.map(place => place['place name']);
+            }
+        } catch (error) {
+            console.warn("PLZ Lookup fehlgeschlagen:", error);
+        }
+        return [];
     },
     addLocation: async (locationData) => {
         return { success: true }; // return await fetchApi('/locations', { method: 'POST', body: JSON.stringify(locationData) });

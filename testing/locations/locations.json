@@ -1,0 +1,45 @@
+[
+  {
+    "id": "b-1",
+    "name": "Haupthaus",
+    "address": {
+      "street": "Musterstrasse",
+      "number": "12",
+      "zip": "5000",
+      "city": "Aarau",
+      "country": "Schweiz"
+    },
+    "floors": [
+      {
+        "id": "floor-eg",
+        "name": "Erdgeschoss",
+        "rooms": [
+          { "id": "room-eg-wohn", "name": "Living Room" },
+          { "id": "room-eg-kueche", "name": "Küche" },
+          { "id": "room-eg-flur", "name": "Hallway" }
+        ]
+      },
+      {
+        "id": "floor-og",
+        "name": "Obergeschoss",
+        "rooms": [
+          { "id": "room-og-bad", "name": "Badezimmer" },
+          { "id": "room-og-schlaf", "name": "Bedroom" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "b-2",
+    "name": "Garage",
+    "floors": [
+      {
+        "id": "floor-gar",
+        "name": "Erdgeschoss",
+        "rooms": [
+          { "id": "room-gar-main", "name": "Main Garage" }
+        ]
+      }
+    ]
+  }
+]

@@ -14,6 +14,7 @@
 }
 
 .location-card {
+    position: relative;
     background: #1e1e2e;
     border: 1px solid #3a3a52;
     border-radius: 10px;
@@ -29,9 +30,7 @@
 }
 
 .location-card:hover {
-    background: #2a2a3e;
-    transform: translateY(-3px);
-    border-color: #89b4fa;
+    background: #313244;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
@@ -39,6 +38,16 @@
     margin: 0;
     color: #cdd6f4;
     font-size: 1.3rem;
+}
+
+.card-actions {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: none;
+    align-items: center;
+    gap: 4px;
+    z-index: 10;
 }
 
 .location-card p {
@@ -61,13 +70,94 @@
 .breadcrumb-sep { color: #6c6c8a; user-select: none; }
 .breadcrumb-active { color: #cdd6f4; pointer-events: none; font-weight: 600; }
 
+/* --- Edit / Add Action Buttons --- */
+#btn-toggle-edit,
+#btn-add-building,
+#btn-add-floor,
+#btn-add-room {
+    background: none;
+    border: 1px solid #3a3a52;
+    border-radius: 6px;
+    color: #6c6c8a;
+    font-size: 0.8rem;
+    padding: 3px 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+#btn-toggle-edit img,
+#btn-add-building img,
+#btn-add-floor img,
+#btn-add-room img {
+    width: 12px;
+    height: 12px;
+    filter: invert(0.5);
+    transition: filter 0.2s;
+}
+
+#btn-toggle-edit:hover, #btn-toggle-edit.active,
+#btn-add-building:hover,
+#btn-add-floor:hover,
+#btn-add-room:hover {
+    color: #cdd6f4;
+    border-color: #cdd6f4;
+}
+
+#btn-toggle-edit:hover img, #btn-toggle-edit.active img,
+#btn-add-building:hover img,
+#btn-add-floor:hover img,
+#btn-add-room:hover img {
+    filter: invert(1);
+}
+
 .floors-tabs {
     display: flex;
-    gap: 1rem;
+    gap: 0.5rem;
     border-bottom: 1px solid #3a3a52;
-    padding-bottom: 0.5rem;
+    padding-bottom: 0;
     margin-bottom: 1rem;
     overflow-x: auto;
+    align-items: flex-end;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE und Edge */
+}
+
+/* Chrome, Safari und Opera */
+.floors-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.floor-tab-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #181825;
+    border: 1px solid #3a3a52;
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    padding: 0.4rem 0.8rem;
+    margin-bottom: 0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+
+}
+
+.floor-tab-wrapper:hover {
+    background: #313244;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.floor-tab-wrapper.active {
+    background: #1e1e2e;
+    border-color: #89b4fa;
+    border-bottom: 2px solid #1e1e2e;
+    padding-bottom: 0.5rem;
+    margin-bottom: -2px;
+    z-index: 1;
 }
 
 .floor-tab {
@@ -76,17 +166,98 @@
     color: #6c6c8a;
     font-size: 1.1rem;
     cursor: pointer;
-    padding: 0.5rem 1rem;
-    transition: color 0.2s, border-bottom 0.2s;
-    border-bottom: 2px solid transparent;
+    padding: 0;
+    margin: 0;
+    transition: color 0.2s;
 }
 
 .floor-tab:hover {
     color: #cdd6f4;
 }
 
-.floor-tab.active {
+.floor-tab-wrapper.active .floor-tab {
     color: #89b4fa;
-    border-bottom: 2px solid #89b4fa;
     font-weight: 600;
+}
+
+/* Drag and Drop & Edit Mode */
+.card-actions, 
+.floor-tab-wrapper .btn-edit, 
+.floor-tab-wrapper .btn-delete {
+    display: none;
+}
+
+.edit-mode .card-actions {
+    display: flex;
+}
+
+.edit-mode .floor-tab-wrapper .btn-edit,
+.edit-mode .floor-tab-wrapper .btn-delete {
+    display: flex;
+    opacity: 1;
+}
+
+.drag-over {
+    border: 2px dashed #89b4fa !important;
+    opacity: 0.7;
+}
+
+/* --- Standardisierte Edit / Remove Buttons für Kacheln und Tabs --- */
+.card-actions button,
+.floor-tab-wrapper .btn-edit,
+.floor-tab-wrapper .btn-delete {
+    background: rgba(42, 42, 62, 0.9);
+    border: 1px solid #3a3a52;
+    border-radius: 6px;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    height: 24px;
+    min-width: 24px;
+    padding: 4px;
+    transition: all 0.2s ease;
+}
+
+.card-actions button {
+    display: flex;
+}
+
+.card-actions .btn-edit:hover,
+.floor-tab-wrapper .btn-edit:hover {
+    background: #313244;
+    border-color: #cdd6f4;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.card-actions .btn-edit img,
+.floor-tab-wrapper .btn-edit img,
+.card-actions .btn-delete img,
+.floor-tab-wrapper .btn-delete img {
+    width: 14px;
+    height: 14px;
+    filter: invert(0.8);
+    transition: filter 0.2s ease;
+}
+
+.card-actions .btn-edit:hover img,
+.floor-tab-wrapper .btn-edit:hover img,
+.card-actions .btn-delete:hover img,
+.floor-tab-wrapper .btn-delete:hover img {
+    filter: invert(1);
+}
+
+.card-actions .btn-delete,
+.floor-tab-wrapper .btn-delete {
+    color: #eba0ac;
+    font-size: 0.75rem;
+    line-height: 1;
+    padding: 4px;
+}
+
+.card-actions .btn-delete:hover,
+.floor-tab-wrapper .btn-delete:hover {
+    background: #e64553;
+    border-color: #e64553;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }

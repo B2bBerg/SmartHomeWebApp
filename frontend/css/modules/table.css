@@ -13,10 +13,13 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    transition: opacity 0.2s;
+    transition: all 0.2s ease;
 }
 
-.btn-add:hover { opacity: 0.9; }
+.btn-add:hover { 
+    opacity: 0.9; 
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
 
 .btn-icon {
     background: transparent;
@@ -25,7 +28,7 @@
     font-size: 1rem;
     padding: 4px;
     border-radius: 4px;
-    transition: background 0.2s;
+    transition: all 0.2s ease;
 }
 
 .btn-edit:hover { background: rgba(137, 180, 250, 0.2); color: #89b4fa; }
@@ -40,6 +43,10 @@
     align-items: center;
     justify-content: center;
     z-index: 1000;
+}
+
+.table-modal.hidden {
+    display: none;
 }
 
 .table-modal-box {
@@ -78,6 +85,12 @@
     padding: 0.4rem 1rem;
     border-radius: 6px;
     cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.table-modal-actions button:hover {
+    background: #313244;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .btn-primary { background: #a6e3a1 !important; color: #11111b !important; }
@@ -178,7 +191,9 @@
     transition: background 0.15s;
 }
 
-.data-table tbody tr:hover { background: #2a2a3e; }
+.data-table tbody tr:hover { 
+    background: #313244; 
+}
 
 .data-table td {
     padding: 0.55rem 1rem;

@@ -115,34 +115,66 @@
     background: rgba(42, 42, 62, 0.9);
     border: 1px solid #3a3a52;
     border-radius: 6px;
-    padding: 5px;
+    padding: 4px;
     cursor: pointer;
     display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 24px;
+    min-width: 24px;
+    transition: all 0.2s ease;
+}
+
+.tile-edit-btn:hover {
+    background: #313244;
+    border-color: #cdd6f4;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .tile-edit-btn img {
     width: 14px;
     height: 14px;
     filter: invert(0.8);
+    transition: filter 0.2s ease;
+}
+
+.tile-edit-btn:hover img {
+    filter: invert(1);
 }
 
 .tile-remove-btn {
     background: rgba(42, 42, 62, 0.9);
     border: 1px solid #3a3a52;
     border-radius: 6px;
-    padding: 3px 6px;
+    padding: 4px;
     cursor: pointer;
     color: #eba0ac;
     font-size: 0.75rem;
     line-height: 1;
     display: flex;
     align-items: center;
+    justify-content: center;
+    height: 24px;
+    min-width: 24px;
+    transition: all 0.2s ease;
 }
 
 .tile-remove-btn:hover {
     background: #e64553;
     border-color: #e64553;
     color: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.tile-remove-btn img {
+    width: 14px;
+    height: 14px;
+    filter: invert(0.8);
+    transition: filter 0.2s ease;
+}
+
+.tile-remove-btn:hover img {
+    filter: invert(1);
 }
 
 /* Resize handles on tile edges */
@@ -205,8 +237,9 @@
 }
 
 .tile-resize-cross-large button:hover:not(:disabled) {
-    background: #444465;
+    background: #313244;
     border-color: #a6e3a1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .tile-resize-cross-large button:disabled {
@@ -362,8 +395,9 @@
 }
 
 .tile-resize-cross button:hover:not(:disabled) {
-    background: #444465;
+    background: #313244;
     border-color: #cdd6f4;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .tile-resize-cross button:disabled {
@@ -427,8 +461,10 @@
     padding: 0.4rem 0.8rem;
     cursor: pointer;
     font-size: 0.9rem;
+    transition: all 0.2s ease;
 }
 
 .tile-modal-actions button:hover {
-    background: #3a3a52;
+    background: #313244;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
