@@ -133,6 +133,7 @@ const LocationsManager = {
             this.locations = locationsData;
             if (!this.locations) this.locations = [];
             
+            this.devices = devices; // Speichern für das spätere Tabellen-Mapping
             this.allDatapoints = [...devices, ...sensors, ...actuators];
             this.renderBuildings();
         } catch (err) {
@@ -391,6 +392,12 @@ const LocationsManager = {
         const roomsContainer = document.getElementById('rooms-container');
         if (!roomsContainer) return;
 
+        // Raum-Details (Tabelle und Dashboard) ausblenden/entfernen, wenn das Stockwerk gewechselt wird
+        const detailsContainer = document.getElementById('room-details-container');
+        if (detailsContainer) {
+            detailsContainer.remove();
+        }
+
         if (!floor.rooms) floor.rooms = [];
 
         let html = `
@@ -473,6 +480,104 @@ const LocationsManager = {
                 }
             });
         });
+
+        roomsContainer.querySelectorAll('.room-card').forEach(card => {
+            card.addEventListener('click', () => {
+                // Markierung bei allen anderen entfernen, bei diesem setzen
+                roomsContainer.querySelectorAll('.room-card').forEach(c => {
+                    c.style.borderColor = '#3a3a52';
+                    c.style.background = '#1e1e2e';
+                });
+                card.style.borderColor = '#89b4fa';
+                card.style.background = '#313244';
+
+                const roomId = card.dataset.room;
+                const room = floor.rooms.find(r => r.id === roomId);
+                if (room) this.renderRoomDetails(room, floor, building);
+            });
+        });
+    },
+
+    renderRoomDetails(room, floor, building) {
+        let detailsContainer = document.getElementById('room-details-container');
+        if (!detailsContainer) {
+            detailsContainer = document.createElement('div');
+            detailsContainer.id = 'room-details-container';
+            detailsContainer.style.marginTop = '2rem';
+            // Unterhalb der Raum-Kacheln (floor-grid) anhängen
+            document.getElementById('rooms-container').parentNode.appendChild(detailsContainer);
+        }
+
+        // Filtere alle verfügbaren Datenpunkte aus, die diesem Raum zugewiesen sind
+        const assignedDevices = this.allDatapoints.filter(dp => dp.location === room.name || dp.location === room.id);
+
+        detailsContainer.innerHTML = `
+            <div class="room-devices-section" style="background:#1e1e2e; border:1px solid #3a3a52; border-radius:8px; padding:1.25rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" id="toggle-room-devices">
+                    <h4 style="margin:0; color:#cdd6f4; font-size:1.05rem;">Zugewiesene Geräte & Sensoren (${assignedDevices.length})</h4>
+                    <span id="room-devices-icon" style="color:#89b4fa; font-size:1.2rem;">▼</span>
+                </div>
+                <div id="room-devices-table" style="display:none; margin-top:1rem;">
+                    <div id="room-table-container"></div>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2.5rem; margin-bottom:1rem;">
+                <h3 style="color:#cdd6f4; margin:0; font-size:1.2rem;">Dashboard: ${room.name}</h3>
+                <div style="display:flex; gap:0.5rem;">
+                    <button id="room-edit-mode-btn" class="btn-icon" style="border:1px solid #3a3a52; padding:4px 8px; border-radius:6px; background:#1e1e2e; color:#cdd6f4; display:flex; align-items:center; gap:6px; font-size:0.85rem; cursor:pointer; transition: all 0.2s;"><img src="assets/icons/gear-svgrepo-com.svg" style="width:14px; filter:invert(0.8);"> Edit</button>
+                    <button id="room-add-tile-btn" class="btn-icon" style="border:1px solid #3a3a52; padding:4px 8px; border-radius:6px; background:#1e1e2e; color:#cdd6f4; display:flex; align-items:center; gap:6px; font-size:0.85rem; cursor:pointer; transition: all 0.2s;"><img src="assets/icons/grid-plus-svgrepo-com.svg" style="width:14px; filter:invert(0.8);"> Add Tile</button>
+                </div>
+            </div>
+            <div id="room-dashboard-grid" class="overview-container" style="background:transparent; border:none; padding:0;"></div>
+        `;
+
+        // Tabelle einklappen / ausklappen
+        document.getElementById('toggle-room-devices').addEventListener('click', () => {
+            const el = document.getElementById('room-devices-table');
+            const icon = document.getElementById('room-devices-icon');
+            if (el.style.display === 'none') {
+                el.style.display = 'block';
+                icon.textContent = '▲';
+            } else {
+                el.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        });
+
+        // Render DataTable für diesen Raum
+        const tableContainer = document.getElementById('room-table-container');
+        if (typeof DataTable !== 'undefined' && tableContainer) {
+            const columns = [
+                { key: 'id',         label: 'UUID', render: (val) => `<span title="${val}" style="font-family: monospace; font-size: 0.85em; color: #6c6c8a;">${val ? val.split('-')[0] + '...' : '—'}</span>` },
+                { key: 'name',       label: 'Datenpunkt' },
+                { key: 'deviceName', label: 'Gerät (Hardware)', render: (val) => val ? `<span style="color: #89b4fa;">${val}</span>` : '—' },
+                { key: 'type',       label: 'Type' },
+                { key: 'channel',    label: 'IO-Port', render: (val) => val ? `<span class="io-port io-port--assigned">${val}</span>` : '—' },
+                { key: 'value',      label: 'Value' },
+                { key: 'unit',       label: 'Unit' },
+                { key: 'updated',    label: 'Last Update' }
+            ];
+
+            const dataTable = new DataTable(tableContainer, columns, { hasAdd: false, hasActions: false, searchable: true });
+            const enrichedDevices = assignedDevices.map(d => {
+                const dev = (this.devices || []).find(devItem => devItem.id === d.deviceId);
+                return { ...d, deviceName: dev ? dev.name : '—' };
+            });
+            dataTable.setData(enrichedDevices);
+        }
+
+        // Instanziiere den TileManager für DIESEN Raum
+        if (typeof window.TileManager !== 'undefined') {
+            this.roomDashboard = window.TileManager.createInstance({
+                container: '#room-dashboard-grid',
+                storageKey: `dashboard_room_${room.id}`, // Jeder Raum speichert sein Layout separat!
+                editBtn: '#room-edit-mode-btn',
+                addBtn: '#room-add-tile-btn',
+                allowedDatapoints: assignedDevices.map(d => d.id) // Nur Geräte dieses Raums zulassen!
+            });
+            this.roomDashboard.init();
+        }
     }
 };
 window.LocationsManager = LocationsManager;

@@ -124,9 +124,6 @@ function renderSensors() {
 // ── Locations view ─────────────────────────────────────────────────────────
 function renderLocations() {
     content.innerHTML = `
-        <div class="page-header">
-            <h1>Locations</h1>
-        </div>
         <div class="locations-content" id="locations-container">
             <p class="page-placeholder">Lade Locations-Struktur...</p>
         </div>

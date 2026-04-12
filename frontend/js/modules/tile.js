@@ -6,6 +6,7 @@ const TileManager = {
     MAX_COL: 3,
     MAX_ROW: 3,
     COLS: 6,
+    rowHeight: 100,
     dragSrc: null,
     resizeSrc: null,
     editMode: false,
@@ -16,20 +17,85 @@ const TileManager = {
     addColSpan: 1,
     addRowSpan: 1,
 
+    createInstance(config) {
+        const instance = Object.create(this);
+        instance.isInstance = true;
+        instance.container = typeof config.container === 'string' ? document.querySelector(config.container) : config.container;
+        instance.storageKey = config.storageKey || 'smartHomeDashboard';
+        instance.editBtn = config.editBtn ? document.querySelector(config.editBtn) : null;
+        instance.addBtn = config.addBtn ? document.querySelector(config.addBtn) : null;
+        
+        // Dynamische Grid-Konfiguration (mit Fallbacks auf Standardwerte)
+        instance.COLS = config.cols || 6;
+        instance.MAX_COL = config.maxColSpan || 3;
+        instance.MAX_ROW = config.maxRowSpan || 3;
+        instance.rowHeight = config.rowHeight || 100;
+        instance.allowedDatapoints = config.allowedDatapoints || null;
+
+        instance.editMode = false;
+        instance.dragSrc = null;
+        instance.resizeSrc = null;
+        instance.hoveredGhost = null;
+        instance.activeSettingsTile = null;
+        instance.addColSpan = 1;
+        instance.addRowSpan = 1;
+        return instance;
+    },
+
     init() {
-        this.container    = document.querySelector('.overview-container');
-        this.modal        = document.getElementById('tile-modal');
-        this.modalInput   = document.getElementById('tile-modal-input');
+        // --- Modals vor Zerstörung durch SPA-Routing schützen ---
+        // Da der #content-Bereich beim Navigieren überschrieben wird, verschieben wir
+        // die Modals sicher in den globalen <body>. Entstehende Duplikate werden gelöscht.
+        const mList = document.querySelectorAll('#tile-modal');
+        if (mList.length > 0) {
+            document.body.appendChild(mList[0]);
+            for (let i = 1; i < mList.length; i++) mList[i].remove();
+        }
+        const smList = document.querySelectorAll('#tile-settings-modal');
+        if (smList.length > 0) {
+            document.body.appendChild(smList[0]);
+            for (let i = 1; i < smList.length; i++) smList[i].remove();
+        }
+
+        // Für das Haupt-Dashboard (Singleton) müssen die Referenzen IMMER neu geladen werden,
+        // da die HTML-Elemente beim Wechseln der Ansicht im SPA-Routing neu gerendert werden.
+        if (!this.isInstance) {
+            this.container = document.querySelector('.overview-container');
+            this.storageKey = 'smartHomeDashboard';
+            this.editBtn = document.getElementById('edit-mode-btn');
+            this.addBtn = document.getElementById('add-tile-btn');
+            
+            // Standardwerte für das Haupt-Dashboard
+            this.COLS = 6;
+            this.MAX_COL = 3;
+            this.MAX_ROW = 3;
+            this.rowHeight = 100;
+            this.allowedDatapoints = null;
+        }
+        
+        // Modals sind global, müssen aber nach einem Ansichtswechsel zwingend neu verknüpft werden
+        this.modal = document.getElementById('tile-modal');
+        this.modalInput = document.getElementById('tile-modal-input');
         this.settingsModal = document.getElementById('tile-settings-modal');
+
+        if (!this.container) return;
+        
+        // Container Grid-Eigenschaften dynamisch anwenden
+        this.container.style.gridTemplateColumns = `repeat(${this.COLS}, 1fr)`;
+        this.container.style.gridAutoRows = `${this.rowHeight}px`;
 
         this.setupEventListeners();
 
         // Dropdowns dynamisch aus derselben Datenquelle laden wie die Tabellen
         this.populateDatapoints().then(() => {
-            // API: Load saved dashboard layout from DB on init
-            window.API.getDashboard().then(data => {
-                if (data && data.length > 0) this.loadDashboard(data);
-            }).catch(err => console.error("Dashboard Ladefehler:", err));
+            if (this.storageKey === 'smartHomeDashboard') {
+                window.API.getDashboard().then(data => {
+                    if (data && data.length > 0) this.loadDashboard(data);
+                }).catch(err => console.error("Dashboard Ladefehler:", err));
+            } else {
+                const saved = localStorage.getItem(this.storageKey);
+                if (saved) this.loadDashboard(JSON.parse(saved));
+            }
         });
 
         this.refreshGhosts();
@@ -37,28 +103,26 @@ const TileManager = {
 
     setupEventListeners() {
         // ── Edit mode ────────────────────────────────────────────────────────
-        const editBtn = document.getElementById('edit-mode-btn');
-        if (editBtn) {
-            editBtn.addEventListener('click', () => {
+        if (this.editBtn) {
+            this.editBtn.onclick = () => {
                 this.editMode = !this.editMode;
-                editBtn.classList.toggle('active', this.editMode);
+                this.editBtn.classList.toggle('active', this.editMode);
                 this.container.classList.toggle('edit-mode', this.editMode);
                 this.container.querySelectorAll('.dynamic-tile').forEach(t => t.draggable = this.editMode);
-                editBtn.querySelector('img').src = this.editMode
+                this.editBtn.querySelector('img').src = this.editMode
                     ? 'assets/icons/circle-exclamation-check-svgrepo-com.svg'
                     : 'assets/icons/gear-svgrepo-com.svg';
                 if (!this.editMode) this.saveDashboard();
                 this.refreshGhosts();
-            });
+            };
         }
 
         // ── Add tile modal ───────────────────────────────────────────────────
-        const addBtn = document.getElementById('add-tile-btn');
-        if (addBtn) {
-            addBtn.addEventListener('click', () => {
+        if (this.addBtn) {
+            this.addBtn.onclick = () => {
                 this.addColSpan = 1;
                 this.addRowSpan = 1;
-                this.modalInput.value = '';
+                if (this.modalInput) this.modalInput.value = '';
                 
                 const addDp = document.getElementById('add-tile-datapoint');
                 const addCt = document.getElementById('add-tile-content');
@@ -67,9 +131,11 @@ const TileManager = {
                 this.filterContentByDatapoint('', 'add-tile-content');
                 
                 this.updateAddSizeDisplay();
-                this.modal.classList.remove('hidden');
-                this.modalInput.focus();
-            });
+                if (this.modal) {
+                    this.modal.classList.remove('hidden');
+                    this.modalInput.focus();
+                }
+            };
         }
 
         if (document.getElementById('tile-modal-confirm')) {
@@ -171,7 +237,12 @@ const TileManager = {
                 window.API.getActuators(),
                 window.API.getDevices()
             ]);
-            const allDatapoints = [...sensors, ...actuators]; // Beide Listen zusammenführen
+            let allDatapoints = [...sensors, ...actuators]; // Beide Listen zusammenführen
+
+            // Filter anwenden, falls das Dashboard nur auf bestimmte Datenpunkte zugreifen darf (z.B. Raum-Dashboard)
+            if (this.allowedDatapoints) {
+                allDatapoints = allDatapoints.filter(dp => this.allowedDatapoints.includes(dp.id));
+            }
 
             // Generiere dynamisches HTML für die <option> Tags
             const optionsHTML = `<option value="" data-type="">&mdash; None &mdash;</option>` + 
@@ -242,8 +313,12 @@ const TileManager = {
 
     saveDashboard() {
         const state = this.getDashboardState();
-        window.API.saveDashboard(state);
-        console.log('Dashboard state:', JSON.stringify(state, null, 2));
+        if (this.storageKey === 'smartHomeDashboard') {
+            window.API.saveDashboard(state);
+        } else {
+            localStorage.setItem(this.storageKey, JSON.stringify(state));
+        }
+        console.log('Dashboard state saved:', this.storageKey);
         return state;
     },
 

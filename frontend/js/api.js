@@ -1,7 +1,42 @@
 /**
  * api.js - Zentrale Verwaltung aller Backend-Aufrufe
+ * Lädt Testdaten dynamisch aus dem /testing/ Ordner oder generiert sie als Fallback.
  */
 const BASE_URL = '/api'; // Später anpassbar, z.B. 'http://192.168.1.100:8080/api'
+
+// --- MOCK DATEN GENERATOR (Fallback für Graphen) ---
+const MockDataGenerator = {
+    generateTimeSeriesData(sensorId, days = 35) {
+        const data = [];
+        const now = new Date();
+        const start = new Date(now.getTime() - (days * 24 * 60 * 60 * 1000));
+        
+        let baseValue = 0;
+        let variance = 1;
+
+        if (sensorId.includes('temp')) { baseValue = 21; variance = 3; }
+        else if (sensorId.includes('co2')) { baseValue = 500; variance = 150; }
+        else if (sensorId.includes('energy')) { baseValue = 1000; variance = 2; }
+        else if (sensorId.includes('water_')) { baseValue = 300; variance = 0.5; }
+        else if (sensorId.includes('waterquality')) { baseValue = 7.0; variance = 0.2; }
+
+        for (let d = new Date(start); d <= now; d.setHours(d.getHours() + 1)) {
+            let val;
+            if (sensorId.includes('energy') || sensorId.includes('water_')) {
+                baseValue += Math.random() * variance; 
+                val = baseValue;
+            } else if (sensorId.includes('presence') || sensorId.includes('contact') || sensorId.includes('flood')) {
+                val = Math.random() > 0.85 ? 1 : 0; 
+            } else {
+                const timeOfDay = d.getHours();
+                const dayNightCycle = Math.sin((timeOfDay - 6) / 24 * Math.PI * 2) * variance;
+                val = baseValue + dayNightCycle + (Math.random() - 0.5) * (variance / 2);
+            }
+            data.push({ timestamp: new Date(d).toISOString(), value: Number(val.toFixed(2)) });
+        }
+        return data;
+    }
+};
 
 async function fetchApi(endpoint, options = {}) {
     try {
@@ -30,7 +65,7 @@ const API = {
     getDashboard: async () => {
         try {
             // Zuerst prüfen, ob es bereits lokal im Browser gespeicherte Anpassungen gibt
-            const savedState = localStorage.getItem('smartHomeDashboard');
+            const savedState = localStorage.getItem('smartHomeDashboard_v5');
             if (savedState) {
                 console.log("Dashboard Layout aus localStorage geladen.");
                 return JSON.parse(savedState);
@@ -42,7 +77,7 @@ const API = {
             const data = await response.json();
             
             // Initiale Daten im localStorage ablegen
-            localStorage.setItem('smartHomeDashboard', JSON.stringify(data));
+            localStorage.setItem('smartHomeDashboard_v5', JSON.stringify(data));
             return data;
         } catch (error) {
             console.error("Fehler beim Laden des Dashboards:", error);
@@ -54,7 +89,7 @@ const API = {
         try {
             // Solange kein Backend existiert, speichern wir das Layout im localStorage des Browsers.
             // So bleibt es auch nach einem F5 / Seiten-Refresh erhalten.
-            localStorage.setItem('smartHomeDashboard', JSON.stringify(dashboardState));
+            localStorage.setItem('smartHomeDashboard_v5', JSON.stringify(dashboardState));
             console.log('Dashboard Layout im localStorage gespeichert (Fallback ohne Backend)');
         } catch (error) {
             console.error("Fehler beim Speichern des Dashboards:", error);
@@ -116,10 +151,15 @@ const API = {
             const response = await fetch('../testing/sensors/sensordata.json?t=' + Date.now());
             if (!response.ok) throw new Error("HTTP Fehler " + response.status);
             const allData = await response.json();
-            return allData[datapoint] || [];
+            
+            if (allData && allData[datapoint]) {
+                return allData[datapoint];
+            }
+            // Falls der Sensor nicht im JSON steht, generiere dynamische Werte:
+            return MockDataGenerator.generateTimeSeriesData(datapoint);
         } catch (error) {
-            console.error(`Fehler beim Laden der Testdaten für ${datapoint}:`, error);
-            return [];
+            console.warn(`Nutze generierte Fallback-Daten für Graphen (${datapoint}).`);
+            return MockDataGenerator.generateTimeSeriesData(datapoint);
         }
     },
     addSensor: async (sensorData) => {
@@ -165,6 +205,25 @@ const API = {
         return { success: true };
     },
 
+    // --- LIVE DATA ---
+    getLiveData: async () => {
+        try {
+            const [sensors, actuators] = await Promise.all([
+                API.getSensors(),
+                API.getActuators()
+            ]);
+            
+            const liveData = {};
+            if (sensors) sensors.forEach(s => liveData[s.id] = s.value);
+            if (actuators) actuators.forEach(a => liveData[a.id] = a.state);
+            
+            return liveData;
+        } catch (error) {
+            console.error('Fehler beim Generieren der Live-Daten:', error);
+            return {};
+        }
+    },
+
     // --- REGELN (RULES) ---
     getRules: async () => {
         // Später: return await fetchApi('/rules');
@@ -205,7 +264,7 @@ const API = {
     // --- APARTMENT / LOCATIONS ---
     getLocations: async () => {
         try {
-            const savedState = localStorage.getItem('smartHomeLocations_v3');
+            const savedState = localStorage.getItem('smartHomeLocations_v6');
             if (savedState) {
                 return JSON.parse(savedState);
             }
@@ -213,7 +272,7 @@ const API = {
             const response = await fetch('../testing/locations/locations.json?t=' + Date.now());
             if (!response.ok) throw new Error("HTTP Fehler " + response.status);
             const data = await response.json();
-            localStorage.setItem('smartHomeLocations_v3', JSON.stringify(data));
+            localStorage.setItem('smartHomeLocations_v6', JSON.stringify(data));
             return data;
         } catch (error) {
             console.error("Fehler beim Laden der Locations-Struktur:", error);
@@ -221,7 +280,7 @@ const API = {
         }
     },
     saveLocations: async (locationsData) => {
-        localStorage.setItem('smartHomeLocations_v3', JSON.stringify(locationsData));
+        localStorage.setItem('smartHomeLocations_v6', JSON.stringify(locationsData));
         return { success: true };
     },
     lookupCityByZip: async (zip, country = 'Schweiz') => {
