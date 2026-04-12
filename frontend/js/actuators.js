@@ -156,7 +156,7 @@ const ActuatorManager = {
             
             const newEntry = {
                 id: newId, deviceId: address, name: name, location: location, channel: port,
-                type: 'Aktor', value: '-', unit: '', status: 'active', updated: 'jetzt'
+                type: 'Aktor', value: '-', unit: '', status: 'active', updated: 'jetzt', timestamp: new Date().toISOString()
             };
             
             const devObj = devices.find(d => d.id === address);

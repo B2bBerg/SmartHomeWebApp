@@ -157,7 +157,7 @@ const DeviceManager = {
             const newId = typeof generateUUID === 'function' ? generateUUID() : '00000000-0000-0000-0000-000000000000';
             
             const newEntry = {
-                id: newId, name: name, location: location, status: 'searching', updated: 'jetzt',
+                id: newId, timestamp: new Date().toISOString(), name: name, location: location, status: 'searching', updated: 'jetzt',
                 macAddress: address.includes(':') ? address : '',
                 busAddress: !address.includes(':') ? address : '',
                 busType: busType, health: '—', battery: null, signal: null, channels: []

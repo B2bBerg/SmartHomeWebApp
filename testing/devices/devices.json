@@ -1,6 +1,7 @@
 [
   {
     "id": "550e8400-e29b-41d4-a716-446655440000",
+    "timestamp": "2026-04-12T10:56:15Z",
     "name": "Wetterstation Garten",
     "location": "Haupthaus",
     "busType": "WIFI",
@@ -18,6 +19,7 @@
   },
   {
     "id": "550e8400-e29b-41d4-a716-446655440001",
+    "timestamp": "2026-04-12T10:56:15Z",
     "name": "Multisensor Schlafz.",
     "location": "Bedroom",
     "busType": "Thread",
@@ -33,6 +35,7 @@
   },
   {
     "id": "550e8400-e29b-41d4-a716-446655440002",
+    "timestamp": "2026-04-12T10:56:15Z",
     "name": "SmartMeter Haus",
     "location": "Haupthaus",
     "busType": "RS485",
@@ -50,6 +53,7 @@
   },
   {
     "id": "550e8400-e29b-41d4-a716-446655440003",
+    "timestamp": "2026-04-12T10:56:15Z",
     "name": "SmartMeter PV",
     "location": "Haupthaus",
     "busType": "Ethernet",
@@ -66,6 +70,7 @@
   },
   {
     "id": "550e8400-e29b-41d4-a716-446655440004",
+    "timestamp": "2026-04-12T10:56:15Z",
     "name": "Präsenzmelder Flur",
     "location": "Hallway",
     "busType": "WIFI",
@@ -82,6 +87,7 @@
   },
   {
     "id": "550e8400-e29b-41d4-a716-446655440010",
+    "timestamp": "2026-04-12T10:56:15Z",
     "name": "Shelly Aktor Wohnz.",
     "location": "Living Room",
     "busType": "Thread",
@@ -99,6 +105,7 @@
   },
   {
     "id": "550e8400-e29b-41d4-a716-446655440011",
+    "timestamp": "2026-04-12T10:56:15Z",
     "name": "Shelly Aktor Schlafz.",
     "location": "Bedroom",
     "busType": "Thread",
@@ -114,6 +121,7 @@
   },
   {
     "id": "550e8400-e29b-41d4-a716-446655440020",
+    "timestamp": "2026-04-12T10:56:15Z",
     "name": "KNX Jalousien Erdgeschoss",
     "location": "Erdgeschoss",
     "busType": "RS485",
@@ -130,6 +138,7 @@
   },
   {
     "id": "550e8400-e29b-41d4-a716-446655440021",
+    "timestamp": "2026-04-12T10:56:15Z",
     "name": "KNX Jalousien Obergeschoss",
     "location": "Obergeschoss",
     "busType": "RS485",
@@ -146,6 +155,7 @@
   },
   {
     "id": "550e8400-e29b-41d4-a716-446655440030",
+    "timestamp": "2026-04-12T10:56:15Z",
     "name": "Temperatur Kueche",
     "location": "Küche",
     "busType": "WIFI",
@@ -159,6 +169,7 @@
   },
   {
     "id": "550e8400-e29b-41d4-a716-446655440031",
+    "timestamp": "2026-04-12T10:56:15Z",
     "name": "Altes Relais Garage",
     "location": "Garage",
     "busType": "RS485",

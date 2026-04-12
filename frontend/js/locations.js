@@ -248,7 +248,7 @@ const LocationsManager = {
 
         document.getElementById('btn-add-building').addEventListener('click', () => {
             this.openModal('building', 'Add Building', { name: '' }, async (data) => {
-                this.locations.push({ id: this.generateId('b'), name: data.name, address: data.address, floors: [] });
+                this.locations.push({ id: this.generateId('b'), timestamp: new Date().toISOString(), name: data.name, address: data.address, floors: [] });
                 await this.saveData();
                 this.renderBuildings();
             });
@@ -410,7 +410,7 @@ const LocationsManager = {
 
         document.getElementById('btn-add-floor').addEventListener('click', () => {
             this.openModal('floor', 'Add Floor', { name: '' }, async (data) => {
-                building.floors.push({ id: this.generateId('f'), name: data.name, rooms: [] });
+                building.floors.push({ id: this.generateId('f'), timestamp: new Date().toISOString(), name: data.name, rooms: [] });
                 await this.saveData();
                 this.renderBuildingDetails(building);
             });
@@ -553,7 +553,7 @@ const LocationsManager = {
 
         document.getElementById('btn-add-room').addEventListener('click', () => {
             this.openModal('room', 'Add Room', { name: '' }, async (data) => {
-                floor.rooms.push({ id: this.generateId('r'), name: data.name });
+                floor.rooms.push({ id: this.generateId('r'), timestamp: new Date().toISOString(), name: data.name });
                 await this.saveData();
                 this.renderRooms(floor, building);
             });

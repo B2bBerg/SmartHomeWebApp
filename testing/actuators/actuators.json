@@ -7,7 +7,8 @@
     "channel": "DO_1",
     "location": "Living Room",
     "value": "On",
-    "unit": ""
+    "unit": "",
+    "timestamp": "2026-04-12T10:56:15Z"
   },
   {
     "id": "123e4567-e89b-12d3-a456-426614174011",
@@ -17,7 +18,8 @@
     "channel": "DO_1",
     "location": "Bedroom",
     "value": "Off",
-    "unit": ""
+    "unit": "",
+    "timestamp": "2026-04-12T10:56:15Z"
   },
   {
     "id": "123e4567-e89b-12d3-a456-426614174020",
@@ -27,7 +29,8 @@
     "channel": "DO_1",
     "location": "Living Room",
     "value": "Open",
-    "unit": ""
+    "unit": "",
+    "timestamp": "2026-04-12T10:56:15Z"
   },
   {
     "id": "123e4567-e89b-12d3-a456-426614174021",
@@ -37,6 +40,7 @@
     "channel": "DO_1",
     "location": "Bedroom",
     "value": "Closed",
-    "unit": ""
+    "unit": "",
+    "timestamp": "2026-04-12T10:56:15Z"
   }
 ]
