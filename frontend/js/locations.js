@@ -3,6 +3,26 @@
  */
 const LocationsManager = {
     init() {
+        // Dynamische Styles für saubere Hover-Trennung (Kachel vs. Buttons)
+        if (!document.getElementById('locations-custom-styles')) {
+            const style = document.createElement('style');
+            style.id = 'locations-custom-styles';
+            style.innerHTML = `
+                .location-card:has(.btn-show-devices:hover),
+                .location-card:has(.btn-icon:hover) {
+                    transform: none !important;
+                    border-color: #3a3a52 !important;
+                    box-shadow: none !important;
+                }
+                .btn-show-devices:hover {
+                    background: #45475a !important;
+                    border-color: #89b4fa !important;
+                    color: #ffffff !important;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
         this.container = document.getElementById('locations-container');
         if (!this.container) return;
         this.isEditMode = false;
@@ -342,8 +362,8 @@ const LocationsManager = {
             : '';
 
         let html = `
-            <div class="breadcrumb" style="align-items:flex-start;">
-                <div style="display:flex; flex-direction:column;">
+            <div class="breadcrumb" style="align-items:flex-end; flex-wrap:wrap; gap:1.5rem; border-bottom: 1px solid #3a3a52; padding-bottom: 0; margin-bottom: 0;">
+                <div style="display:flex; flex-direction:column; margin-bottom: 0.4rem;">
                     <div>
                         <span id="bc-locations" style="cursor:pointer;">Locations</span>
                         <span class="breadcrumb-sep">/</span>
@@ -351,19 +371,14 @@ const LocationsManager = {
                     </div>
                     ${addressText}
                 </div>
-                <div style="flex-grow:1"></div>
-                <button id="btn-toggle-edit" class="${this.isEditMode ? 'active' : ''}" title="Edit layout"><img src="assets/icons/gear-svgrepo-com.svg" alt="edit">Edit</button>
-                <button id="btn-add-floor" title="Add floor"><img src="assets/icons/grid-plus-svgrepo-com.svg" alt="add">Add Floor</button>
-            </div>
         `;
 
         if (!building.floors) building.floors = [];
 
         if (building.floors.length === 0) {
-            html += `<p style="color: #6c6c8a;">Keine Stockwerke konfiguriert.</p>`;
-            html += `<div id="rooms-container" class="floor-grid ${this.isEditMode ? 'edit-mode' : ''}"></div>`;
+            html += `<p style="color: #6c6c8a; margin:0;">Keine Stockwerke konfiguriert.</p>`;
         } else {
-            html += `<div class="floors-tabs ${this.isEditMode ? 'edit-mode' : ''}">`;
+            html += `<div class="floors-tabs ${this.isEditMode ? 'edit-mode' : ''}" style="margin:0; padding:0; border-bottom:none; flex-wrap:wrap;">`;
             building.floors.forEach((floor, index) => {
                 html += `
                     <div class="floor-tab-wrapper" data-floor="${floor.id}" data-index="${index}" ${this.isEditMode ? 'draggable="true"' : ''}>
@@ -373,8 +388,17 @@ const LocationsManager = {
                     </div>`;
             });
             html += `</div>`;
-            html += `<div id="rooms-container" class="floor-grid ${this.isEditMode ? 'edit-mode' : ''}"></div>`;
         }
+        
+        html += `
+                <div style="flex-grow:1"></div>
+                <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom: 0.4rem;">
+                    <button id="btn-toggle-edit" class="${this.isEditMode ? 'active' : ''}" title="Edit layout"><img src="assets/icons/gear-svgrepo-com.svg" alt="edit">Edit</button>
+                    <button id="btn-add-floor" title="Add floor"><img src="assets/icons/grid-plus-svgrepo-com.svg" alt="add">Add Floor</button>
+                </div>
+            </div>
+            <div id="rooms-container" class="${this.isEditMode ? 'edit-mode' : ''}"></div>
+        `;
         
         this.container.innerHTML = html;
         document.getElementById('bc-locations').addEventListener('click', () => this.renderBuildings());
@@ -468,53 +492,54 @@ const LocationsManager = {
         const roomsContainer = document.getElementById('rooms-container');
         if (!roomsContainer) return;
 
-        // Raum-Details (Tabelle und Dashboard) ausblenden/entfernen, wenn das Stockwerk gewechselt wird
-        const detailsContainer = document.getElementById('room-details-container');
-        if (detailsContainer) {
-            detailsContainer.remove();
-        }
-
         if (!floor.rooms) floor.rooms = [];
 
         let html = `
-            <div style="grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <h3 style="color: #cdd6f4; margin: 0; font-size: 1.1rem;">Räume in ${floor.name}</h3>
-                <button id="btn-add-room" title="Add room"><img src="assets/icons/grid-plus-svgrepo-com.svg" alt="add">Add Room</button>
-            </div>
+            <div style="display: flex; align-items: flex-end; flex-wrap: wrap; gap: 1.5rem; border-bottom: 1px solid #3a3a52; padding-bottom: 0; margin-bottom: 1.5rem; margin-top: 0.5rem;">
+                <div style="display:flex; flex-direction:column; margin-bottom: 0.4rem;">
+                    <h3 style="color: #cdd6f4; margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">🚪 Räume in ${floor.name}</h3>
+                </div>
         `;
 
         if (floor.rooms.length === 0) {
-            html += `<p style="color: #6c6c8a; grid-column: 1 / -1;">Keine Räume in diesem Stockwerk konfiguriert.</p>`;
+            html += `<p style="color: #6c6c8a; margin: 0 0 0.4rem 0;">Keine Räume konfiguriert.</p>`;
         } else {
+            html += `<div class="floors-tabs rooms-tabs ${this.isEditMode ? 'edit-mode' : ''}" style="margin:0; padding:0; border-bottom:none; flex-wrap:wrap;">`;
             floor.rooms.forEach((room, index) => {
-                const dpCount = this.allDatapoints.filter(dp => (dp.location === room.name || dp.location === room.id) && ['Sensor', 'Aktor'].includes(dp.dpType)).length;
                 html += `
-                    <div class="location-card room-card" data-room="${room.id}" data-index="${index}" ${this.isEditMode ? 'draggable="true"' : ''}>
-                        <div class="card-actions">
-                            <button class="btn-icon btn-edit edit-room" data-id="${room.id}"><img src="assets/icons/gear-svgrepo-com.svg" alt="Edit"></button>
-                            <button class="btn-icon btn-delete delete-room" data-id="${room.id}"><img src="assets/icons/trash-svgrepo-com.svg" alt="Remove"></button>
-                        </div>
-                        <h3>${room.name}</h3>
-                        <p>${dpCount} Sensoren & Aktoren</p>
+                    <div class="floor-tab-wrapper room-tab-wrapper" data-room="${room.id}" data-index="${index}" ${this.isEditMode ? 'draggable="true"' : ''}>
+                        <button class="floor-tab room-tab">${room.name}</button>
+                        <button class="btn-icon btn-edit edit-room" data-id="${room.id}"><img src="assets/icons/gear-svgrepo-com.svg" alt="Edit"></button>
+                        <button class="btn-icon btn-delete delete-room" data-id="${room.id}"><img src="assets/icons/trash-svgrepo-com.svg" alt="Remove"></button>
                     </div>`;
             });
+            html += `</div>`;
         }
+        
+        html += `
+                <div style="flex-grow:1"></div>
+                <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom: 0.4rem;">
+                    <button id="btn-add-room" title="Add room"><img src="assets/icons/grid-plus-svgrepo-com.svg" alt="add">Add Room</button>
+                </div>
+            </div>
+            <div id="active-room-content"></div>
+        `;
         roomsContainer.innerHTML = html;
 
         if (this.isEditMode) {
             let dragStartRoom = null;
-            roomsContainer.querySelectorAll('.room-card').forEach(card => {
-                card.addEventListener('dragstart', (e) => {
-                    dragStartRoom = parseInt(card.dataset.index);
+            roomsContainer.querySelectorAll('.room-tab-wrapper').forEach(tab => {
+                tab.addEventListener('dragstart', (e) => {
+                    dragStartRoom = parseInt(tab.dataset.index);
                     e.dataTransfer.effectAllowed = 'move';
-                    card.style.opacity = '0.5';
+                    tab.style.opacity = '0.5';
                 });
-                card.addEventListener('dragover', (e) => { e.preventDefault(); card.classList.add('drag-over'); });
-                card.addEventListener('dragleave', () => { card.classList.remove('drag-over'); });
-                card.addEventListener('drop', async (e) => {
+                tab.addEventListener('dragover', (e) => { e.preventDefault(); tab.classList.add('drag-over'); });
+                tab.addEventListener('dragleave', () => { tab.classList.remove('drag-over'); });
+                tab.addEventListener('drop', async (e) => {
                     e.preventDefault();
-                    card.classList.remove('drag-over');
-                    const dragEndRoom = parseInt(card.dataset.index);
+                    tab.classList.remove('drag-over');
+                    const dragEndRoom = parseInt(tab.dataset.index);
                     if (dragStartRoom !== null && dragStartRoom !== dragEndRoom) {
                         const movedItem = floor.rooms.splice(dragStartRoom, 1)[0];
                         floor.rooms.splice(dragEndRoom, 0, movedItem);
@@ -522,7 +547,7 @@ const LocationsManager = {
                         this.renderRooms(floor, building);
                     }
                 });
-                card.addEventListener('dragend', () => { card.style.opacity = '1'; });
+                tab.addEventListener('dragend', () => { tab.style.opacity = '1'; });
             });
         }
 
@@ -557,32 +582,32 @@ const LocationsManager = {
             });
         });
 
-        roomsContainer.querySelectorAll('.room-card').forEach(card => {
-            card.addEventListener('click', () => {
-                // Markierung bei allen anderen entfernen, bei diesem setzen
-                roomsContainer.querySelectorAll('.room-card').forEach(c => {
-                    c.style.borderColor = '#3a3a52';
-                    c.style.background = '#1e1e2e';
-                });
-                card.style.borderColor = '#89b4fa';
-                card.style.background = '#313244';
-
-                const roomId = card.dataset.room;
+        const roomTabs = roomsContainer.querySelectorAll('.room-tab-wrapper');
+        roomTabs.forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                if(e.target.tagName === 'BUTTON' && e.target.classList.contains('btn-icon')) return;
+                roomTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                const roomId = tab.dataset.room;
+                this.activeRoomId = roomId;
                 const room = floor.rooms.find(r => r.id === roomId);
                 if (room) this.renderRoomDetails(room, floor, building);
             });
         });
+
+        // Standardmäßig den zuletzt geöffneten oder den ersten Raum anwählen
+        let activeRoom = floor.rooms.find(r => r.id === this.activeRoomId);
+        if (!activeRoom && floor.rooms.length > 0) activeRoom = floor.rooms[0];
+        if (activeRoom) {
+            const activeTab = roomsContainer.querySelector(`.room-tab-wrapper[data-room="${activeRoom.id}"]`);
+            if (activeTab) activeTab.classList.add('active');
+            this.renderRoomDetails(activeRoom, floor, building);
+        }
     },
 
     renderRoomDetails(room, floor, building) {
-        let detailsContainer = document.getElementById('room-details-container');
-        if (!detailsContainer) {
-            detailsContainer = document.createElement('div');
-            detailsContainer.id = 'room-details-container';
-            detailsContainer.style.marginTop = '2rem';
-            // Unterhalb der Raum-Kacheln (floor-grid) anhängen
-            document.getElementById('rooms-container').parentNode.appendChild(detailsContainer);
-        }
+        const detailsContainer = document.getElementById('active-room-content');
+        if (!detailsContainer) return;
 
         // STRIKTER FILTER: Nur echte Sensoren und Aktoren ausgeben. Verhindert Geister-Geräte!
         const assignedDatapoints = this.allDatapoints.filter(dp => (dp.location === room.name || dp.location === room.id) && ['Sensor', 'Aktor'].includes(dp.dpType));
