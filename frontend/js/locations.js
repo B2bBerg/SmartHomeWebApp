@@ -133,8 +133,13 @@ const LocationsManager = {
             this.locations = locationsData;
             if (!this.locations) this.locations = [];
             
-            this.devices = devices; // Speichern für das spätere Tabellen-Mapping
-            this.allDatapoints = [...devices, ...sensors, ...actuators];
+            this.devices = devices || []; // Speichern für das spätere Tabellen-Mapping
+            
+            const d = this.devices.map(x => ({ ...x, dpType: 'Gerät' }));
+            const s = (sensors || []).map(x => ({ ...x, dpType: 'Sensor' }));
+            const a = (actuators || []).map(x => ({ ...x, dpType: 'Aktor' }));
+            this.allDatapoints = [...d, ...s, ...a];
+            
             this.renderBuildings();
         } catch (err) {
             console.error("Fehler beim Laden der Locations-Struktur:", err);
@@ -179,12 +184,16 @@ const LocationsManager = {
                         <h3>${building.name}</h3>
                         <p>${floorCount} Stockwerke</p>
                         ${addressText}
+                        <button class="btn-show-devices" data-id="${building.id}" style="margin-top: 12px; background: #313244; border: 1px solid #45475a; color: #cdd6f4; border-radius: 6px; padding: 6px 10px; font-size: 0.85em; cursor: pointer; transition: background 0.2s; width: 100%;">
+                            Show Devices
+                        </button>
                     </div>
                 `;
             });
         }
         
         html += `</div>`;
+        html += `<div id="building-devices-container" style="margin-top: 2rem; width: 100%;"></div>`;
         this.container.innerHTML = html;
         
         document.getElementById('btn-toggle-edit').addEventListener('click', () => {
@@ -256,6 +265,73 @@ const LocationsManager = {
                 if (building) this.renderBuildingDetails(building);
             });
         });
+
+        this.container.querySelectorAll('.btn-show-devices').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Verhindert, dass man in den Raum-Detail-Modus wechselt
+                const b = this.locations.find(x => x.id === btn.dataset.id);
+                if (b) this.renderBuildingDevices(b);
+            });
+        });
+    },
+
+    renderBuildingDevices(building) {
+        const container = document.getElementById('building-devices-container');
+        if (!container) return;
+
+        // Sammle alle Namen und IDs, die zu diesem Haus gehören (Haus, Stockwerke, Räume)
+        const locationNames = new Set([building.name, building.id]);
+        (building.floors || []).forEach(f => {
+            locationNames.add(f.name);
+            locationNames.add(f.id);
+            (f.rooms || []).forEach(r => {
+                locationNames.add(r.name);
+                locationNames.add(r.id);
+            });
+        });
+
+        // Filtere alle physischen Hardware-Geräte, die sich im Haus befinden
+        const buildingDevices = (this.devices || []).filter(d => locationNames.has(d.location));
+
+        container.innerHTML = `
+            <div class="building-devices-section" style="background:#1e1e2e; border:1px solid #3a3a52; border-radius:8px; padding:1.25rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" id="toggle-building-devices">
+                    <h4 style="margin:0; color:#cdd6f4; font-size:1.05rem;">Zugeordnete Hardware-Geräte in ${building.name} (${buildingDevices.length})</h4>
+                    <span id="building-devices-icon" style="color:#89b4fa; font-size:1.2rem;">▼</span>
+                </div>
+                <div id="building-devices-table" style="display:block; margin-top:1rem;">
+                    <div id="bldg-table-wrapper"></div>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('toggle-building-devices').addEventListener('click', () => {
+            const el = document.getElementById('building-devices-table');
+            const icon = document.getElementById('building-devices-icon');
+            if (el.style.display === 'none') { el.style.display = 'block'; icon.textContent = '▼'; } 
+            else { el.style.display = 'none'; icon.textContent = '▲'; }
+        });
+
+        const tableWrapper = document.getElementById('bldg-table-wrapper');
+        if (typeof DataTable !== 'undefined' && tableWrapper) {
+            const columns = [
+                { key: 'id',         label: 'UUID', render: (val) => `<span title="${val}" style="font-family: monospace; font-size: 0.85em; color: #6c6c8a;">${val ? val.split('-')[0] + '...' : '—'}</span>` },
+                { key: 'name',       label: 'Gerätename' },
+                { key: 'location',   label: 'Standort' },
+                { key: 'busType',    label: 'Netzwerk' },
+                { key: 'macAddress', label: 'Adresse', render: (val, row) => `<span style="font-family: monospace; color:#a6adc8;">${val || row.busAddress || '—'}</span>` },
+                { key: 'status',     label: 'Status', render: (val) => {
+                    if (val === 'active') return `<span style="color:#a6e3a1; font-weight:bold;">Active</span>`;
+                    if (val === 'searching') return `<span style="color:#f9e2af; font-weight:bold;">Searching...</span>`;
+                    if (val === 'not_reachable') return `<span style="color:#f38ba8; font-weight:bold;">Offline</span>`;
+                    return `<span style="color:#6c6c8a;">${val || '—'}</span>`;
+                }}
+            ];
+            const dataTable = new DataTable(tableWrapper, columns, { hasAdd: false, hasActions: false, searchable: true });
+            dataTable.setData(buildingDevices);
+        }
+        
+        container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     },
 
     renderBuildingDetails(building) {
@@ -411,7 +487,7 @@ const LocationsManager = {
             html += `<p style="color: #6c6c8a; grid-column: 1 / -1;">Keine Räume in diesem Stockwerk konfiguriert.</p>`;
         } else {
             floor.rooms.forEach((room, index) => {
-                const devCount = this.allDatapoints.filter(dp => dp.location === room.name || dp.location === room.id).length;
+                const dpCount = this.allDatapoints.filter(dp => (dp.location === room.name || dp.location === room.id) && ['Sensor', 'Aktor'].includes(dp.dpType)).length;
                 html += `
                     <div class="location-card room-card" data-room="${room.id}" data-index="${index}" ${this.isEditMode ? 'draggable="true"' : ''}>
                         <div class="card-actions">
@@ -419,7 +495,7 @@ const LocationsManager = {
                             <button class="btn-icon btn-delete delete-room" data-id="${room.id}"><img src="assets/icons/trash-svgrepo-com.svg" alt="Remove"></button>
                         </div>
                         <h3>${room.name}</h3>
-                        <p>${devCount} Geräte / Sensoren</p>
+                        <p>${dpCount} Sensoren & Aktoren</p>
                     </div>`;
             });
         }
@@ -508,13 +584,13 @@ const LocationsManager = {
             document.getElementById('rooms-container').parentNode.appendChild(detailsContainer);
         }
 
-        // Filtere alle verfügbaren Datenpunkte aus, die diesem Raum zugewiesen sind
-        const assignedDevices = this.allDatapoints.filter(dp => dp.location === room.name || dp.location === room.id);
+        // STRIKTER FILTER: Nur echte Sensoren und Aktoren ausgeben. Verhindert Geister-Geräte!
+        const assignedDatapoints = this.allDatapoints.filter(dp => (dp.location === room.name || dp.location === room.id) && ['Sensor', 'Aktor'].includes(dp.dpType));
 
         detailsContainer.innerHTML = `
             <div class="room-devices-section" style="background:#1e1e2e; border:1px solid #3a3a52; border-radius:8px; padding:1.25rem;">
                 <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" id="toggle-room-devices">
-                    <h4 style="margin:0; color:#cdd6f4; font-size:1.05rem;">Zugewiesene Geräte & Sensoren (${assignedDevices.length})</h4>
+                    <h4 style="margin:0; color:#cdd6f4; font-size:1.05rem;">Zugewiesene Sensoren & Aktoren (${assignedDatapoints.length})</h4>
                     <span id="room-devices-icon" style="color:#89b4fa; font-size:1.2rem;">▼</span>
                 </div>
                 <div id="room-devices-table" style="display:none; margin-top:1rem;">
@@ -550,9 +626,10 @@ const LocationsManager = {
         if (typeof DataTable !== 'undefined' && tableContainer) {
             const columns = [
                 { key: 'id',         label: 'UUID', render: (val) => `<span title="${val}" style="font-family: monospace; font-size: 0.85em; color: #6c6c8a;">${val ? val.split('-')[0] + '...' : '—'}</span>` },
-                { key: 'name',       label: 'Datenpunkt' },
-                { key: 'deviceName', label: 'Gerät (Hardware)', render: (val) => val ? `<span style="color: #89b4fa;">${val}</span>` : '—' },
-                { key: 'type',       label: 'Type' },
+                { key: 'name',       label: 'Name' },
+                { key: 'dpType',     label: 'Typ', render: (val) => val === 'Sensor' ? `<span style="color:#a6e3a1; font-weight:bold;">Sensor</span>` : `<span style="color:#f9e2af; font-weight:bold;">Aktor</span>` },
+                { key: 'deviceName', label: 'Hardware-Gerät', render: (val) => val && val !== '—' ? `<span style="color: #89b4fa;">${val}</span>` : '—' },
+                { key: 'type',       label: 'Mess-Typ' },
                 { key: 'channel',    label: 'IO-Port', render: (val) => val ? `<span class="io-port io-port--assigned">${val}</span>` : '—' },
                 { key: 'value',      label: 'Value' },
                 { key: 'unit',       label: 'Unit' },
@@ -560,7 +637,7 @@ const LocationsManager = {
             ];
 
             const dataTable = new DataTable(tableContainer, columns, { hasAdd: false, hasActions: false, searchable: true });
-            const enrichedDevices = assignedDevices.map(d => {
+            const enrichedDevices = assignedDatapoints.map(d => {
                 const dev = (this.devices || []).find(devItem => devItem.id === d.deviceId);
                 return { ...d, deviceName: dev ? dev.name : '—' };
             });
@@ -574,7 +651,7 @@ const LocationsManager = {
                 storageKey: `dashboard_room_${room.id}`, // Jeder Raum speichert sein Layout separat!
                 editBtn: '#room-edit-mode-btn',
                 addBtn: '#room-add-tile-btn',
-                allowedDatapoints: assignedDevices.map(d => d.id) // Nur Geräte dieses Raums zulassen!
+                allowedDatapoints: assignedDatapoints.map(d => d.id) // Nur Sensoren/Aktoren dieses Raums zulassen!
             });
             this.roomDashboard.init();
         }

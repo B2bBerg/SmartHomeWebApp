@@ -105,7 +105,13 @@ const DeviceManager = {
                     <label>Standort</label>
                     <select id="modal-location">
                         <option value="">-- Nicht zugewiesen --</option>
-                        ${locations.map(floor => `<optgroup label="${floor.name}">${floor.rooms.map(room => `<option value="${room.name}">${room.name}</option>`).join('')}</optgroup>`).join('')}
+                        ${locations.map(bldg => `
+                            <option value="${bldg.name}">🏢 ${bldg.name}</option>
+                            ${(bldg.floors || []).map(floor => `
+                                <option value="${floor.name}">&nbsp;&nbsp;🟰 ${floor.name}</option>
+                                ${(floor.rooms || []).map(room => `<option value="${room.name}">&nbsp;&nbsp;&nbsp;&nbsp;🚪 ${room.name}</option>`).join('')}
+                            `).join('')}
+                        `).join('')}
                     </select>
                 </div>
                 <div class="settings-group">
@@ -186,7 +192,13 @@ const DeviceManager = {
                     <label>Standort</label>
                     <select id="edit-location">
                         <option value="">-- Nicht zugewiesen --</option>
-                        ${locations.map(floor => `<optgroup label="${floor.name}">${floor.rooms.map(room => `<option value="${room.name}" ${row.location === room.name ? 'selected' : ''}>${room.name}</option>`).join('')}</optgroup>`).join('')}
+                        ${locations.map(bldg => `
+                            <option value="${bldg.name}" ${row.location === bldg.name ? 'selected' : ''}>🏢 ${bldg.name}</option>
+                            ${(bldg.floors || []).map(floor => `
+                                <option value="${floor.name}" ${row.location === floor.name ? 'selected' : ''}>&nbsp;&nbsp;🟰 ${floor.name}</option>
+                                ${(floor.rooms || []).map(room => `<option value="${room.name}" ${row.location === room.name ? 'selected' : ''}>&nbsp;&nbsp;&nbsp;&nbsp;🚪 ${room.name}</option>`).join('')}
+                            `).join('')}
+                        `).join('')}
                     </select>
                 </div>
                 <div class="settings-group"><label>MAC- oder Bus-Adresse</label><input type="text" id="edit-address" value="${addrValue}"></div>

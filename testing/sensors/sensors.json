@@ -5,6 +5,7 @@
     "name": "Temp Living",
     "type": "Temperature",
     "channel": "AI_1",
+    "location": "Living Room",
     "value": "21.4",
     "unit": "\u00b0C"
   },
@@ -14,6 +15,7 @@
     "name": "Temp Bedroom",
     "type": "Temperature",
     "channel": "AI_1",
+    "location": "Bedroom",
     "value": "19.8",
     "unit": "\u00b0C"
   },
@@ -23,6 +25,7 @@
     "name": "Energy Main",
     "type": "Energy",
     "channel": "AI_1",
+    "location": "Main Garage",
     "value": "3.2",
     "unit": "kWh"
   },
@@ -32,6 +35,7 @@
     "name": "Energy Solar",
     "type": "Energy",
     "channel": "AI_2",
+    "location": "Main Garage",
     "value": "1.1",
     "unit": "kWh"
   },
@@ -41,6 +45,7 @@
     "name": "Motion Hall",
     "type": "Motion",
     "channel": "DI_1",
+    "location": "Hallway",
     "value": "0",
     "unit": ""
   }

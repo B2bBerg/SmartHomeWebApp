@@ -79,7 +79,13 @@ const ActuatorManager = {
                     <label>Standort</label>
                     <select id="modal-location">
                         <option value="">-- Nicht zugewiesen --</option>
-                        ${locations.map(floor => `<optgroup label="${floor.name}">${floor.rooms.map(room => `<option value="${room.name}">${room.name}</option>`).join('')}</optgroup>`).join('')}
+                        ${locations.map(bldg => 
+                            (bldg.floors || []).map(floor => 
+                                `<optgroup label="${bldg.name} - ${floor.name}">
+                                    ${(floor.rooms || []).map(room => `<option value="${room.name}">${room.name}</option>`).join('')}
+                                </optgroup>`
+                            ).join('')
+                        ).join('')}
                     </select>
                 </div>
                 <div class="settings-group">
@@ -190,7 +196,13 @@ const ActuatorManager = {
             <div class="table-modal-box">
                 <h3>Aktor bearbeiten</h3>
                 <div class="settings-group"><label>Name</label><input type="text" id="edit-name" value="${row.name || ''}"></div>
-                <div class="settings-group"><label>Standort</label><select id="edit-location"><option value="">-- Nicht zugewiesen --</option>${locations.map(floor => `<optgroup label="${floor.name}">${floor.rooms.map(room => `<option value="${room.name}" ${row.location === room.name ? 'selected' : ''}>${room.name}</option>`).join('')}</optgroup>`).join('')}</select></div>
+                <div class="settings-group"><label>Standort</label><select id="edit-location"><option value="">-- Nicht zugewiesen --</option>
+                ${locations.map(bldg => 
+                    (bldg.floors || []).map(floor => 
+                        `<optgroup label="${bldg.name} - ${floor.name}">${(floor.rooms || []).map(room => `<option value="${room.name}" ${row.location === room.name ? 'selected' : ''}>${room.name}</option>`).join('')}</optgroup>`
+                    ).join('')
+                ).join('')}
+                </select></div>
                 <div class="settings-group"><label>Master-Gerät (Hardware)</label><select id="edit-address"><option value="">-- Bitte wählen --</option>${devices.map(d => `<option value="${d.id}" data-channels="${JSON.stringify(d.channels || []).replace(/"/g, '&quot;')}" ${d.id === row.deviceId ? 'selected' : ''}>${d.name} (${d.id.split('-')[0]}...)</option>`).join('')}</select></div>
                 <div class="settings-group"><label>IO-Port (Channel)</label><select id="edit-ioport"><option value="">-- Zuerst Gerät wählen --</option></select></div>
                 <div id="edit-msg" class="modal-msg"></div>

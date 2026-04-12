@@ -64,20 +64,10 @@ const API = {
     // --- DASHBOARD ---
     getDashboard: async () => {
         try {
-            // Zuerst prüfen, ob es bereits lokal im Browser gespeicherte Anpassungen gibt
-            const savedState = localStorage.getItem('smartHomeDashboard_v5');
-            if (savedState) {
-                console.log("Dashboard Layout aus localStorage geladen.");
-                return JSON.parse(savedState);
-            }
-
-            // 2. Falls nicht, initiale Konfiguration aus der Datei laden
             const response = await fetch('../testing/dashboard/dashboard.json?t=' + Date.now());
             if (!response.ok) throw new Error("HTTP Fehler " + response.status);
             const data = await response.json();
             
-            // Initiale Daten im localStorage ablegen
-            localStorage.setItem('smartHomeDashboard_v5', JSON.stringify(data));
             return data;
         } catch (error) {
             console.error("Fehler beim Laden des Dashboards:", error);
@@ -87,10 +77,7 @@ const API = {
 
     saveDashboard: async (dashboardState) => {
         try {
-            // Solange kein Backend existiert, speichern wir das Layout im localStorage des Browsers.
-            // So bleibt es auch nach einem F5 / Seiten-Refresh erhalten.
-            localStorage.setItem('smartHomeDashboard_v5', JSON.stringify(dashboardState));
-            console.log('Dashboard Layout im localStorage gespeichert (Fallback ohne Backend)');
+            console.log('Dashboard Layout speichern wird ignoriert, da direkt aus JSON geladen wird.');
         } catch (error) {
             console.error("Fehler beim Speichern des Dashboards:", error);
         }
@@ -215,7 +202,9 @@ const API = {
             
             const liveData = {};
             if (sensors) sensors.forEach(s => liveData[s.id] = s.value);
-            if (actuators) actuators.forEach(a => liveData[a.id] = a.state);
+            
+            // Aktoren nutzen in den Testdaten "value" (z.B. "On"/"Off" oder "Open"/"Closed") statt "state"
+            if (actuators) actuators.forEach(a => liveData[a.id] = a.value !== undefined ? a.value : a.state);
             
             return liveData;
         } catch (error) {
@@ -264,15 +253,9 @@ const API = {
     // --- APARTMENT / LOCATIONS ---
     getLocations: async () => {
         try {
-            const savedState = localStorage.getItem('smartHomeLocations_v6');
-            if (savedState) {
-                return JSON.parse(savedState);
-            }
-
             const response = await fetch('../testing/locations/locations.json?t=' + Date.now());
             if (!response.ok) throw new Error("HTTP Fehler " + response.status);
             const data = await response.json();
-            localStorage.setItem('smartHomeLocations_v6', JSON.stringify(data));
             return data;
         } catch (error) {
             console.error("Fehler beim Laden der Locations-Struktur:", error);
@@ -280,7 +263,6 @@ const API = {
         }
     },
     saveLocations: async (locationsData) => {
-        localStorage.setItem('smartHomeLocations_v6', JSON.stringify(locationsData));
         return { success: true };
     },
     lookupCityByZip: async (zip, country = 'Schweiz') => {
