@@ -1,0 +1,49 @@
+:root {
+    /* Globale Farbpalette (Catppuccin Mocha basierend) */
+    --bg-base: #1e1e2e;
+    --bg-base-rgb: 30, 30, 46;
+    
+    --bg-mantle: #181825;
+    --bg-crust: #11111b;
+    
+    --bg-surface: #2a2a3e;
+    --bg-surface-rgb: 42, 42, 62;
+    --bg-surface0: #313244;
+    --bg-surface1: #45475a;
+    
+    --bg-button: #33334a;
+    --border-button: #444465;
+    
+    --border-color: #3a3a52;
+    --border-color-rgb: 58, 58, 82;
+    
+    --text-primary: #cdd6f4;
+    --text-secondary: #6c6c8a;
+    --text-muted: #a6adc8;
+    
+    --accent-green: #a6e3a1;
+    --accent-green-rgb: 166, 227, 161;
+    
+    --accent-blue: #89b4fa;
+    --accent-blue-rgb: 137, 180, 250;
+    
+    --accent-red: #f38ba8;
+    --accent-red-rgb: 243, 139, 168;
+    
+    --error-red: #e64553;
+    --accent-flamingo: #eba0ac;
+    --accent-peach: #fab387;
+    
+    --accent-yellow: #f9e2af;
+    --accent-yellow-rgb: 249, 226, 175;
+    
+    /* Status Badges */
+    --badge-active-bg: #1e3a2e;
+    --badge-inactive-bg: #3a1e1e;
+    --badge-warning-bg: #3a2e1e;
+    
+    /* Utility */
+    --shadow-color-rgb: 0, 0, 0;
+    --white-rgb: 255, 255, 255;
+    --white: #ffffff;
+}
