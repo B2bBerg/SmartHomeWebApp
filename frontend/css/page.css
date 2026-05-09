@@ -6,7 +6,7 @@
 }
 
 .page-header h1 {
-    color: #cdd6f4;
+    color: var(--text-primary);
     font-size: 1.1rem;
     font-weight: 600;
     margin: 0;
@@ -14,10 +14,10 @@
 }
 
 .page-placeholder {
-    color: #6c6c8a;
+    color: var(--text-secondary);
     font-size: 0.9rem;
     padding: 2rem;
-    border: 1px dashed #3a3a52;
+    border: 1px dashed var(--border-color);
     border-radius: 8px;
     text-align: center;
 }

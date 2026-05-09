@@ -9,7 +9,7 @@ const DeviceManager = {
         if (!container) return;
 
         const columns = [
-            { key: 'id',         label: 'Device-ID', render: (val) => `<span title="${val}" style="font-family: monospace; font-size: 0.85em; color: #6c6c8a;">${val}</span>` },
+            { key: 'id',         label: 'Device-ID', render: (val) => `<span title="${val}" style="font-family: monospace; font-size: 0.85em; color: var(--text-secondary);">${val}</span>` },
             { key: 'name',       label: 'Gerätename' },
             { key: 'location',   label: 'Standort' },
             { key: 'busType',    label: 'Netzwerk' },
@@ -25,14 +25,14 @@ const DeviceManager = {
             { key: 'health',     label: 'Health', render: (_, row) => {
                 let html = '';
                 if (row.battery !== undefined && row.battery !== null) {
-                    const bColor = row.battery <= 20 ? '#e64553' : (row.battery <= 50 ? '#f9e2af' : '#a6e3a1');
+                    const bColor = row.battery <= 20 ? 'var(--error-red)' : (row.battery <= 50 ? 'var(--accent-yellow)' : 'var(--accent-green)');
                     html += `<span title="Batterie: ${row.battery}%" style="color: ${bColor}; font-size: 0.85em; margin-right: 8px;">🔋 ${row.battery}%</span>`;
                 }
                 if (row.signal !== undefined && row.signal !== null) {
-                    const sColor = row.signal <= 40 ? '#e64553' : (row.signal <= 70 ? '#f9e2af' : '#a6e3a1');
+                    const sColor = row.signal <= 40 ? 'var(--error-red)' : (row.signal <= 70 ? 'var(--accent-yellow)' : 'var(--accent-green)');
                     html += `<span title="Signalstärke: ${row.signal}%" style="color: ${sColor}; font-size: 0.85em;">📶 ${row.signal}%</span>`;
                 }
-                return html !== '' ? html : '<span style="color: #6c6c8a;">—</span>';
+                return html !== '' ? html : '<span style="color: var(--text-secondary);">—</span>';
             }},
             { key: 'ios',        label: 'IO-Ports', render: (_, row) => {
                 const usedChannels = row.usedChannels || [];
@@ -47,7 +47,7 @@ const DeviceManager = {
                     channelsArray = usedChannels;
                 }
 
-                if (channelsArray.length === 0) return '<span style="color: #6c6c8a;">—</span>';
+                if (channelsArray.length === 0) return '<span style="color: var(--text-secondary);">—</span>';
 
                 return channelsArray.map(ch => {
                     const isUsed = usedChannels.includes(String(ch));

@@ -6,13 +6,13 @@
 }
 
 .logic-tag {
-    background: #181825;
-    color: #f5e0dc;
+    background: var(--bg-mantle);
+    color: var(--text-primary);
     padding: 4px 8px;
     border-radius: 4px;
     font-family: 'Courier New', Courier, monospace;
     font-size: 0.8rem;
-    border: 1px solid #313244;
+    border: 1px solid var(--palette-surface0);
 }
 
 .rule-builder {
@@ -24,14 +24,14 @@
     gap: 8px;
     margin-bottom: 10px;
     padding-bottom: 10px;
-    border-bottom: 1px solid #313244;
+    border-bottom: 1px solid var(--palette-surface0);
 }
 
 .condition-row select, .condition-row input {
     flex: 1;
-    background: #1e1e2e;
-    border: 1px solid #3a3a52;
-    color: #cdd6f4;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: var(--input-text);
     padding: 5px;
     border-radius: 4px;
 }

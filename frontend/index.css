@@ -1,49 +1,91 @@
 :root {
-    /* Globale Farbpalette (Catppuccin Mocha basierend) */
-    --bg-base: #1e1e2e;
-    --bg-base-rgb: 30, 30, 46;
+    /* ==========================================================================
+       1. BASIS FARBPALETTE (Catppuccin Mocha) - "Source of Truth"
+       ========================================================================== */
+    --palette-base: #1e1e2e;
+    --palette-mantle: #181825;
+    --palette-crust: #11111b;
     
-    --bg-mantle: #181825;
-    --bg-crust: #11111b;
+    --palette-surface0: #313244;
+    --palette-surface1: #45475a;
+    --palette-surface2: #585b70;
     
-    --bg-surface: #2a2a3e;
-    --bg-surface-rgb: 42, 42, 62;
-    --bg-surface0: #313244;
-    --bg-surface1: #45475a;
+    --palette-text: #cdd6f4;
+    --palette-subtext0: #a6adc8;
+    --palette-overlay0: #6c6c8a;
     
-    --bg-button: #33334a;
-    --border-button: #444465;
+    --palette-green: #a6e3a1;
+    --palette-blue: #89b4fa;
+    --palette-yellow: #f9e2af;
+    --palette-red: #f38ba8;
+    --palette-error: #e64553;
     
-    --border-color: #3a3a52;
-    --border-color-rgb: 58, 58, 82;
-    
-    --text-primary: #cdd6f4;
-    --text-secondary: #6c6c8a;
-    --text-muted: #a6adc8;
-    
-    --accent-green: #a6e3a1;
-    --accent-green-rgb: 166, 227, 161;
-    
-    --accent-blue: #89b4fa;
-    --accent-blue-rgb: 137, 180, 250;
-    
-    --accent-red: #f38ba8;
-    --accent-red-rgb: 243, 139, 168;
-    
-    --error-red: #e64553;
-    --accent-flamingo: #eba0ac;
-    --accent-peach: #fab387;
-    
-    --accent-yellow: #f9e2af;
-    --accent-yellow-rgb: 249, 226, 175;
-    
-    /* Status Badges */
-    --badge-active-bg: #1e3a2e;
-    --badge-inactive-bg: #3a1e1e;
-    --badge-warning-bg: #3a2e1e;
-    
-    /* Utility */
+    /* Transparenzen & Utilities */
     --shadow-color-rgb: 0, 0, 0;
     --white-rgb: 255, 255, 255;
     --white: #ffffff;
+
+    /* ==========================================================================
+       2. APP & LAYOUT HINTERGRÜNDE
+       ========================================================================== */
+    --bg-base: var(--palette-base);
+    --bg-mantle: var(--palette-mantle);
+    --bg-crust: var(--palette-crust);
+    --bg-sidebar: var(--palette-mantle);
+    --bg-content: var(--palette-base);
+    --bg-surface: #2a2a3e; /* Historische Fallback-Farbe */
+
+    /* ==========================================================================
+       3. TYPOGRAFIE (Texte)
+       ========================================================================== */
+    --text-primary: var(--palette-text);
+    --text-secondary: var(--palette-overlay0);
+    --text-muted: var(--palette-subtext0);
+    
+    --text-success: var(--palette-green);
+    --text-warning: var(--palette-yellow);
+    --error-red: var(--palette-error);
+
+    /* ==========================================================================
+       4. UI ELEMENTE (Buttons, Inputs, Borders)
+       ========================================================================== */
+    --border-color: #3a3a52;
+    
+    --bg-button: #33334a;
+    --border-button: #444465;
+    --btn-hover-bg: var(--palette-surface1);
+    
+    --input-bg: var(--palette-surface0);
+    --input-border: var(--palette-surface1);
+    --input-text: var(--palette-text);
+
+    /* ==========================================================================
+       5. DASHBOARD & TILES
+       ========================================================================== */
+    --tile-bg: var(--palette-surface0);
+    --tile-border: var(--border-color);
+    --tile-hover-bg: var(--palette-surface1);
+    --tile-active-bg: var(--palette-surface2);
+    
+    --accent-green: var(--palette-green);
+    --accent-blue: var(--palette-blue);
+    --accent-yellow: var(--palette-yellow);
+    --accent-red: var(--palette-red);
+
+    /* ==========================================================================
+       6. STATUS BADGES
+       ========================================================================== */
+    --badge-active-bg: #1e3a2e;
+    --badge-inactive-bg: #3a1e1e;
+    --badge-warning-bg: #3a2e1e;
+    --badge-searching-bg: var(--bg-surface);
+
+    /* ==========================================================================
+       7. MODALS & DATENTABELLEN (Erweiterbar)
+       ========================================================================== */
+    --modal-overlay-bg: rgba(var(--shadow-color-rgb), 0.6);
+    --modal-bg: var(--bg-surface);
+    
+    --table-header-bg: var(--palette-crust);
+    --table-row-hover-bg: var(--palette-surface0);
 }

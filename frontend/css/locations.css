@@ -15,8 +15,8 @@
 
 .location-card {
     position: relative;
-    background: #1e1e2e;
-    border: 1px solid #3a3a52;
+    background: var(--bg-base);
+    border: 1px solid var(--border-color);
     border-radius: 10px;
     padding: 2rem 1.5rem;
     cursor: pointer;
@@ -30,13 +30,13 @@
 }
 
 .location-card:hover {
-    background: #313244;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    background: var(--palette-surface0);
+    box-shadow: 0 4px 12px rgba(var(--shadow-color-rgb), 0.2);
 }
 
 .location-card h3 {
     margin: 0;
-    color: #cdd6f4;
+    color: var(--text-primary);
     font-size: 1.3rem;
 }
 
@@ -52,7 +52,7 @@
 
 .location-card p {
     margin: 0;
-    color: #6c6c8a;
+    color: var(--text-secondary);
     font-size: 0.9rem;
 }
 
@@ -60,15 +60,15 @@
     display: flex;
     gap: 0.75rem;
     align-items: center;
-    color: #a6adc8;
+    color: var(--text-muted);
     font-size: 1.1rem;
     margin-bottom: 1.5rem;
 }
 
 .breadcrumb span { cursor: pointer; transition: color 0.2s; }
-.breadcrumb span:hover { color: #89b4fa; }
-.breadcrumb-sep { color: #6c6c8a; user-select: none; }
-.breadcrumb-active { color: #cdd6f4; pointer-events: none; font-weight: 600; }
+.breadcrumb span:hover { color: var(--accent-blue); }
+.breadcrumb-sep { color: var(--text-secondary); user-select: none; }
+.breadcrumb-active { color: var(--text-primary); pointer-events: none; font-weight: 600; }
 
 /* --- Edit / Add Action Buttons --- */
 #btn-toggle-edit,
@@ -76,9 +76,9 @@
 #btn-add-floor,
 #btn-add-room {
     background: none;
-    border: 1px solid #3a3a52;
+    border: 1px solid var(--border-color);
     border-radius: 6px;
-    color: #6c6c8a;
+    color: var(--text-secondary);
     font-size: 0.8rem;
     padding: 3px 8px;
     cursor: pointer;
@@ -102,8 +102,8 @@
 #btn-add-building:hover,
 #btn-add-floor:hover,
 #btn-add-room:hover {
-    color: #cdd6f4;
-    border-color: #cdd6f4;
+    color: var(--text-primary);
+    border-color: var(--text-primary);
 }
 
 #btn-toggle-edit:hover img, #btn-toggle-edit.active img,
@@ -134,8 +134,8 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    background: #181825;
-    border: 1px solid #3a3a52;
+    background: var(--bg-mantle);
+    border: 1px solid var(--border-color);
     border-bottom: none;
     border-radius: 8px 8px 0 0;
     padding: 0.4rem 0.8rem;
@@ -147,14 +147,14 @@
 }
 
 .floor-tab-wrapper:hover {
-    background: #313244;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    background: var(--palette-surface0);
+    box-shadow: 0 4px 12px rgba(var(--shadow-color-rgb), 0.2);
 }
 
 .floor-tab-wrapper.active {
-    background: #1e1e2e;
-    border-color: #89b4fa;
-    border-bottom: 2px solid #1e1e2e;
+    background: var(--bg-base);
+    border-color: var(--accent-blue);
+    border-bottom: 2px solid var(--bg-base);
     padding-bottom: 0.5rem;
     margin-bottom: -2px;
     z-index: 1;
@@ -163,7 +163,7 @@
 .floor-tab {
     background: transparent;
     border: none;
-    color: #6c6c8a;
+    color: var(--text-secondary);
     font-size: 1.1rem;
     cursor: pointer;
     padding: 0;
@@ -172,11 +172,11 @@
 }
 
 .floor-tab:hover {
-    color: #cdd6f4;
+    color: var(--text-primary);
 }
 
 .floor-tab-wrapper.active .floor-tab {
-    color: #89b4fa;
+    color: var(--accent-blue);
     font-weight: 600;
 }
 
@@ -198,7 +198,7 @@
 }
 
 .drag-over {
-    border: 2px dashed #89b4fa !important;
+    border: 2px dashed var(--accent-blue) !important;
     opacity: 0.7;
 }
 
@@ -207,7 +207,7 @@
 .floor-tab-wrapper .btn-edit,
 .floor-tab-wrapper .btn-delete {
     background: rgba(42, 42, 62, 0.9);
-    border: 1px solid #3a3a52;
+    border: 1px solid var(--border-color);
     border-radius: 6px;
     cursor: pointer;
     align-items: center;
@@ -224,9 +224,9 @@
 
 .card-actions .btn-edit:hover,
 .floor-tab-wrapper .btn-edit:hover {
-    background: #313244;
-    border-color: #cdd6f4;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    background: var(--palette-surface0);
+    border-color: var(--text-primary);
+    box-shadow: 0 4px 12px rgba(var(--shadow-color-rgb), 0.2);
 }
 
 .card-actions .btn-edit img,
@@ -248,7 +248,7 @@
 
 .card-actions .btn-delete,
 .floor-tab-wrapper .btn-delete {
-    color: #eba0ac;
+    color: var(--accent-red);
     font-size: 0.75rem;
     line-height: 1;
     padding: 4px;
@@ -256,8 +256,8 @@
 
 .card-actions .btn-delete:hover,
 .floor-tab-wrapper .btn-delete:hover {
-    background: #e64553;
-    border-color: #e64553;
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    background: var(--error-red);
+    border-color: var(--error-red);
+    color: var(--white);
+    box-shadow: 0 4px 12px rgba(var(--shadow-color-rgb), 0.2);
 }

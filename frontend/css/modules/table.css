@@ -2,8 +2,8 @@
 
 /* Toolbar & Buttons */
 .btn-add {
-    background: #a6e3a1;
-    color: #1e1e2e;
+    background: var(--accent-green);
+    color: var(--bg-base);
     border: none;
     border-radius: 6px;
     padding: 0.4rem 0.8rem;
@@ -18,7 +18,7 @@
 
 .btn-add:hover { 
     opacity: 0.9; 
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 12px rgba(var(--shadow-color-rgb), 0.2);
 }
 
 .btn-icon {
@@ -31,14 +31,14 @@
     transition: all 0.2s ease;
 }
 
-.btn-edit:hover { background: rgba(137, 180, 250, 0.2); color: #89b4fa; }
-.btn-delete:hover { background: rgba(243, 139, 168, 0.2); color: #f38ba8; }
+.btn-edit:hover { background: rgba(137, 180, 250, 0.2); color: var(--accent-blue); }
+.btn-delete:hover { background: rgba(243, 139, 168, 0.2); color: var(--accent-red); }
 
 /* --- Table Modal (Add Window) --- */
 .table-modal {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.7);
+    background: var(--modal-overlay-bg);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -50,8 +50,8 @@
 }
 
 .table-modal-box {
-    background: #1e1e2e;
-    border: 1px solid #3a3a52;
+    background: var(--bg-base);
+    border: 1px solid var(--border-color);
     padding: 1.5rem;
     border-radius: 12px;
     width: 320px;
@@ -60,13 +60,13 @@
     gap: 1rem;
 }
 
-.table-modal-box h3 { margin: 0; color: #cdd6f4; font-size: 1.1rem; }
-.table-modal-box p { color: #6c6c8a; font-size: 0.9rem; margin: 0; }
+.table-modal-box h3 { margin: 0; color: var(--text-primary); font-size: 1.1rem; }
+.table-modal-box p { color: var(--text-secondary); font-size: 0.9rem; margin: 0; }
 
 .table-modal-box select {
-    background: #181825;
-    border: 1px solid #3a3a52;
-    color: #cdd6f4;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: var(--input-text);
     padding: 0.5rem;
     border-radius: 6px;
     outline: none;
@@ -79,9 +79,9 @@
 }
 
 .table-modal-actions button {
-    background: #313244;
+    background: var(--bg-button);
     border: none;
-    color: #cdd6f4;
+    color: var(--text-primary);
     padding: 0.4rem 1rem;
     border-radius: 6px;
     cursor: pointer;
@@ -89,11 +89,11 @@
 }
 
 .table-modal-actions button:hover {
-    background: #313244;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    background: var(--btn-hover-bg);
+    box-shadow: 0 4px 12px rgba(var(--shadow-color-rgb), 0.2);
 }
 
-.btn-primary { background: #a6e3a1 !important; color: #11111b !important; }
+.btn-primary { background: var(--accent-green) !important; color: var(--palette-crust) !important; }
 
 /* --- Table Modal Form Elements --- */
 .table-modal-box .settings-group {
@@ -104,13 +104,13 @@
 
 .table-modal-box label {
     font-size: 0.85rem;
-    color: #a6adc8;
+    color: var(--text-muted);
 }
 
 .table-modal-box input {
-    background: #181825;
-    border: 1px solid #3a3a52;
-    color: #cdd6f4;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: var(--input-text);
     padding: 0.5rem;
     border-radius: 6px;
     outline: none;
@@ -129,7 +129,7 @@
     display: none;
     flex-direction: column;
     gap: 1rem;
-    border-top: 1px solid #3a3a52;
+    border-top: 1px solid var(--border-color);
     padding-top: 1rem;
     margin-top: 0.5rem;
 }
@@ -141,8 +141,8 @@
     line-height: 1.3;
 }
 
-.modal-msg.error { color: #f38ba8; }
-.modal-msg.success { color: #a6e3a1; }
+.modal-msg.error { color: var(--accent-red); }
+.modal-msg.success { color: var(--accent-green); }
 
 /* --- Table Base Styles (aus alter data-table.css) --- */
 .data-table-wrapper {
@@ -154,12 +154,12 @@
     width: 100%;
     border-collapse: collapse;
     font-size: 0.9rem;
-    color: #cdd6f4;
+    color: var(--text-primary);
 }
 
 .data-table thead tr {
-    background: #1e1e2e;
-    border-bottom: 1px solid #3a3a52;
+    background: var(--table-header-bg);
+    border-bottom: 1px solid var(--bg-surface);
 }
 
 .data-table th {
@@ -167,13 +167,13 @@
     text-align: left;
     font-weight: 600;
     font-size: 0.8rem;
-    color: #6c6c8a;
+    color: var(--text-secondary);
     white-space: nowrap;
     cursor: pointer;
     user-select: none;
 }
 
-.data-table th:hover { color: #cdd6f4; }
+.data-table th:hover { color: var(--text-primary); }
 
 .data-table th .sort-icon {
     margin-left: 4px;
@@ -183,16 +183,16 @@
 
 .data-table th.sorted .sort-icon {
     opacity: 1;
-    color: #cdd6f4;
+    color: var(--text-primary);
 }
 
 .data-table tbody tr {
-    border-bottom: 1px solid #2a2a3e;
+    border-bottom: 1px solid var(--bg-surface);
     transition: background 0.15s;
 }
 
 .data-table tbody tr:hover { 
-    background: #313244; 
+    background: var(--table-row-hover-bg); 
 }
 
 .data-table td {
@@ -208,10 +208,10 @@
 }
 
 .data-table-search {
-    background: #1e1e2e;
-    border: 1px solid #3a3a52;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
     border-radius: 6px;
-    color: #cdd6f4;
+    color: var(--input-text);
     padding: 0.35rem 0.6rem;
     font-size: 0.85rem;
     outline: none;
@@ -219,10 +219,10 @@
     max-width: 260px;
 }
 
-.data-table-search::placeholder { color: #6c6c8a; }
+.data-table-search::placeholder { color: var(--text-secondary); }
 
 .data-table-count {
-    color: #6c6c8a;
+    color: var(--text-secondary);
     font-size: 0.8rem;
     margin-left: auto;
 }
@@ -235,11 +235,11 @@
     font-size: 0.75rem;
     font-weight: 600;
 }
-.badge--active   { background: #1e3a2e; color: #a6e3a1; }
-.badge--inactive { background: #3a1e1e; color: #f38ba8; }
-.badge--warning  { background: #3a2e1e; color: #fab387; }
-.badge--searching{ background: rgba(137, 180, 250, 0.2); color: #89b4fa; }
-.badge--error    { background: rgba(243, 139, 168, 0.2); color: #f38ba8; }
+.badge--active   { background: var(--badge-active-bg); color: var(--accent-green); }
+.badge--inactive { background: var(--badge-inactive-bg); color: var(--accent-red); }
+.badge--warning  { background: var(--badge-warning-bg); color: var(--accent-yellow); }
+.badge--searching{ background: var(--badge-searching-bg); color: var(--accent-blue); }
+.badge--error    { background: rgba(243, 139, 168, 0.2); color: var(--error-red); }
 
 /* --- IO-Ports --- */
 .io-port {
@@ -254,14 +254,14 @@
     cursor: default;
 }
 .io-port--free {
-    color: #a6e3a1;
+    color: var(--accent-green);
     border-color: rgba(166, 227, 161, 0.2);
 }
 .io-port--used {
-    color: #6c6c8a;
+    color: var(--text-secondary);
     opacity: 0.8;
 }
 .io-port--assigned {
-    color: #f9e2af;
+    color: var(--accent-yellow);
     border-color: rgba(249, 226, 175, 0.2);
 }

@@ -7,7 +7,7 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    background: #1e1e2e;
+    background: var(--bg-sidebar);
     padding: 1rem 0;
     overflow: hidden;
     transition: width 0.25s ease;
@@ -65,11 +65,11 @@
 }
 
 #sidebar li:hover { 
-    background: #313244; 
+    background: var(--palette-surface0); 
 }
 
 #sidebar a {
-    color: #cdd6f4;
+    color: var(--text-primary);
     text-decoration: none;
     font-size: 0.95rem;
     overflow: hidden;

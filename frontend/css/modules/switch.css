@@ -23,10 +23,10 @@
     position: absolute;
     cursor: pointer;
     inset: 0;
-    background-color: #313244;
+    background-color: var(--palette-surface0);
     transition: .4s;
     border-radius: 34px;
-    border: 1px solid #45475a;
+    border: 1px solid var(--palette-surface1);
 }
 
 .slider:before {
@@ -36,23 +36,23 @@
     width: 22px;
     left: 4px;
     bottom: 3px;
-    background-color: #cdd6f4;
+    background-color: var(--text-primary);
     transition: .4s;
     border-radius: 50%;
 }
 
 input:checked + .slider {
-    background-color: #a6e3a1;
+    background-color: var(--accent-green);
 }
 
 input:checked + .slider:before {
     transform: translateX(30px);
-    background-color: #1e1e2e;
+    background-color: var(--bg-base);
 }
 
 .switch-status {
     font-size: 0.75rem;
-    color: #6c6c8a;
+    color: var(--text-secondary);
     font-weight: bold;
 }
 
@@ -63,8 +63,8 @@ input:checked + .slider:before {
 }
 
 .shutter-btn {
-    background: #313244;
-    border: 1px solid #45475a;
+    background: var(--palette-surface0);
+    border: 1px solid var(--palette-surface1);
     border-radius: 8px;
     width: 45px;
     height: 45px;
@@ -73,19 +73,19 @@ input:checked + .slider:before {
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
-    color: #cdd6f4;
+    color: var(--text-primary);
     font-size: 1.2rem;
 }
 
 .shutter-btn:hover {
-    background: #313244;
-    border-color: #cdd6f4;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    background: var(--palette-surface0);
+    border-color: var(--text-primary);
+    box-shadow: 0 4px 12px rgba(var(--shadow-color-rgb), 0.2);
 }
 
 .stop-icon {
     width: 14px;
     height: 14px;
-    background: #f38ba8;
+    background: var(--accent-red);
     border-radius: 2px;
 }

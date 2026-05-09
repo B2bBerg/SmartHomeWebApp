@@ -8,9 +8,9 @@
     padding: 10px 12px;
     box-sizing: border-box;
     background: rgba(30, 30, 46, 0.4);
-    border: 1px solid #3a3a52;
+    border: 1px solid var(--border-color);
     border-radius: 8px;
-    color: #cdd6f4;
+    color: var(--text-primary);
 }
 
 .chart-header {
@@ -19,7 +19,7 @@
     align-items: center;
     padding-bottom: 8px;
     margin-bottom: 8px;
-    border-bottom: 1px solid #3a3a52;
+    border-bottom: 1px solid var(--border-color);
     gap: 10px;
     flex-wrap: wrap;
 }
@@ -28,7 +28,7 @@
     display: flex;
     gap: 8px;
     font-size: 0.75rem;
-    color: #cdd6f4;
+    color: var(--text-primary);
     align-items: center;
 }
 
@@ -36,7 +36,7 @@
     background: rgba(42, 42, 62, 0.5);
     padding: 3px 6px;
     border-radius: 4px;
-    border: 1px solid #3a3a52;
+    border: 1px solid var(--border-color);
 }
 
 .chart-controls {
@@ -45,9 +45,9 @@
 }
 
 .chart-controls button {
-    background: #1e1e2e;
-    border: 1px solid #3a3a52;
-    color: #cdd6f4;
+    background: var(--bg-base);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
     font-size: 0.65rem;
     padding: 2px 5px;
     border-radius: 4px;
@@ -56,15 +56,15 @@
 }
 
 .chart-controls button.active {
-    background: #a6e3a1;
-    color: #1e1e2e;
-    border-color: #a6e3a1;
+    background: var(--accent-green);
+    color: var(--bg-base);
+    border-color: var(--accent-green);
 }
 
 .chart-metric-select {
-    background: #1e1e2e;
-    border: 1px solid #3a3a52;
-    color: #cdd6f4;
+    background: var(--bg-base);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
     font-size: 0.7rem;
     border-radius: 4px;
     padding: 2px 4px;
@@ -86,7 +86,7 @@
     justify-content: space-between;
     align-items: flex-end;
     font-size: 0.65rem;
-    color: #6c6c8a;
+    color: var(--text-secondary);
     font-family: monospace;
     padding-bottom: 18px; /* Optischer Ausgleich, damit die Null-Linie mit der X-Achse bündig bleibt */
 }
@@ -114,7 +114,7 @@
     flex-direction: column;
     align-items: center;
     font-size: 0.65rem;
-    color: #6c6c8a;
+    color: var(--text-secondary);
     font-family: monospace;
     white-space: nowrap;
     cursor: default;
@@ -122,11 +122,11 @@
 }
 
 .tick-time {
-    color: #6c6c8a;
+    color: var(--text-secondary);
 }
 
 .tick-midnight .tick-date {
-    color: #cdd6f4;
+    color: var(--text-primary);
     font-weight: 700;
 }
 
@@ -134,7 +134,7 @@
     content: '';
     width: 1px;
     height: 5px;
-    background: #6c6c8a;
+    background: var(--text-secondary);
     margin-bottom: 2px;
 }
 
@@ -174,7 +174,7 @@
 
 .chart-path {
     fill: none;
-    stroke: #a6e3a1;
+    stroke: var(--accent-green);
     stroke-width: 1.5;
     stroke-linecap: round;
     stroke-linejoin: round;
@@ -185,14 +185,14 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    color: #e64553;
+    color: var(--error-red);
     font-size: 1rem;
     font-weight: 600;
     text-align: center;
     background: rgba(30, 30, 46, 0.85);
     padding: 6px 12px;
     border-radius: 6px;
-    border: 1px solid #e64553;
+    border: 1px solid var(--error-red);
 }
 
 .chart-error-message.hidden {
@@ -210,7 +210,7 @@
     position: absolute;
     width: 12px;
     height: 12px;
-    background: #a6e3a1;
+    background: var(--accent-green);
     border-radius: 50%;
     transform: translate(-50%, 50%); /* Exakte Zentrierung auf den Punktkoordinaten */
     pointer-events: all;

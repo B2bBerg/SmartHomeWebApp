@@ -1,9 +1,9 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 .tile {
-    background: #2a2a3e;
-    color: #cdd6f4;
-    border: 1px solid #3a3a52;
+    background: var(--tile-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 1.5rem 1rem;
     font-size: 0.95rem;
@@ -15,8 +15,8 @@
 }
 
 .tile:hover {
-    background: #313244;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    background: var(--tile-hover-bg);
+    box-shadow: 0 4px 12px rgba(var(--shadow-color-rgb), 0.2);
 }
 
 body {
@@ -24,7 +24,7 @@ body {
     min-height: 100vh;
     font-family: sans-serif;
     padding-top: 52px;
-    background: #161621;
+    background: var(--bg-crust);
 }
 
 #sidebar {

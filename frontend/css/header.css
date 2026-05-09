@@ -4,13 +4,13 @@
     left: 0;
     right: 0;
     height: 52px;
-    background: #1e1e2e;
+    background: var(--bg-base);
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 1rem;
     z-index: 100;
-    border-bottom: 1px solid #2a2a3e;
+    border-bottom: 1px solid var(--bg-surface);
 }
 
 .header-left .logo {
@@ -37,8 +37,8 @@
 }
 
 .header-icon:hover {
-    background: #313244;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    background: var(--palette-surface0);
+    box-shadow: 0 4px 12px rgba(var(--shadow-color-rgb), 0.2);
 }
 
 .header-icon img {

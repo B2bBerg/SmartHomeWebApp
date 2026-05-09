@@ -64,7 +64,7 @@ class Graph {
                                 <div class="grid-line"></div>
                             </div>
                             <svg class="chart-svg" viewBox="0 0 200 100" preserveAspectRatio="none">
-                                <path class="chart-path" d="" fill="none" stroke="#4ea8de" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                                <path class="chart-path" d="" fill="none" stroke="var(--accent-blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
                             </svg>
                             <div class="chart-points-container"></div>
                             <div class="chart-error-message hidden">Fehler beim Laden</div>

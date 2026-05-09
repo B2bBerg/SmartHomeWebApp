@@ -33,18 +33,18 @@
 }
 
 .edit-mode .ghost-tile {
-    border-color: #3a3a52;
+    border-color: var(--border-color);
     pointer-events: all;
 }
 
 .ghost-tile.drag-over {
     background: #2a2a3e66;
-    border-color: #a6e3a1 !important;
+    border-color: var(--accent-green) !important;
 }
 
 .ghost-tile.resize-target {
     background: #2a2a3e99;
-    border-color: #cdd6f4 !important;
+    border-color: var(--text-primary) !important;
 }
 
 .resize-overlay {
@@ -56,7 +56,7 @@
 
 
 .dynamic-tile.drag-over {
-    border-color: #cdd6f4;
+    border-color: var(--text-primary);
 }
 
 .tile-label {
@@ -113,7 +113,7 @@
 
 .tile-edit-btn {
     background: rgba(42, 42, 62, 0.9);
-    border: 1px solid #3a3a52;
+    border: 1px solid var(--border-color);
     border-radius: 6px;
     padding: 4px;
     cursor: pointer;
@@ -126,9 +126,9 @@
 }
 
 .tile-edit-btn:hover {
-    background: #313244;
-    border-color: #cdd6f4;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    background: var(--palette-surface0);
+    border-color: var(--text-primary);
+    box-shadow: 0 4px 12px rgba(var(--shadow-color-rgb), 0.2);
 }
 
 .tile-edit-btn img {
@@ -144,11 +144,11 @@
 
 .tile-remove-btn {
     background: rgba(42, 42, 62, 0.9);
-    border: 1px solid #3a3a52;
+    border: 1px solid var(--border-color);
     border-radius: 6px;
     padding: 4px;
     cursor: pointer;
-    color: #eba0ac;
+    color: var(--accent-red);
     font-size: 0.75rem;
     line-height: 1;
     display: flex;
@@ -160,10 +160,10 @@
 }
 
 .tile-remove-btn:hover {
-    background: #e64553;
-    border-color: #e64553;
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    background: var(--error-red);
+    border-color: var(--error-red);
+    color: var(--white);
+    box-shadow: 0 4px 12px rgba(var(--shadow-color-rgb), 0.2);
 }
 
 .tile-remove-btn img {
@@ -184,7 +184,7 @@
     pointer-events: none;
     transition: opacity 0.2s;
     z-index: 10;
-    background: #3a3a52;
+    background: var(--border-color);
     border-radius: 3px;
 }
 
@@ -194,7 +194,7 @@
 }
 
 .tile-resize-handle:hover {
-    background: #cdd6f4;
+    background: var(--text-primary);
 }
 
 .tile-resize-col {
@@ -220,7 +220,7 @@
     flex-direction: column;
     align-items: center;
     padding: 1.5rem;
-    background: #1e1e2e;
+    background: var(--bg-base);
     border-radius: 12px;
     gap: 10px;
 }
@@ -228,18 +228,18 @@
 .tile-resize-cross-large button {
     width: 50px;
     height: 45px;
-    background: #33334a;
-    border: 1px solid #444465;
-    color: white;
+    background: var(--bg-button);
+    border: 1px solid var(--border-button);
+    color: var(--white);
     font-size: 1.2rem;
     border-radius: 8px;
     cursor: pointer;
 }
 
 .tile-resize-cross-large button:hover:not(:disabled) {
-    background: #313244;
-    border-color: #a6e3a1;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    background: var(--btn-hover-bg);
+    border-color: var(--accent-green);
+    box-shadow: 0 4px 12px rgba(var(--shadow-color-rgb), 0.2);
 }
 
 .tile-resize-cross-large button:disabled {
@@ -255,13 +255,13 @@
 .tile-remove {
     font-weight: bold;
     font-size: 14px;
-    color: #eba0ac;
+    color: var(--accent-red);
 }
 
 .tile-remove:hover {
-    background: #e64553 !important;
-    border-color: #e64553 !important;
-    color: white !important;
+    background: var(--error-red) !important;
+    border-color: var(--error-red) !important;
+    color: var(--white) !important;
 }
 
 
@@ -269,9 +269,9 @@
     position: absolute;
     inset: 0;
     background: rgba(243,139,168,0.15);
-    border: 1px solid #f38ba8;
+    border: 1px solid var(--accent-red);
     border-radius: 8px;
-    color: #f38ba8;
+    color: var(--accent-red);
     font-size: 0.75rem;
     display: flex;
     align-items: center;
@@ -291,7 +291,7 @@
 .tile-modal {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.5);
+    background: var(--modal-overlay-bg);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -303,8 +303,8 @@
 }
 
 .tile-modal-box {
-    background: #2a2a3e;
-    border: 1px solid #3a3a52;
+    background: var(--modal-bg);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 1.5rem;
     display: flex;
@@ -314,7 +314,7 @@
 }
 
 .tile-modal-box h3 {
-    color: #cdd6f4;
+    color: var(--text-primary);
     font-size: 0.95rem;
     font-weight: 600;
     margin: 0 0 1rem 0;
@@ -340,17 +340,17 @@
 }
 
 .settings-col label, .settings-group label {
-    color: #6c6c8a;
+    color: var(--text-secondary);
     font-size: 0.8rem;
 }
 
 .settings-col input,
 .settings-col select,
 .settings-group select {
-    background: #1e1e2e;
-    border: 1px solid #3a3a52;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
     border-radius: 6px;
-    color: #cdd6f4;
+    color: var(--input-text);
     padding: 0.4rem 1.8rem 0.4rem 0.6rem;
     font-size: 0.9rem;
     outline: none;
@@ -370,7 +370,7 @@
 }
 
 .size-display {
-    color: #6c6c8a;
+    color: var(--text-secondary);
     font-size: 0.8rem;
     text-align: center;
     margin-top: 2px;
@@ -385,9 +385,9 @@
 .tile-resize-cross button {
     width: 100%;
     height: 22px;
-    background: #33334a;
-    border: 1px solid #3a3a52;
-    color: #cdd6f4;
+    background: var(--bg-button);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
     font-size: 0.65rem;
     border-radius: 4px;
     cursor: pointer;
@@ -395,9 +395,9 @@
 }
 
 .tile-resize-cross button:hover:not(:disabled) {
-    background: #313244;
-    border-color: #cdd6f4;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    background: var(--btn-hover-bg);
+    border-color: var(--text-primary);
+    box-shadow: 0 4px 12px rgba(var(--shadow-color-rgb), 0.2);
 }
 
 .tile-resize-cross button:disabled {
@@ -406,9 +406,9 @@
 }
 
 .btn-danger {
-    background: #e64553 !important;
-    border-color: #e64553 !important;
-    color: #fff !important;
+    background: var(--error-red) !important;
+    border-color: var(--error-red) !important;
+    color: var(--white) !important;
 }
 
 .tile-content {
@@ -424,13 +424,13 @@
 .tile-value {
     font-size: 1.8rem;
     font-weight: 600;
-    color: #cdd6f4;
+    color: var(--text-primary);
 }
 
 .tile-graph-placeholder {
-    color: #6c6c8a;
+    color: var(--text-secondary);
     font-size: 0.85rem;
-    border: 1px dashed #3a3a52;
+    border: 1px dashed var(--border-color);
     border-radius: 6px;
     padding: 1rem;
     width: 100%;
@@ -438,10 +438,10 @@
 }
 
 .tile-modal-box input {
-    background: #1e1e2e;
-    border: 1px solid #3a3a52;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
     border-radius: 6px;
-    color: #cdd6f4;
+    color: var(--input-text);
     padding: 0.4rem 0.6rem;
     font-size: 0.9rem;
     outline: none;
@@ -454,10 +454,10 @@
 }
 
 .tile-modal-actions button {
-    background: #33334a;
-    border: 1px solid #3a3a52;
+    background: var(--bg-button);
+    border: 1px solid var(--border-color);
     border-radius: 6px;
-    color: #cdd6f4;
+    color: var(--text-primary);
     padding: 0.4rem 0.8rem;
     cursor: pointer;
     font-size: 0.9rem;
@@ -465,6 +465,6 @@
 }
 
 .tile-modal-actions button:hover {
-    background: #313244;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    background: var(--btn-hover-bg);
+    box-shadow: 0 4px 12px rgba(var(--shadow-color-rgb), 0.2);
 }
