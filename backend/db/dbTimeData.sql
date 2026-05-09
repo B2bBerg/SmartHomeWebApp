@@ -4,12 +4,7 @@ CREATE EXTENSION postgres_fdw;
 -- Define the server link to the meta database instance
 CREATE SERVER meta_db_link
 FOREIGN DATA WRAPPER postgres_fdw
-OPTIONS (host 'localhost', port '5432', dbname 'meta_database');
-
--- User mapping (allows the Timescale user to authenticate against the meta DB)
-CREATE USER MAPPING FOR current_user
-SERVER meta_db_link
-OPTIONS (user 'meta_user', password 'your_password');
+OPTIONS (host 'dbStatic', port '5432', dbname 'smarthome_static');
 
 -- Import foreign schema tables (only those needed for joins)
 IMPORT FOREIGN SCHEMA public 
@@ -161,24 +156,51 @@ SELECT add_retention_policy('datapoint_monthly_stats', INTERVAL '10 years');
 -- Helper Views for Frontend / API (Joining TimescaleDB with FDW Metadata)
 ------------------------------------------------------------------------------------------------------------------------------
 
--- View to get the absolute latest numeric value for each datapoint including its metadata name
-CREATE OR REPLACE VIEW view_latest_datapoint_values AS
-SELECT DISTINCT ON (v.datapoint_id)
-    v.datapoint_id,
-    d.datapoint_name,
-    v.val AS latest_value,
-    v.recorded_at AS last_updated
-FROM datapoint_values v
-JOIN datapoint d ON v.datapoint_id = d.datapoint_id
-ORDER BY v.datapoint_id, v.recorded_at DESC;
+-- =========================================================================================
+-- PERFORMANCE OPTIMIERUNG: "Latest State" Tabellen statt DISTINCT ON Views
+-- =========================================================================================
+CREATE TABLE datapoint_latest_values (
+  datapoint_id uuid PRIMARY KEY,
+  latest_value DOUBLE PRECISION NOT NULL,
+  last_updated timestamptz NOT NULL
+);
 
--- View to get the absolute latest state (binary) for each datapoint including its metadata name
+CREATE OR REPLACE FUNCTION update_latest_value() RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO datapoint_latest_values (datapoint_id, latest_value, last_updated)
+    VALUES (NEW.datapoint_id, NEW.val, NEW.recorded_at)
+    ON CONFLICT (datapoint_id) DO UPDATE SET latest_value = EXCLUDED.latest_value, last_updated = EXCLUDED.last_updated
+    WHERE datapoint_latest_values.last_updated <= EXCLUDED.last_updated;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_upsert_latest_value AFTER INSERT ON datapoint_values
+FOR EACH ROW EXECUTE FUNCTION update_latest_value();
+
+CREATE TABLE datapoint_latest_states (
+  datapoint_id uuid PRIMARY KEY,
+  current_state boolean NOT NULL,
+  last_updated timestamptz NOT NULL
+);
+
+CREATE OR REPLACE FUNCTION update_latest_state() RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO datapoint_latest_states (datapoint_id, current_state, last_updated)
+    VALUES (NEW.datapoint_id, NEW.val, NEW.recorded_at)
+    ON CONFLICT (datapoint_id) DO UPDATE SET current_state = EXCLUDED.current_state, last_updated = EXCLUDED.last_updated
+    WHERE datapoint_latest_states.last_updated <= EXCLUDED.last_updated;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_upsert_latest_state AFTER INSERT ON datapoint_states_binary
+FOR EACH ROW EXECUTE FUNCTION update_latest_state();
+
+CREATE OR REPLACE VIEW view_latest_datapoint_values AS
+SELECT v.datapoint_id, d.datapoint_name, v.latest_value, v.last_updated
+FROM datapoint_latest_values v JOIN datapoint d ON v.datapoint_id = d.datapoint_id;
+
 CREATE OR REPLACE VIEW view_latest_datapoint_states AS
-SELECT DISTINCT ON (s.datapoint_id)
-    s.datapoint_id,
-    d.datapoint_name,
-    s.val AS current_state,
-    s.recorded_at AS last_updated
-FROM datapoint_states_binary s
-JOIN datapoint d ON s.datapoint_id = d.datapoint_id
-ORDER BY s.datapoint_id, s.recorded_at DESC;
+SELECT s.datapoint_id, d.datapoint_name, s.current_state, s.last_updated
+FROM datapoint_latest_states s JOIN datapoint d ON s.datapoint_id = d.datapoint_id;

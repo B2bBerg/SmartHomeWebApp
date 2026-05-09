@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # Der Webserver / Die App
+  web-app:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - dbStatic
+      - dbTimeseries
+    environment:
+      DATABASE_URL: postgres://${APP_DB_USER?Bitte APP_DB_USER in .env setzen}:${APP_DB_PASSWORD?Bitte APP_DB_PASSWORD in .env setzen}@dbStatic:5432/${DB_STATIC_NAME:-smarthome_static}
+      TIMESERIES_URL: postgres://${APP_DB_USER?Bitte APP_DB_USER in .env setzen}:${APP_DB_PASSWORD?Bitte APP_DB_PASSWORD in .env setzen}@dbTimeseries:5432/${DB_TIME_NAME:-smarthome_time}
+    networks:
+      - backend
+
+  # Die Datenbanken
+  # Static
+  dbStatic:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    volumes:
+      - dbStatic-data:/var/lib/postgresql/data
+      - ../backend/db/dbStaticData.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
+      - ../backend/db/dbStaticUsers.sh:/docker-entrypoint-initdb.d/02_users.sh:ro
+    environment:
+      POSTGRES_USER: ${DB_USER?Bitte DB_USER in .env setzen}
+      POSTGRES_PASSWORD: ${DB_PASSWORD?Bitte DB_PASSWORD in .env setzen}
+      POSTGRES_DB: ${DB_STATIC_NAME:-smarthome_static}
+      APP_DB_USER: ${APP_DB_USER?Bitte APP_DB_USER in .env setzen}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD?Bitte APP_DB_PASSWORD in .env setzen}
+    networks:
+      - backend
+
+  # Timeseries
+  dbTimeseries:
+    image: timescale/timescaledb:latest-pg18
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    volumes:
+      - dbTimeseries-data:/var/lib/postgresql/data
+      - ../backend/db/dbTimeData.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
+      - ../backend/db/dbTimeUsers.sh:/docker-entrypoint-initdb.d/02_users.sh:ro
+    environment:
+      POSTGRES_USER: ${DB_USER?Bitte DB_USER in .env setzen}
+      POSTGRES_PASSWORD: ${DB_PASSWORD?Bitte DB_PASSWORD in .env setzen}
+      POSTGRES_DB: ${DB_TIME_NAME:-smarthome_time}
+      APP_DB_USER: ${APP_DB_USER?Bitte APP_DB_USER in .env setzen}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD?Bitte APP_DB_PASSWORD in .env setzen}
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  dbStatic-data:
+  dbTimeseries-data:

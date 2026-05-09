@@ -92,8 +92,18 @@ CREATE TABLE datapoint
   updated_at        timestamptz  DEFAULT now(),
   is_active         boolean      DEFAULT true,
   deactivated_at    timestamptz ,
+  obis_code         varchar(32) ,
+  scaler            numeric      DEFAULT 1,
   PRIMARY KEY (datapoint_id)
 );
+
+COMMENT ON COLUMN datapoint.datapoint_type_id IS 'ist Wert';
+
+COMMENT ON COLUMN datapoint.unit_type_id IS 'ist Wert';
+
+COMMENT ON COLUMN datapoint.obis_code IS 'z.B. '1-0:1.8.0'';
+
+COMMENT ON COLUMN datapoint.scaler IS 'z.B. Wh in kWh umzurechnen';
 
 CREATE TABLE datapoint_type
 (
@@ -102,6 +112,8 @@ CREATE TABLE datapoint_type
   created_at        timestamptz  NOT NULL DEFAULT now(),
   PRIMARY KEY (datapoint_type_id)
 );
+
+COMMENT ON COLUMN datapoint_type.datapoint_type IS '"Lux", "Temperature", "Switch"';
 
 CREATE TABLE device_channel
 (
@@ -192,6 +204,27 @@ CREATE TABLE model_type
   PRIMARY KEY (model_type_id)
 );
 
+CREATE TABLE obis_definition
+(
+  obis_code       varchar(32)  NOT NULL,
+  name            varchar(100) NOT NULL,
+  description     text        ,
+  medium          varchar(50) ,
+  default_type_id uuid         NOT NULL,
+  default_unit_id uuid         NOT NULL,
+  PRIMARY KEY (obis_code)
+);
+
+COMMENT ON COLUMN obis_definition.obis_code IS 'z.B. '1-0:1.8.0'';
+
+COMMENT ON COLUMN obis_definition.name IS ''Wirkenergie Bezug'';
+
+COMMENT ON COLUMN obis_definition.medium IS ''Strom', 'Gas', 'Wasser'';
+
+COMMENT ON COLUMN obis_definition.default_type_id IS 'soll Wert';
+
+COMMENT ON COLUMN obis_definition.default_unit_id IS 'soll Wert';
+
 CREATE TABLE permission_type
 (
   permission_type_id uuid        NOT NULL DEFAULT uuidv7(),
@@ -275,6 +308,8 @@ CREATE TABLE unit_type
   unit_type    varchar(50) NOT NULL,
   PRIMARY KEY (unit_type_id)
 );
+
+COMMENT ON COLUMN unit_type.unit_type IS '"°C", "%", "lux"';
 
 CREATE TABLE user_invitations
 (
@@ -455,12 +490,12 @@ ALTER TABLE tile
 ALTER TABLE tile_datapoint
   ADD CONSTRAINT FK_datapoint_TO_tile_datapoint
     FOREIGN KEY (datapoint_id)
-    REFERENCES datapoint (datapoint_id) ON DELETE CASCADE;
+    REFERENCES datapoint (datapoint_id);
 
 ALTER TABLE tile_datapoint
   ADD CONSTRAINT FK_tile_TO_tile_datapoint
     FOREIGN KEY (tile_id)
-    REFERENCES tile (tile_id) ON DELETE CASCADE;
+    REFERENCES tile (tile_id);
 
 ALTER TABLE automation_rule
   ADD CONSTRAINT FK_users_TO_automation_rule
@@ -475,7 +510,7 @@ ALTER TABLE automation_rule
 ALTER TABLE rule_condition
   ADD CONSTRAINT FK_automation_rule_TO_rule_condition
     FOREIGN KEY (rule_id)
-    REFERENCES automation_rule (rule_id) ON DELETE CASCADE;
+    REFERENCES automation_rule (rule_id);
 
 ALTER TABLE rule_condition
   ADD CONSTRAINT FK_datapoint_TO_rule_condition
@@ -485,12 +520,27 @@ ALTER TABLE rule_condition
 ALTER TABLE rule_action
   ADD CONSTRAINT FK_automation_rule_TO_rule_action
     FOREIGN KEY (rule_id)
-    REFERENCES automation_rule (rule_id) ON DELETE CASCADE;
+    REFERENCES automation_rule (rule_id);
 
 ALTER TABLE rule_action
   ADD CONSTRAINT FK_datapoint_TO_rule_action
     FOREIGN KEY (datapoint_id)
     REFERENCES datapoint (datapoint_id);
+
+ALTER TABLE obis_definition
+  ADD CONSTRAINT FK_datapoint_type_TO_obis_definition
+    FOREIGN KEY (default_type_id)
+    REFERENCES datapoint_type (datapoint_type_id);
+
+ALTER TABLE obis_definition
+  ADD CONSTRAINT FK_unit_type_TO_obis_definition
+    FOREIGN KEY (default_unit_id)
+    REFERENCES unit_type (unit_type_id);
+
+ALTER TABLE datapoint
+  ADD CONSTRAINT FK_obis_definition_TO_datapoint
+    FOREIGN KEY (obis_code)
+    REFERENCES obis_definition (obis_code);
 
 -- Indexes for Foreign Keys (crucial for performance, especially with postgres_fdw)
 CREATE INDEX idx_datapoint_device_channel ON datapoint(device_channel_id);
@@ -500,8 +550,17 @@ CREATE INDEX idx_location_parent ON location(parent_location_id);
 CREATE INDEX idx_rule_condition_rule ON rule_condition(rule_id);
 CREATE INDEX idx_automation_rule_location ON automation_rule(location_id);
 
--- Zusätzliche Indizes für Child-Elemente (wichtig für Dashboard- & Regel-Ladezeiten)
+-- Child-Elemente
 CREATE INDEX idx_rule_action_rule ON rule_action(rule_id);
 CREATE INDEX idx_tile_app_page ON tile(app_page_id);
 CREATE INDEX idx_tile_datapoint_tile ON tile_datapoint(tile_id);
 CREATE INDEX idx_user_sessions_user ON user_sessions(user_id);
+
+-- Lesezugriffe
+CREATE INDEX idx_user_location_access_user ON user_location_access(user_id);
+CREATE INDEX idx_user_location_access_location ON user_location_access(location_id);
+CREATE INDEX idx_app_page_user ON app_page(user_id);
+CREATE INDEX idx_app_page_location ON app_page(location_id);
+CREATE INDEX idx_rule_condition_datapoint ON rule_condition(datapoint_id);
+CREATE INDEX idx_rule_action_datapoint ON rule_action(datapoint_id);
+CREATE INDEX idx_audit_log_user ON audit_log(user_id);
