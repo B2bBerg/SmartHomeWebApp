@@ -154,17 +154,17 @@ const DeviceManager = {
             }
 
             btnConfirm.disabled = true;
-            const newId = typeof generateUUID === 'function' ? generateUUID() : '00000000-0000-0000-0000-000000000000';
             
             const newEntry = {
-                id: newId, timestamp: new Date().toISOString(), name: name, location: location, status: 'searching', updated: 'jetzt',
+                timestamp: new Date().toISOString(), name: name, location: location, status: 'searching', updated: 'jetzt',
                 macAddress: address.includes(':') ? address : '',
                 busAddress: !address.includes(':') ? address : '',
                 busType: busType, health: '—', battery: null, signal: null, channels: []
             };
 
             try {
-                await window.API.addDevice(newEntry);
+                const res = await window.API.addDevice(newEntry);
+                newEntry.id = res.id;
                 this.table._addRow(newEntry);
                 modal.remove();
                 this.triggerSearch(newEntry);

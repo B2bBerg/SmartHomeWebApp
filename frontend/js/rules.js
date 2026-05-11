@@ -73,7 +73,6 @@ const RuleManager = {
 
         modal.querySelector('#save-rule').onclick = () => {
             const newRule = {
-                id: typeof generateUUID === 'function' ? generateUUID() : Date.now().toString(),
                 name: document.getElementById('rule-name').value,
                 active: true,
                 logic: document.getElementById('rule-logic').value,
@@ -83,7 +82,8 @@ const RuleManager = {
                     value: modal.querySelector('.rule-val').value
                 }]
             };
-            window.API.addRule(newRule).then(() => {
+            window.API.addRule(newRule).then((res) => {
+                newRule.id = res.id;
                 this.table._addRow(newRule);
                 modal.remove();
             }).catch(err => alert("Fehler beim Speichern der Regel."));

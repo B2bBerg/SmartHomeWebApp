@@ -9,7 +9,7 @@ const ActuatorManager = {
         if (!container) return;
 
         const columns = [
-            { key: 'id',         label: 'UUID', render: (val) => `<span title="${val}" style="font-family: monospace; font-size: 0.85em; color: #6c6c8a;">${val ? val.split('-')[0] + '...' : '—'}</span>` },
+            { key: 'id',         label: 'UUID', render: (val) => `<span title="${val}" style="font-family: monospace; font-size: 0.85em; color: var(--text-secondary);">${val || '—'}</span>` },
             { key: 'name',       label: 'Datenpunkt' },
             { key: 'deviceName', label: 'Gerät (Hardware)', render: (val) => val ? `<span style="color: #89b4fa;">${val}</span>` : '—' },
             { key: 'type',       label: 'Type' },
@@ -152,18 +152,18 @@ const ActuatorManager = {
             }
 
             btnConfirm.disabled = true;
-            const newId = typeof generateUUID === 'function' ? generateUUID() : '00000000-0000-0000-0000-000000000000';
             
             const newEntry = {
-                id: newId, deviceId: address, name: name, location: location, channel: port,
-                type: 'Aktor', value: '-', unit: '', status: 'active', updated: 'jetzt', timestamp: new Date().toISOString()
+                deviceId: address, name: name, location: location, channel: port,
+                isSensor: false, isActuator: true, type: 'Aktor', value: '-', unit: '', status: 'active', updated: 'jetzt', timestamp: new Date().toISOString()
             };
             
             const devObj = devices.find(d => d.id === address);
             if (devObj) newEntry.deviceName = devObj.name;
                 
             try {
-                await window.API.addActuator(newEntry);
+                const res = await window.API.addActuator(newEntry);
+                newEntry.id = res.id;
                 this.table._addRow(newEntry);
                 modal.remove();
             } catch (err) {

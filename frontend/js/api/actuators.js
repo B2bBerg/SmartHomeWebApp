@@ -4,7 +4,7 @@ export const ActuatorsAPI = {
     getActuators: async () => {
         // Später: return await fetchApi('/actuators');
         try {
-            const response = await fetch('../testing/actuators/actuators.json?t=' + Date.now());
+            const response = await fetch('./testing/actuators/actuators.json?t=' + Date.now());
             if (!response.ok) throw new Error("HTTP Fehler " + response.status);
             return await response.json();
         } catch (error) {
@@ -18,7 +18,8 @@ export const ActuatorsAPI = {
         return { success: true };
     },
     addActuator: async (actuatorData) => {
-        return { success: true }; // Später: return await fetchApi('/actuators', { method: 'POST', body: JSON.stringify(actuatorData) });
+        // Später: return await fetchApi('/actuators', { method: 'POST', body: JSON.stringify(actuatorData) });
+        return { success: true, id: 'backend-act-' + Date.now() };
     },
     updateActuator: async (id, updateData) => {
         return { success: true }; // Später: return await fetchApi(`/actuators/${id}`, { method: 'PUT', body: JSON.stringify(updateData) });

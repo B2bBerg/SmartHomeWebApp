@@ -328,8 +328,8 @@ const TileManager = {
 
         const tile = document.createElement('div');
         tile.className    = 'tile dynamic-tile';
-        const uuid = typeof generateUUID === 'function' ? generateUUID() : Date.now().toString(36);
-        tile.dataset.id   = config ? config.id : `tile-${uuid}`;
+        const tmpId = 'tile-tmp-' + Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
+        tile.dataset.id   = config ? config.id : tmpId;
         tile.innerHTML    = this.createTileHTML(label);
 
         if (config) {

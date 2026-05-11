@@ -3,7 +3,7 @@ import { fetchApi } from './core.js';
 export const SystemAPI = {
     getDashboard: async () => {
         try {
-            const response = await fetch('../testing/dashboard/dashboard.json?t=' + Date.now());
+            const response = await fetch('./testing/dashboard/dashboard.json?t=' + Date.now());
             if (!response.ok) throw new Error("HTTP Fehler " + response.status);
             const data = await response.json();
             return data;

@@ -5,7 +5,7 @@ export const SensorsAPI = {
     getSensors: async () => {
         // Später: return await fetchApi('/sensors');
         try {
-            const response = await fetch('../testing/sensors/sensors.json?t=' + Date.now());
+            const response = await fetch('./testing/sensors/sensors.json?t=' + Date.now());
             if (!response.ok) throw new Error("HTTP Fehler " + response.status);
             return await response.json();
         } catch (error) {
@@ -16,7 +16,7 @@ export const SensorsAPI = {
     getSensorData: async (datapoint) => {
         // Später: return await fetchApi(`/sensors/${datapoint}/history`);
         try {
-            const response = await fetch('../testing/sensors/sensordata.json?t=' + Date.now());
+            const response = await fetch('./testing/sensors/sensordata.json?t=' + Date.now());
             if (!response.ok) throw new Error("HTTP Fehler " + response.status);
             const allData = await response.json();
             
@@ -31,7 +31,8 @@ export const SensorsAPI = {
         }
     },
     addSensor: async (sensorData) => {
-        return { success: true }; // Später: return await fetchApi('/sensors', { method: 'POST', body: JSON.stringify(sensorData) });
+        // Später: return await fetchApi('/sensors', { method: 'POST', body: JSON.stringify(sensorData) });
+        return { success: true, id: 'backend-sens-' + Date.now() };
     },
     updateSensor: async (id, updateData) => {
         return { success: true }; // Später: return await fetchApi(`/sensors/${id}`, { method: 'PUT', body: JSON.stringify(updateData) });

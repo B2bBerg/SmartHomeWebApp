@@ -3,7 +3,7 @@ import { fetchApi } from './core.js';
 export const DevicesAPI = {
     getDevices: async () => {
         try {
-            const response = await fetch('../testing/devices/devices.json?t=' + Date.now());
+            const response = await fetch('./testing/devices/devices.json?t=' + Date.now());
             if (!response.ok) throw new Error("HTTP Fehler " + response.status);
             return await response.json();
         } catch (error) {
@@ -26,7 +26,7 @@ export const DevicesAPI = {
     },
     addDevice: async (deviceData) => {
         // Später: return await fetchApi('/devices', { method: 'POST', body: JSON.stringify(deviceData) });
-        return { success: true, id: deviceData.id };
+        return { success: true, id: 'backend-dev-' + Date.now() };
     },
     updateDevice: async (id, updateData) => {
         // Später: return await fetchApi(`/devices/${id}`, { method: 'PUT', body: JSON.stringify(updateData) });

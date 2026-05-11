@@ -14,8 +14,10 @@ class DataTable {
                 key: 'actions', 
                 label: 'Aktionen', 
                 render: (v, row) => `
-                    <button class="btn-icon btn-edit" title="Name bearbeiten">✎</button>
-                    <button class="btn-icon btn-delete" title="Löschen">🗑</button>
+                    <div style="display: flex; gap: 4px; white-space: nowrap;">
+                        <button class="btn-icon btn-edit" title="Name bearbeiten">✎</button>
+                        <button class="btn-icon btn-delete" title="Löschen">🗑</button>
+                    </div>
                 ` 
             });
         }

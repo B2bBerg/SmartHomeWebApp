@@ -15,10 +15,8 @@ export const RulesAPI = {
         ];
     },
     addRule: async (ruleData) => {
-        const newId = ruleData.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'rule-' + Date.now().toString(36));
-        ruleData.id = newId;
         // Später: return await fetchApi('/rules', { method: 'POST', body: JSON.stringify(ruleData) });
-        return { success: true, id: newId };
+        return { success: true, id: 'backend-rule-' + Date.now() };
     },
     updateRule: async (id, ruleData) => { return { success: true }; },
     deleteRule: async (id) => { return { success: true }; },
