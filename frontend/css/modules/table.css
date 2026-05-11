@@ -168,7 +168,7 @@
     font-weight: 600;
     font-size: 0.8rem;
     color: var(--text-secondary);
-    white-space: nowrap;
+    white-space: normal;
     cursor: pointer;
     user-select: none;
 }
@@ -197,7 +197,8 @@
 
 .data-table td {
     padding: 0.55rem 1rem;
-    white-space: nowrap;
+    white-space: normal;
+    word-break: break-word;
 }
 
 .data-table-toolbar {
