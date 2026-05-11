@@ -1,0 +1,35 @@
+[
+  {
+    "id": "tile-1775461837010",
+    "timestamp": "2026-04-12T10:56:15Z",
+    "label": "Schalter Wohnzimmer",
+    "col": 1,
+    "row": 1,
+    "colSpan": 1,
+    "rowSpan": 1,
+    "contentType": "switch-light",
+    "datapoint": "123e4567-e89b-12d3-a456-426614174010"
+  },
+  {
+    "id": "tile-1775461861969",
+    "timestamp": "2026-04-12T10:56:15Z",
+    "label": "Schalter Rollladen Wohnzimmer",
+    "col": 2,
+    "row": 1,
+    "colSpan": 1,
+    "rowSpan": 1,
+    "contentType": "switch-shutter",
+    "datapoint": "123e4567-e89b-12d3-a456-426614174020"
+  },
+  {
+    "id": "tile-1775462266646",
+    "timestamp": "2026-04-12T10:56:15Z",
+    "label": "Temperatur Wohnzimmer",
+    "col": 1,
+    "row": 2,
+    "colSpan": 3,
+    "rowSpan": 3,
+    "contentType": "temp-graph",
+    "datapoint": "123e4567-e89b-12d3-a456-426614174000"
+  }
+]

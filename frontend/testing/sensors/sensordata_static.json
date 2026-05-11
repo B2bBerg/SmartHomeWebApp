@@ -1,0 +1,90 @@
+{
+  "sensor.temp.living": [
+    {
+      "timestamp": "2026-04-06T07:45:00Z",
+      "temperature": 20.8,
+      "humidity": 45
+    },
+    {
+      "timestamp": "2026-04-06T07:50:00Z",
+      "temperature": 21.0,
+      "humidity": 44
+    },
+    {
+      "timestamp": "2026-04-06T07:55:00Z",
+      "temperature": 21.3,
+      "humidity": 44
+    },
+    {
+      "timestamp": "2026-04-06T08:00:00Z",
+      "temperature": 21.5,
+      "humidity": 43
+    }
+  ],
+  "sensor.temp.kitchen": [
+    {
+      "timestamp": "2026-04-06T07:45:00Z",
+      "temperature": 22.1,
+      "humidity": 50
+    },
+    {
+      "timestamp": "2026-04-06T07:50:00Z",
+      "temperature": 22.3,
+      "humidity": 52
+    },
+    {
+      "timestamp": "2026-04-06T07:55:00Z",
+      "temperature": 22.5,
+      "humidity": 55
+    },
+    {
+      "timestamp": "2026-04-06T08:00:00Z",
+      "temperature": 22.4,
+      "humidity": 54
+    }
+  ],
+  "sensor.energy.main": [
+    {
+      "timestamp": "2026-04-06T07:45:00Z",
+      "power": 3.1,
+      "voltage": 230
+    },
+    {
+      "timestamp": "2026-04-06T07:50:00Z",
+      "power": 3.4,
+      "voltage": 229
+    },
+    {
+      "timestamp": "2026-04-06T07:55:00Z",
+      "power": 4.2,
+      "voltage": 228
+    },
+    {
+      "timestamp": "2026-04-06T08:00:00Z",
+      "power": 3.8,
+      "voltage": 230
+    }
+  ],
+  "sensor.energy.solar": [
+    {
+      "timestamp": "2026-04-06T07:45:00Z",
+      "power": 0.8,
+      "voltage": 230
+    },
+    {
+      "timestamp": "2026-04-06T07:50:00Z",
+      "power": 0.9,
+      "voltage": 230
+    },
+    {
+      "timestamp": "2026-04-06T07:55:00Z",
+      "power": 1.2,
+      "voltage": 231
+    },
+    {
+      "timestamp": "2026-04-06T08:00:00Z",
+      "power": 1.5,
+      "voltage": 230
+    }
+  ]
+}
