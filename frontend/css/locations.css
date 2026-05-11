@@ -70,11 +70,8 @@
 .breadcrumb-sep { color: var(--text-secondary); user-select: none; }
 .breadcrumb-active { color: var(--text-primary); pointer-events: none; font-weight: 600; }
 
-/* --- Edit / Add Action Buttons --- */
-#btn-toggle-edit,
-#btn-add-building,
-#btn-add-floor,
-#btn-add-room {
+/* --- Standard Outline Action Buttons (Header/Controls) --- */
+.btn-outline {
     background: none;
     border: 1px solid var(--border-color);
     border-radius: 6px;
@@ -88,32 +85,53 @@
     transition: color 0.2s, border-color 0.2s;
 }
 
-#btn-toggle-edit img,
-#btn-add-building img,
-#btn-add-floor img,
-#btn-add-room img {
+.btn-outline img {
     width: 12px;
     height: 12px;
     filter: invert(0.5);
     transition: filter 0.2s;
 }
 
-#btn-toggle-edit:hover, #btn-toggle-edit.active,
-#btn-add-building:hover,
-#btn-add-floor:hover,
-#btn-add-room:hover {
+.btn-outline:hover, .btn-outline.active {
     color: var(--text-primary);
     border-color: var(--text-primary);
 }
 
-#btn-toggle-edit:hover img, #btn-toggle-edit.active img,
-#btn-add-building:hover img,
-#btn-add-floor:hover img,
-#btn-add-room:hover img {
+.btn-outline:hover img, .btn-outline.active img {
     filter: invert(1);
 }
 
-.floors-tabs {
+/* --- Kachel Action Buttons (Hardware / Sensors) --- */
+.btn-show-devices,
+.btn-show-datapoints {
+    flex: 1;
+    background: var(--palette-surface0);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.btn-show-devices:hover,
+.btn-show-datapoints:hover {
+    background: var(--palette-surface1);
+    border-color: var(--accent-blue);
+    color: var(--white);
+}
+
+/* Verhindere Kachel-Hover-Effekt, wenn man auf Action-Buttons klickt */
+.location-card:has(.btn-show-devices:hover),
+.location-card:has(.btn-show-datapoints:hover),
+.location-card:has(.btn-icon:hover) {
+    transform: none !important;
+    border-color: var(--border-color) !important;
+    box-shadow: none !important;
+}
+
+.tabs-container {
     display: flex;
     gap: 0.5rem;
     border-bottom: 1px solid #3a3a52;
@@ -126,11 +144,11 @@
 }
 
 /* Chrome, Safari und Opera */
-.floors-tabs::-webkit-scrollbar {
+.tabs-container::-webkit-scrollbar {
     display: none;
 }
 
-.floor-tab-wrapper {
+.tab-wrapper {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -146,12 +164,12 @@
 
 }
 
-.floor-tab-wrapper:hover {
+.tab-wrapper:hover {
     background: var(--palette-surface0);
     box-shadow: 0 4px 12px rgba(var(--shadow-color-rgb), 0.2);
 }
 
-.floor-tab-wrapper.active {
+.tab-wrapper.active {
     background: var(--bg-base);
     border-color: var(--accent-blue);
     border-bottom: 2px solid var(--bg-base);
@@ -160,7 +178,7 @@
     z-index: 1;
 }
 
-.floor-tab {
+.tab-button {
     background: transparent;
     border: none;
     color: var(--text-secondary);
@@ -171,19 +189,19 @@
     transition: color 0.2s;
 }
 
-.floor-tab:hover {
+.tab-button:hover {
     color: var(--text-primary);
 }
 
-.floor-tab-wrapper.active .floor-tab {
+.tab-wrapper.active .tab-button {
     color: var(--accent-blue);
     font-weight: 600;
 }
 
 /* Drag and Drop & Edit Mode */
 .card-actions, 
-.floor-tab-wrapper .btn-edit, 
-.floor-tab-wrapper .btn-delete {
+.tab-wrapper .btn-edit, 
+.tab-wrapper .btn-delete {
     display: none;
 }
 
@@ -191,8 +209,8 @@
     display: flex;
 }
 
-.edit-mode .floor-tab-wrapper .btn-edit,
-.edit-mode .floor-tab-wrapper .btn-delete {
+.edit-mode .tab-wrapper .btn-edit,
+.edit-mode .tab-wrapper .btn-delete {
     display: flex;
     opacity: 1;
 }
@@ -203,13 +221,13 @@
 }
 
 /* --- Standardisierte Edit / Remove Buttons für Kacheln und Tabs --- */
-.card-actions button,
-.floor-tab-wrapper .btn-edit,
-.floor-tab-wrapper .btn-delete {
+.btn-edit,
+.btn-delete {
     background: rgba(42, 42, 62, 0.9);
     border: 1px solid var(--border-color);
     border-radius: 6px;
     cursor: pointer;
+    display: flex;
     align-items: center;
     justify-content: center;
     height: 24px;
@@ -218,44 +236,33 @@
     transition: all 0.2s ease;
 }
 
-.card-actions button {
-    display: flex;
-}
-
-.card-actions .btn-edit:hover,
-.floor-tab-wrapper .btn-edit:hover {
+.btn-edit:hover {
     background: var(--palette-surface0);
     border-color: var(--text-primary);
     box-shadow: 0 4px 12px rgba(var(--shadow-color-rgb), 0.2);
 }
 
-.card-actions .btn-edit img,
-.floor-tab-wrapper .btn-edit img,
-.card-actions .btn-delete img,
-.floor-tab-wrapper .btn-delete img {
+.btn-edit img,
+.btn-delete img {
     width: 14px;
     height: 14px;
     filter: invert(0.8);
     transition: filter 0.2s ease;
 }
 
-.card-actions .btn-edit:hover img,
-.floor-tab-wrapper .btn-edit:hover img,
-.card-actions .btn-delete:hover img,
-.floor-tab-wrapper .btn-delete:hover img {
+.btn-edit:hover img,
+.btn-delete:hover img {
     filter: invert(1);
 }
 
-.card-actions .btn-delete,
-.floor-tab-wrapper .btn-delete {
+.btn-delete {
     color: var(--accent-red);
     font-size: 0.75rem;
     line-height: 1;
     padding: 4px;
 }
 
-.card-actions .btn-delete:hover,
-.floor-tab-wrapper .btn-delete:hover {
+.btn-delete:hover {
     background: var(--error-red);
     border-color: var(--error-red);
     color: var(--white);
