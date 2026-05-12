@@ -20,15 +20,16 @@ const RuleManager = {
             }
         ];
 
-        this.table = new DataTable(container, columns, { searchable: true });
+        this.table = new DataTable(container, columns, { 
+            searchable: true,
+            onAdd: () => this.showRuleBuilder(),
+            onDelete: (rowId) => this.deleteRule(rowId)
+        });
         
         // Regeln dynamisch aus der API laden
         window.API.getRules().then(rules => {
             this.table.setData(rules);
         }).catch(err => console.error("Fehler beim Laden der Regeln:", err));
-
-        // "Add"-Event der Tabelle überschreiben für den Regel-Baukasten
-        this.table._showAddModal = () => this.showRuleBuilder();
     },
 
     showRuleBuilder() {
@@ -86,8 +87,19 @@ const RuleManager = {
                 newRule.id = res.id;
                 this.table._addRow(newRule);
                 modal.remove();
-            }).catch(err => alert("Fehler beim Speichern der Regel."));
+            }).catch(err => window.Dialog.alert("Fehler", "Fehler beim Speichern der Regel.", true));
         };
+    },
+
+    async deleteRule(rowId) {
+        try {
+            await window.API.deleteRule(rowId);
+            this.table.data = this.table.data.filter(r => r.id !== rowId);
+            this.table.setData(this.table.data);
+        } catch (err) {
+            console.error("Fehler beim Löschen:", err);
+            window.Dialog.alert("Fehler", "Löschen fehlgeschlagen.", true);
+        }
     }
 };
 

@@ -12,12 +12,12 @@ const SensorManager = {
             { key: 'id',         label: 'UUID', render: (val) => `<span title="${val}" style="font-family: monospace; font-size: 0.85em; color: var(--text-secondary);">${val || '—'}</span>` },
             { key: 'name',       label: 'Datenpunkt' },
             { key: 'deviceName', label: 'Gerät (Hardware)', render: (val) => val ? `<span style="color: #89b4fa;">${val}</span>` : '—' },
-            { key: 'type',       label: 'Type' },
-            { key: 'location',   label: 'Location' },
+            { key: 'type',       label: 'Typ' },
+            { key: 'location',   label: 'Standort' },
             { key: 'channel',    label: 'IO-Port', render: (val) => val ? `<span class="io-port io-port--assigned">${val}</span>` : '—' },
-            { key: 'value',      label: 'Value' },
-            { key: 'unit',       label: 'Unit' },
-            { key: 'updated',    label: 'Last Update' },
+            { key: 'value',      label: 'Wert' },
+            { key: 'unit',       label: 'Einheit' },
+            { key: 'updated',    label: 'Letztes Update' },
         ];
 
         this.table = new DataTable(container, columns, {
@@ -245,7 +245,7 @@ const SensorManager = {
             this.table.setData(this.table.data);
         } catch (err) {
             console.error("Fehler beim Löschen:", err);
-            alert("Löschen fehlgeschlagen.");
+            window.Dialog.alert("Fehler", "Löschen fehlgeschlagen.", true);
         }
     }
 };

@@ -15,8 +15,8 @@ class DataTable {
                 label: 'Aktionen', 
                 render: (v, row) => `
                     <div style="display: flex; gap: 4px; white-space: nowrap;">
-                        <button class="btn-icon btn-edit" title="Name bearbeiten">✎</button>
-                        <button class="btn-icon btn-delete" title="Löschen">🗑</button>
+                        <button class="btn-edit" title="Bearbeiten"><img src="assets/icons/gear-svgrepo-com.svg" alt="Bearbeiten"></button>
+                        <button class="btn-delete" title="Löschen"><img src="assets/icons/trash-svgrepo-com.svg" alt="Löschen"></button>
                     </div>
                 ` 
             });
@@ -97,10 +97,9 @@ class DataTable {
     }
 
     async _onDelete(rowId) {
-        if(confirm('Möchten Sie diesen Eintrag wirklich löschen?')) {
-            if (typeof this.options.onDelete === 'function') {
-                this.options.onDelete(rowId);
-            }
+        const confirmed = await window.Dialog.confirm('Löschen bestätigen', 'Sind Sie sicher, dass das Objekt gelöscht werden soll?');
+        if (confirmed) {
+            if (typeof this.options.onDelete === 'function') this.options.onDelete(rowId);
         }
     }
 

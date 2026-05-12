@@ -16,13 +16,13 @@ const DeviceManager = {
             { key: 'macAddress', label: 'MAC Adresse', render: (val) => val ? `<span style="font-family: monospace;">${val}</span>` : '—' },
             { key: 'busAddress', label: 'Bus Adresse', render: (val) => val ? `<span style="font-family: monospace;">${val}</span>` : '—' },
             { key: 'status',     label: 'Status', render: (val) => {
-                if (val === 'active') return `<span class="badge badge--active">Active</span>`;
-                if (val === 'searching') return `<span class="badge badge--searching">Searching... ⏳</span>`;
-                if (val === 'not_reachable') return `<span class="badge badge--error">Not Reachable ❌</span>`;
-                if (val === 'warning') return `<span class="badge badge--warning">Warning</span>`;
-                return `<span class="badge badge--inactive">${val || 'Unknown'}</span>`;
+                if (val === 'active') return `<span class="badge badge--active">Aktiv</span>`;
+                if (val === 'searching') return `<span class="badge badge--searching">Wird gesucht... ⏳</span>`;
+                if (val === 'not_reachable') return `<span class="badge badge--error">Nicht erreichbar ❌</span>`;
+                if (val === 'warning') return `<span class="badge badge--warning">Warnung</span>`;
+                return `<span class="badge badge--inactive">${val || 'Unbekannt'}</span>`;
             }},
-            { key: 'health',     label: 'Health', render: (_, row) => {
+            { key: 'health',     label: 'Zustand', render: (_, row) => {
                 let html = '';
                 if (row.battery !== undefined && row.battery !== null) {
                     const bColor = row.battery <= 20 ? 'var(--error-red)' : (row.battery <= 50 ? 'var(--accent-yellow)' : 'var(--accent-green)');
@@ -243,7 +243,7 @@ const DeviceManager = {
             this.table.setData(this.table.data);
         } catch (err) {
             console.error("Fehler beim Löschen:", err);
-            alert("Löschen fehlgeschlagen.");
+            window.Dialog.alert("Fehler", "Löschen fehlgeschlagen.", true);
         }
     },
 

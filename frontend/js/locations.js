@@ -5,7 +5,9 @@ const LocationsManager = {
     init() {
         this.container = document.getElementById('locations-container');
         if (!this.container) return;
-        this.isEditMode = false;
+        this.isEditModeBuildings = false;
+        this.isEditModeFloors = false;
+        this.isEditModeRooms = false;
         this.createModal();
         this.loadData();
     },
@@ -15,7 +17,7 @@ const LocationsManager = {
         const modalHtml = `
             <div id="location-modal" class="table-modal hidden">
                 <div class="table-modal-box">
-                    <h3 id="loc-modal-title">Edit</h3>
+                    <h3 id="loc-modal-title">Bearbeiten</h3>
                     <div class="settings-group">
                         <label>Typ / Vorlage <span style="font-size:0.8em; color:var(--text-muted); font-weight:normal;">(Suchen oder <a href="#" id="loc-modal-clear-name-link" style="color:var(--accent-blue); text-decoration:none;">Felder leeren</a>)</span></label>
                         <input id="loc-modal-type-search" type="text" placeholder="Gespeicherten Typ suchen..." list="loc-modal-type-list">
@@ -273,12 +275,12 @@ const LocationsManager = {
     renderBuildings() {
         let html = `
             <div class="breadcrumb">
-                <span class="breadcrumb-active">Locations</span>
+                <span class="breadcrumb-active">Standorte</span>
                 <div style="flex-grow:1"></div>
-                <button id="btn-toggle-edit" class="btn-outline ${this.isEditMode ? 'active' : ''}" title="Edit layout"><img src="assets/icons/gear-svgrepo-com.svg" alt="edit">Edit Buildings</button>
-                <button id="btn-add-building" class="btn-outline" title="Add building"><img src="assets/icons/grid-plus-svgrepo-com.svg" alt="add">Add Building</button>
+                <button id="btn-toggle-edit" class="btn-outline ${this.isEditModeBuildings ? 'active' : ''}" title="Layout bearbeiten"><img src="assets/icons/gear-svgrepo-com.svg" alt="edit">Gebäude bearbeiten</button>
+                <button id="btn-add-building" class="btn-outline" title="Gebäude hinzufügen"><img src="assets/icons/grid-plus-svgrepo-com.svg" alt="add">Gebäude hinzufügen</button>
             </div>
-            <div class="floor-grid ${this.isEditMode ? 'edit-mode' : ''}">`;
+            <div class="floor-grid ${this.isEditModeBuildings ? 'edit-mode' : ''}">`;
         
         if (!this.locations || this.locations.length === 0) {
             html += `<p style="color: var(--text-secondary);">Keine Gebäude gefunden.</p>`;
@@ -290,10 +292,10 @@ const LocationsManager = {
                     : '';
                 
                 html += `
-                    <div class="location-card building-card" data-building="${building.id}" data-index="${index}" ${this.isEditMode ? 'draggable="true"' : ''}>
+                    <div class="location-card building-card" data-building="${building.id}" data-index="${index}" ${this.isEditModeBuildings ? 'draggable="true"' : ''}>
                         <div class="card-actions">
-                            <button class="btn-icon btn-edit edit-building" data-id="${building.id}"><img src="assets/icons/gear-svgrepo-com.svg" alt="Edit"></button>
-                            <button class="btn-icon btn-delete delete-building" data-id="${building.id}"><img src="assets/icons/trash-svgrepo-com.svg" alt="Remove"></button>
+                            <button class="btn-icon btn-edit edit-building" data-id="${building.id}"><img src="assets/icons/gear-svgrepo-com.svg" alt="Bearbeiten"></button>
+                            <button class="btn-icon btn-delete delete-building" data-id="${building.id}"><img src="assets/icons/trash-svgrepo-com.svg" alt="Löschen"></button>
                         </div>
                         <h3>${building.name}</h3>
                         <p>${floorCount} Stockwerke</p>
@@ -303,7 +305,7 @@ const LocationsManager = {
                                 Hardware
                             </button>
                             <button class="btn-show-datapoints" data-id="${building.id}">
-                                Sensors / Actors
+                                Sensoren / Aktoren
                             </button>
                         </div>
                     </div>
@@ -316,11 +318,11 @@ const LocationsManager = {
         this.container.innerHTML = html;
         
         document.getElementById('btn-toggle-edit').addEventListener('click', () => {
-            this.isEditMode = !this.isEditMode;
+            this.isEditModeBuildings = !this.isEditModeBuildings;
             this.renderBuildings();
         });
 
-        if (this.isEditMode) {
+        if (this.isEditModeBuildings) {
             let dragStartIndex = null;
             this.container.querySelectorAll('.building-card').forEach(card => {
                 card.addEventListener('dragstart', (e) => {
@@ -346,7 +348,7 @@ const LocationsManager = {
         }
 
         document.getElementById('btn-add-building').addEventListener('click', () => {
-            this.openModal('building', 'Add Building', { name: '' }, async (data) => {
+            this.openModal('building', 'Gebäude hinzufügen', { name: '' }, async (data) => {
                 const res = await window.API.addLocation({ type: 'building', name: data.name, address: data.address });
                 this.locations.push({ id: res.id, timestamp: new Date().toISOString(), name: data.name, address: data.address, floors: [] });
                 await this.saveData();
@@ -358,7 +360,7 @@ const LocationsManager = {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const b = this.locations.find(x => x.id === btn.dataset.id);
-                this.openModal('building', 'Edit Building', { name: b.name, address: b.address }, async (data) => {
+                this.openModal('building', 'Gebäude bearbeiten', { name: b.name, address: b.address }, async (data) => {
                     b.name = data.name;
                     b.address = data.address;
                     await this.saveData();
@@ -370,7 +372,7 @@ const LocationsManager = {
         this.container.querySelectorAll('.delete-building').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                if (confirm('Gebäude wirklich löschen?')) {
+                if (await window.Dialog.confirm('Löschen bestätigen', 'Sind Sie sicher, dass das Objekt gelöscht werden soll?')) {
                     this.locations = this.locations.filter(x => x.id !== btn.dataset.id);
                     await this.saveData();
                     this.renderBuildings();
@@ -382,7 +384,11 @@ const LocationsManager = {
             card.addEventListener('click', () => {
                 const buildingId = card.dataset.building;
                 const building = this.locations.find(b => b.id === buildingId);
-                if (building) this.renderBuildingDetails(building);
+                if (building) {
+                    this.isEditModeFloors = false;
+                    this.isEditModeRooms = false;
+                    this.renderBuildingDetails(building);
+                }
             });
         });
 
@@ -449,8 +455,8 @@ const LocationsManager = {
                 { key: 'busType',    label: 'Netzwerk' },
                 { key: 'macAddress', label: 'Adresse', render: (val, row) => `<span style="font-family: monospace; color:var(--text-muted);">${val || row.busAddress || '—'}</span>` },
                 { key: 'status',     label: 'Status', render: (val) => {
-                    if (val === 'active') return `<span style="color:var(--text-success); font-weight:bold;">Active</span>`;
-                    if (val === 'searching') return `<span style="color:var(--text-warning); font-weight:bold;">Searching...</span>`;
+                    if (val === 'active') return `<span style="color:var(--text-success); font-weight:bold;">Aktiv</span>`;
+                    if (val === 'searching') return `<span style="color:var(--text-warning); font-weight:bold;">Wird gesucht...</span>`;
                     if (val === 'not_reachable') return `<span style="color:var(--error-red); font-weight:bold;">Offline</span>`;
                     return `<span style="color:var(--text-secondary);">${val || '—'}</span>`;
                 }}
@@ -509,9 +515,9 @@ const LocationsManager = {
                 { key: 'type',       label: 'Mess-Typ' },
                 { key: 'location',   label: 'Standort' },
                 { key: 'channel',    label: 'IO-Port', render: (val) => val ? `<span class="io-port io-port--assigned">${val}</span>` : '—' },
-                { key: 'value',      label: 'Value' },
-                { key: 'unit',       label: 'Unit' },
-                { key: 'updated',    label: 'Last Update' }
+                { key: 'value',      label: 'Wert' },
+                { key: 'unit',       label: 'Einheit' },
+                { key: 'updated',    label: 'Letztes Update' }
             ];
 
             const dataTable = new DataTable(tableWrapper, columns, { hasAdd: false, hasActions: false, searchable: true });
@@ -549,13 +555,13 @@ const LocationsManager = {
         if (building.floors.length === 0) {
             html += `<p style="color: var(--text-secondary); margin:0;">Keine Stockwerke konfiguriert.</p>`;
         } else {
-            html += `<div class="tabs-container ${this.isEditMode ? 'edit-mode' : ''}" style="margin:0; padding:0; border-bottom:none; flex-wrap:wrap;">`;
+            html += `<div class="tabs-container ${this.isEditModeFloors ? 'edit-mode' : ''}" style="margin:0; padding:0; border-bottom:none; flex-wrap:wrap;">`;
             building.floors.forEach((floor, index) => {
                 html += `
-                    <div class="tab-wrapper" data-floor="${floor.id}" data-index="${index}" ${this.isEditMode ? 'draggable="true"' : ''}>
+                    <div class="tab-wrapper" data-floor="${floor.id}" data-index="${index}" ${this.isEditModeFloors ? 'draggable="true"' : ''}>
                         <button class="tab-button">${floor.name}</button>
-                        <button class="btn-icon btn-edit edit-floor" data-id="${floor.id}"><img src="assets/icons/gear-svgrepo-com.svg" alt="Edit"></button>
-                        <button class="btn-icon btn-delete delete-floor" data-id="${floor.id}"><img src="assets/icons/trash-svgrepo-com.svg" alt="Remove"></button>
+                        <button class="btn-icon btn-edit edit-floor" data-id="${floor.id}"><img src="assets/icons/gear-svgrepo-com.svg" alt="Bearbeiten"></button>
+                        <button class="btn-icon btn-delete delete-floor" data-id="${floor.id}"><img src="assets/icons/trash-svgrepo-com.svg" alt="Löschen"></button>
                     </div>`;
             });
             html += `</div>`;
@@ -564,23 +570,23 @@ const LocationsManager = {
         html += `
                 <div style="flex-grow:1"></div>
                 <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom: 0.4rem;">
-                    <button id="btn-toggle-edit" class="btn-outline ${this.isEditMode ? 'active' : ''}" title="Edit layout"><img src="assets/icons/gear-svgrepo-com.svg" alt="edit">Edit Floors</button>
-                    <button id="btn-add-floor" class="btn-outline" title="Add Floor/Appartment"><img src="assets/icons/grid-plus-svgrepo-com.svg" alt="add">Add Floor/Appartment</button>
+                    <button id="btn-toggle-edit" class="btn-outline ${this.isEditModeFloors ? 'active' : ''}" title="Layout bearbeiten"><img src="assets/icons/gear-svgrepo-com.svg" alt="edit">Stockwerke bearbeiten</button>
+                    <button id="btn-add-floor" class="btn-outline" title="Stockwerk/Wohnung hinzufügen"><img src="assets/icons/grid-plus-svgrepo-com.svg" alt="add">Stockwerk/Wohnung hinzufügen</button>
                 </div>
             </div>
-            <div id="rooms-container" class="${this.isEditMode ? 'edit-mode' : ''}"></div>
+            <div id="rooms-container"></div>
         `;
         
         this.container.innerHTML = html;
         document.getElementById('bc-locations').addEventListener('click', () => this.renderBuildings());
         
         document.getElementById('btn-toggle-edit').addEventListener('click', () => {
-            this.isEditMode = !this.isEditMode;
+            this.isEditModeFloors = !this.isEditModeFloors;
             this.renderBuildingDetails(building);
         });
 
         document.getElementById('btn-add-floor').addEventListener('click', () => {
-            this.openModal('floor', 'Add Floor/Appartment', { name: '' }, async (data) => {
+            this.openModal('floor', 'Stockwerk/Wohnung hinzufügen', { name: '' }, async (data) => {
                 const res = await window.API.addLocation({ type: 'floor', name: data.name, parentId: building.id });
                 building.floors.push({ id: res.id, timestamp: new Date().toISOString(), name: data.name, rooms: [] });
                 await this.saveData();
@@ -593,7 +599,7 @@ const LocationsManager = {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const f = building.floors.find(x => x.id === btn.dataset.id);
-                    this.openModal('floor', 'Edit Floor/Appartment', { name: f.name }, async (data) => {
+                    this.openModal('floor', 'Stockwerk/Wohnung bearbeiten', { name: f.name }, async (data) => {
                         f.name = data.name;
                         await this.saveData();
                         this.renderBuildingDetails(building);
@@ -604,7 +610,7 @@ const LocationsManager = {
             this.container.querySelectorAll('.delete-floor').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     e.stopPropagation();
-                    if (confirm('Stockwerk/Appartment wirklich löschen?')) {
+                    if (await window.Dialog.confirm('Löschen bestätigen', 'Sind Sie sicher, dass das Objekt gelöscht werden soll?')) {
                         building.floors = building.floors.filter(x => x.id !== btn.dataset.id);
                         await this.saveData();
                         this.renderBuildingDetails(building);
@@ -633,7 +639,7 @@ const LocationsManager = {
                 this.renderRooms(activeFloor, building);
             }
 
-            if (this.isEditMode) {
+            if (this.isEditModeFloors) {
                 let dragStartFloor = null;
                 this.container.querySelectorAll('.tab-wrapper[data-floor]').forEach(tab => {
                     tab.addEventListener('dragstart', (e) => {
@@ -676,13 +682,13 @@ const LocationsManager = {
         if (floor.rooms.length === 0) {
             html += `<p style="color: var(--text-secondary); margin: 0 0 0.4rem 0;">Keine Räume konfiguriert.</p>`;
         } else {
-            html += `<div class="tabs-container ${this.isEditMode ? 'edit-mode' : ''}" style="margin:0; padding:0; border-bottom:none; flex-wrap:wrap;">`;
+            html += `<div class="tabs-container ${this.isEditModeRooms ? 'edit-mode' : ''}" style="margin:0; padding:0; border-bottom:none; flex-wrap:wrap;">`;
             floor.rooms.forEach((room, index) => {
                 html += `
-                    <div class="tab-wrapper" data-room="${room.id}" data-index="${index}" ${this.isEditMode ? 'draggable="true"' : ''}>
+                    <div class="tab-wrapper" data-room="${room.id}" data-index="${index}" ${this.isEditModeRooms ? 'draggable="true"' : ''}>
                         <button class="tab-button">${room.name}</button>
-                        <button class="btn-icon btn-edit edit-room" data-id="${room.id}"><img src="assets/icons/gear-svgrepo-com.svg" alt="Edit"></button>
-                        <button class="btn-icon btn-delete delete-room" data-id="${room.id}"><img src="assets/icons/trash-svgrepo-com.svg" alt="Remove"></button>
+                        <button class="btn-icon btn-edit edit-room" data-id="${room.id}"><img src="assets/icons/gear-svgrepo-com.svg" alt="Bearbeiten"></button>
+                        <button class="btn-icon btn-delete delete-room" data-id="${room.id}"><img src="assets/icons/trash-svgrepo-com.svg" alt="Löschen"></button>
                     </div>`;
             });
             html += `</div>`;
@@ -691,15 +697,15 @@ const LocationsManager = {
         html += `
                 <div style="flex-grow:1"></div>
                 <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom: 0.4rem;">
-                    <button id="btn-toggle-edit-rooms" class="btn-outline ${this.isEditMode ? 'active' : ''}" title="Edit layout"><img src="assets/icons/gear-svgrepo-com.svg" alt="edit">Edit Rooms</button>
-                    <button id="btn-add-room" class="btn-outline" title="Add room"><img src="assets/icons/grid-plus-svgrepo-com.svg" alt="add">Add Room</button>
+                    <button id="btn-toggle-edit-rooms" class="btn-outline ${this.isEditModeRooms ? 'active' : ''}" title="Layout bearbeiten"><img src="assets/icons/gear-svgrepo-com.svg" alt="edit">Räume bearbeiten</button>
+                    <button id="btn-add-room" class="btn-outline" title="Raum hinzufügen"><img src="assets/icons/grid-plus-svgrepo-com.svg" alt="add">Raum hinzufügen</button>
                 </div>
             </div>
             <div id="active-room-content"></div>
         `;
         roomsContainer.innerHTML = html;
 
-        if (this.isEditMode) {
+        if (this.isEditModeRooms) {
             let dragStartRoom = null;
             roomsContainer.querySelectorAll('.tab-wrapper[data-room]').forEach(tab => {
                 tab.addEventListener('dragstart', (e) => {
@@ -725,12 +731,12 @@ const LocationsManager = {
         }
 
         document.getElementById('btn-toggle-edit-rooms').addEventListener('click', () => {
-            this.isEditMode = !this.isEditMode;
-            this.renderBuildingDetails(building);
+            this.isEditModeRooms = !this.isEditModeRooms;
+            this.renderRooms(floor, building);
         });
 
         document.getElementById('btn-add-room').addEventListener('click', () => {
-            this.openModal('room', 'Add Room', { name: '' }, async (data) => {
+            this.openModal('room', 'Raum hinzufügen', { name: '' }, async (data) => {
                 const res = await window.API.addLocation({ type: 'room', name: data.name, parentId: floor.id });
                 floor.rooms.push({ id: res.id, timestamp: new Date().toISOString(), name: data.name });
                 await this.saveData();
@@ -742,7 +748,7 @@ const LocationsManager = {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const r = floor.rooms.find(x => x.id === btn.dataset.id);
-                this.openModal('room', 'Edit Room', { name: r.name }, async (data) => {
+                this.openModal('room', 'Raum bearbeiten', { name: r.name }, async (data) => {
                     r.name = data.name;
                     await this.saveData();
                     this.renderRooms(floor, building);
@@ -753,7 +759,7 @@ const LocationsManager = {
         roomsContainer.querySelectorAll('.delete-room').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                if (confirm('Raum wirklich löschen?')) {
+                if (await window.Dialog.confirm('Löschen bestätigen', 'Sind Sie sicher, dass das Objekt gelöscht werden soll?')) {
                     floor.rooms = floor.rooms.filter(x => x.id !== btn.dataset.id);
                     await this.saveData();
                     this.renderRooms(floor, building);
@@ -795,11 +801,11 @@ const LocationsManager = {
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.5rem; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
                 <div style="display:flex; align-items:center; gap:0.5rem;">
                     <h3 style="color:var(--text-primary); margin:0; font-size:1.2rem;">Dashboard: ${room.name}</h3>
-                    <button id="btn-edit-room-name" class="btn-outline" title="Raum umbenennen"><img src="assets/icons/gear-svgrepo-com.svg" alt="edit">Edit Title</button>
+                    <button id="btn-edit-room-name" class="btn-outline" title="Raum umbenennen"><img src="assets/icons/gear-svgrepo-com.svg" alt="edit">Titel bearbeiten</button>
                 </div>
                 <div style="display:flex; gap:0.5rem;">
-                    <button id="room-edit-mode-btn" class="btn-outline" title="Edit tile layout"><img src="assets/icons/gear-svgrepo-com.svg" alt="edit">Edit Tile</button>
-                    <button id="room-add-tile-btn" class="btn-outline" title="Add tile"><img src="assets/icons/grid-plus-svgrepo-com.svg" alt="add">Add Tile</button>
+                    <button id="room-edit-mode-btn" class="btn-outline" title="Kachel-Layout bearbeiten"><img src="assets/icons/gear-svgrepo-com.svg" alt="edit">Kachel bearbeiten</button>
+                    <button id="room-add-tile-btn" class="btn-outline" title="Kachel hinzufügen"><img src="assets/icons/grid-plus-svgrepo-com.svg" alt="add">Kachel hinzufügen</button>
                 </div>
             </div>
             <div id="room-dashboard-grid" class="overview-container" style="background:transparent; border:none; padding:0;"></div>
@@ -820,7 +826,7 @@ const LocationsManager = {
         const btnEditName = document.getElementById('btn-edit-room-name');
         if (btnEditName) {
             btnEditName.addEventListener('click', () => {
-                this.openModal('room', 'Edit Room', { name: room.name }, async (data) => {
+                this.openModal('room', 'Raum bearbeiten', { name: room.name }, async (data) => {
                     room.name = data.name;
                     await this.saveData();
                     this.renderRooms(floor, building);

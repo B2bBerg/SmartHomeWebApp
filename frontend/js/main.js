@@ -75,15 +75,30 @@ const SIDEBAR_VIEWS_MAP = {
     settings:  renderSettings,
 }
 
+const VIEW_TITLE_MAP = {
+    dashboard: 'Dashboard',
+    locations: 'Standorte',
+    devices:   'Geräte',
+    sensors:   'Sensoren',
+    actuators: 'Aktoren',
+    rules:     'Regeln',
+    users:     'Benutzer',
+    settings:  'Einstellungen'
+};
+
 function navigate(view) {
     sidebar.querySelectorAll('li').forEach(li => li.classList.remove('active'));
-    const li = sidebar.querySelector(`li[title="${view.charAt(0).toUpperCase() + view.slice(1)}"]`);
+    const title = VIEW_TITLE_MAP[view] || 'Dashboard';
+    const li = sidebar.querySelector(`li[title="${title}"]`);
     if (li) li.classList.add('active');
     (SIDEBAR_VIEWS_MAP[view] || renderDashboard)();
 };
 
 sidebar.querySelectorAll('li[title]').forEach(li => {
-    li.addEventListener('click', () => navigate(li.title.toLowerCase()));
+    li.addEventListener('click', () => {
+        const viewKey = Object.keys(VIEW_TITLE_MAP).find(k => VIEW_TITLE_MAP[k] === li.title) || 'dashboard';
+        navigate(viewKey);
+    });
 });
 
 // ── Dashboard view (existing content) ────────────────────────────────────────
@@ -101,7 +116,7 @@ function renderDashboard() {
 function renderDevices() {
     content.innerHTML = `
         <div class="page-header">
-            <h1>Devices (Hardware)</h1>
+            <h1>Geräte (Hardware)</h1>
         </div>
         <div id="device-table-container"></div>
     `;
@@ -113,7 +128,7 @@ function renderDevices() {
 function renderSensors() {
     content.innerHTML = `
         <div class="page-header">
-            <h1>Sensors</h1>
+            <h1>Sensoren</h1>
         </div>
         <div id="sensor-table-container"></div>
     `;
@@ -135,7 +150,7 @@ function renderLocations() {
 function renderActuators() {
     content.innerHTML = `
         <div class="page-header">
-            <h1>Actuators</h1>
+            <h1>Aktoren</h1>
         </div>
         <div id="actuator-table-container"></div>
     `;
@@ -147,7 +162,7 @@ function renderActuators() {
 function renderRules() {
     content.innerHTML = `
         <div class="page-header">
-            <h1>Rules</h1>
+            <h1>Regeln</h1>
         </div>
         <div id="rules-table-container"></div>
     `;
@@ -159,12 +174,12 @@ function renderRules() {
 function renderUsers() {
     content.innerHTML = `
         <div class="page-header">
-            <h1>Users</h1>
+            <h1>Benutzer</h1>
         </div>
         <div class="users-content">
             <!-- OPEN: user list / management injected here -->
             <!-- window.API.getUsers().then(data => ...) -->
-            <p class="page-placeholder">Users view – coming soon</p>
+            <p class="page-placeholder">Benutzer-Ansicht – bald verfügbar</p>
         </div>
     `;
 }
@@ -173,11 +188,11 @@ function renderUsers() {
 function renderSettings() {
     content.innerHTML = `
         <div class="page-header">
-            <h1>Settings</h1>
+            <h1>Einstellungen</h1>
         </div>
         <div class="settings-content">
             <!-- OPEN: settings sections injected here -->
-            <p class="page-placeholder">Settings view – coming soon</p>
+            <p class="page-placeholder">Einstellungen – bald verfügbar</p>
         </div>
     `;
 }

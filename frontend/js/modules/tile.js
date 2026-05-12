@@ -162,13 +162,15 @@ const TileManager = {
         }
 
         if (document.getElementById('tile-settings-delete')) {
-            document.getElementById('tile-settings-delete').onclick = () => {
+            document.getElementById('tile-settings-delete').onclick = async () => {
                 if (!this.activeSettingsTile) return;
-                this.activeSettingsTile.remove();
-                this.settingsModal.classList.add('hidden');
-                this.activeSettingsTile = null;
-                this.refreshGhosts();
-                this.saveDashboard();
+                if (await window.Dialog.confirm('Löschen bestätigen', 'Sind Sie sicher, dass das Objekt gelöscht werden soll?')) {
+                    this.activeSettingsTile.remove();
+                    this.settingsModal.classList.add('hidden');
+                    this.activeSettingsTile = null;
+                    this.refreshGhosts();
+                    this.saveDashboard();
+                }
             };
         }
 
@@ -245,7 +247,7 @@ const TileManager = {
             }
 
             // Generiere dynamisches HTML für die <option> Tags
-            const optionsHTML = `<option value="" data-type="">&mdash; None &mdash;</option>` + 
+            const optionsHTML = `<option value="" data-type="">&mdash; Keine &mdash;</option>` + 
                 allDatapoints.map(dp => {
                     let dpType = '';
                     const t = (dp.type || '').toLowerCase();
@@ -379,11 +381,13 @@ const TileManager = {
             this.openSettings(tile);
         });
 
-        tile.querySelector('.tile-remove-btn')?.addEventListener('click', (e) => {
+        tile.querySelector('.tile-remove-btn')?.addEventListener('click', async (e) => {
             e.preventDefault(); e.stopPropagation();
-            tile.remove();
-            this.refreshGhosts();
-            this.saveDashboard();
+            if (await window.Dialog.confirm('Löschen bestätigen', 'Sind Sie sicher, dass das Objekt gelöscht werden soll?')) {
+                tile.remove();
+                this.refreshGhosts();
+                this.saveDashboard();
+            }
         });
 
         const colHandle = tile.querySelector('.tile-resize-col');
@@ -417,7 +421,7 @@ const TileManager = {
             if (!this.dragSrc || this.dragSrc === tile) return;
             const sameSize = this.dragSrc.dataset.colSpan === tile.dataset.colSpan &&
                              this.dragSrc.dataset.rowSpan === tile.dataset.rowSpan;
-            if (!sameSize) { this.showError(tile, 'Tiles must be the same size to swap'); return; }
+            if (!sameSize) { this.showError(tile, 'Kacheln müssen gleich gross sein, um sie zu tauschen'); return; }
             const srcCol = this.dragSrc.dataset.gridCol, srcRow = this.dragSrc.dataset.gridRow;
             this.dragSrc.dataset.gridCol = tile.dataset.gridCol;
             this.dragSrc.dataset.gridRow = tile.dataset.gridRow;
@@ -548,12 +552,12 @@ const TileManager = {
 
     createTileHTML(label) {
         return `<span class="tile-label">${label}</span>
-            <div class="tile-config-wrapper">
-                <button class="tile-remove-btn" title="Remove">✕</button>
-                <button class="tile-edit-btn" title="Configure"><img src="assets/icons/gear-svgrepo-com.svg"></button>
+            <div class="tile-config-wrapper" style="display: flex; gap: 4px;">
+                <button class="btn-edit tile-edit-btn" title="Konfigurieren"><img src="assets/icons/gear-svgrepo-com.svg" alt="Bearbeiten"></button>
+                <button class="btn-delete tile-remove-btn" title="Entfernen"><img src="assets/icons/trash-svgrepo-com.svg" alt="Löschen"></button>
             </div>
-            <div class="tile-resize-handle tile-resize-col" title="Drag to resize width"></div>
-            <div class="tile-resize-handle tile-resize-row" title="Drag to resize height"></div>`;
+            <div class="tile-resize-handle tile-resize-col" title="Breite anpassen"></div>
+            <div class="tile-resize-handle tile-resize-row" title="Höhe anpassen"></div>`;
     },
 
     applyPosition(el) {
@@ -692,7 +696,7 @@ const TileManager = {
             this.applyPosition(this.dragSrc);
             this.saveDashboard();
         } else {
-            this.showError(this.dragSrc, 'Tile does not fit here');
+            this.showError(this.dragSrc, 'Kachel passt hier nicht hin');
         }
         this.refreshGhosts();
     },
