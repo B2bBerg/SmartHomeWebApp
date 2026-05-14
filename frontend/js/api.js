@@ -3,8 +3,7 @@
  * Aggregiert alle Sub-Module aus /api/ und stellt sie als globales window.API bereit.
  */
 import { DevicesAPI } from './api/devices.js';
-import { SensorsAPI } from './api/sensors.js';
-import { ActuatorsAPI } from './api/actuators.js';
+import { DatapointsAPI } from './api/datapoints.js';
 import { LocationsAPI } from './api/locations.js';
 import { RulesAPI } from './api/rules.js';
 import { SystemAPI } from './api/system.js';
@@ -12,9 +11,8 @@ import { AddressAPI } from './api/address.js';
 
 const API = {
     ...DevicesAPI,
-    ...SensorsAPI,
+    ...DatapointsAPI,
     ...AddressAPI,
-    ...ActuatorsAPI,
     ...LocationsAPI,
     ...RulesAPI,
     ...SystemAPI,
