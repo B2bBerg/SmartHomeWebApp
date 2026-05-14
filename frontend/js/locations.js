@@ -793,7 +793,6 @@ const LocationsManager = {
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.5rem; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
                 <div style="display:flex; align-items:center; gap:0.5rem;">
                     <h3 style="color:var(--text-primary); margin:0; font-size:1.2rem;">Dashboard: ${room.name}</h3>
-                    <button id="btn-edit-room-name" class="btn-outline" title="Raum umbenennen"><img src="assets/icons/gear-svgrepo-com.svg" alt="edit">Titel bearbeiten</button>
                 </div>
                 <div style="display:flex; gap:0.5rem;">
                     <button id="room-edit-mode-btn" class="btn-outline" title="Kachel-Layout bearbeiten"><img src="assets/icons/gear-svgrepo-com.svg" alt="edit">Kachel bearbeiten</button>
@@ -813,17 +812,6 @@ const LocationsManager = {
                 allowedDatapoints: assignedDatapoints.map(d => d.id) // Nur Sensoren/Aktoren dieses Raums zulassen!
             });
             this.roomDashboard.init();
-        }
-
-        const btnEditName = document.getElementById('btn-edit-room-name');
-        if (btnEditName) {
-            btnEditName.addEventListener('click', () => {
-                this.openModal('room', 'Raum bearbeiten', { name: room.name }, async (data) => {
-                    room.name = data.name;
-                    await this.saveData();
-                    this.renderRooms(floor, building);
-                });
-            });
         }
     }
 };
