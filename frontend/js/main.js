@@ -194,9 +194,11 @@ function renderUsers() {
 }
 
 // --- Init Router ---
-if (window.Router) {
-    window.Router.init();
-}
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.Router) {
+        window.Router.init();
+    }
+});
 
 // ── Settings view ───────────────────────────────────────────────────────────
 function renderSettings() {

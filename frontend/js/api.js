@@ -20,14 +20,10 @@ const API = {
     // Spezifische Logik, die Module kombiniert:
     getLiveData: async () => {
         try {
-            const [sensors, actuators] = await Promise.all([
-                API.getSensors(),
-                API.getActuators()
-            ]);
+            const datapoints = await API.getDatapoints();
             
             const liveData = {};
-            if (sensors) sensors.forEach(s => liveData[s.id] = s.value);
-            if (actuators) actuators.forEach(a => liveData[a.id] = a.value !== undefined ? a.value : a.state);
+            if (datapoints) datapoints.forEach(dp => liveData[dp.id] = dp.value !== undefined ? dp.value : dp.state);
             
             return liveData;
         } catch (error) {
