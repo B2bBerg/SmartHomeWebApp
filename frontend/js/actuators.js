@@ -15,7 +15,7 @@ const ActuatorManager = {
             { key: 'type',       label: 'Typ' },
             { key: 'location',   label: 'Standort' },
             { key: 'channel',    label: 'IO-Port', render: (val) => val ? `<span class="io-port io-port--assigned">${val}</span>` : '—' },
-            { key: 'value',      label: 'Wert' },
+            { key: 'value',      label: 'Wert / Zustand', render: (val, row) => (val !== undefined ? val : (row.state !== undefined ? row.state : '—')) },
             { key: 'unit',       label: 'Einheit' },
             { key: 'updated',    label: 'Letztes Update' }
         ];
@@ -32,7 +32,8 @@ const ActuatorManager = {
 
     async loadData() {
         try {
-            const [actuators, devices] = await Promise.all([window.API.getActuators(), window.API.getDevices()]);
+            const [datapoints, devices] = await Promise.all([window.API.getDatapoints(), window.API.getDevices()]);
+            const actuators = datapoints.filter(dp => dp.isActuator || dp.canWrite);
             const mergedData = actuators.map(a => {
                 const dev = devices.find(d => d.id === a.deviceId) || {};
                 return { ...dev, ...a, id: a.id, deviceName: dev.name };
@@ -48,16 +49,14 @@ const ActuatorManager = {
         let locations = [];
         let usedPortsMap = {};
         try {
-            const [devs, sensors, actuators, locs] = await Promise.all([
+            const [devs, datapoints, locs] = await Promise.all([
                 window.API.getDevices(),
-                window.API.getSensors(),
-                window.API.getActuators(),
+                window.API.getDatapoints(),
                 window.API.getLocations()
             ]);
             devices = devs;
             locations = locs;
-            const allDatapoints = [...sensors, ...actuators];
-            allDatapoints.forEach(dp => {
+            datapoints.forEach(dp => {
                 if (dp.deviceId && dp.channel) {
                     if (!usedPortsMap[dp.deviceId]) usedPortsMap[dp.deviceId] = new Set();
                     usedPortsMap[dp.deviceId].add(String(dp.channel));
@@ -65,113 +64,78 @@ const ActuatorManager = {
             });
         } catch (err) { console.error("Konnte Daten nicht laden", err); }
 
-        const modal = document.createElement('div');
-        modal.className = 'table-modal';
-        modal.innerHTML = `
-            <div class="table-modal-box">
-                <h3>Neuen Aktor erfassen</h3>
-                <p>Suchen Sie das Master-Gerät (Hardware) für den neuen Datenpunkt:</p>
-                <div class="settings-group">
-                    <label>Name *</label>
-                    <input type="text" id="modal-name" placeholder="Eigener Name (z.B. Deckenlampe)">
-                </div>
-                <div class="settings-group">
-                    <label>Standort</label>
-                    <select id="modal-location">
-                        <option value="">-- Nicht zugewiesen --</option>
-                        ${locations.map(bldg => 
-                            (bldg.floors || []).map(floor => 
-                                `<optgroup label="${bldg.name} - ${floor.name}">
-                                    ${(floor.rooms || []).map(room => `<option value="${room.name}">${room.name}</option>`).join('')}
-                                </optgroup>`
-                            ).join('')
-                        ).join('')}
-                    </select>
-                </div>
-                <div class="settings-group">
-                    <label>Master-Gerät (Hardware) *</label>
-                    <select id="modal-address">
-                        <option value="">-- Bitte wählen --</option>
-                        ${devices.map(d => `<option value="${d.id}" data-channels="${JSON.stringify(d.channels || []).replace(/"/g, '&quot;')}">${d.name} (${d.id.split('-')[0]}...)</option>`).join('')}
-                    </select>
-                </div>
-                <div class="settings-group">
-                    <label>IO-Port (Channel) *</label>
-                    <select id="modal-ioport">
-                        <option value="">-- Zuerst Gerät wählen --</option>
-                    </select>
-                </div>
-                <div id="modal-msg" class="modal-msg"></div>
-                <div class="table-modal-actions">
-                    <button id="modal-cancel">Abbrechen</button>
-                    <button id="modal-confirm" class="btn-add">Hinzufügen</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-
-        modal.querySelector('#modal-cancel').onclick = () => modal.remove();
-        
-        const devSelect = modal.querySelector('#modal-address');
-        const portSelect = modal.querySelector('#modal-ioport');
-        devSelect.addEventListener('change', () => {
-            const selectedOpt = devSelect.options[devSelect.selectedIndex];
-            const deviceId = selectedOpt ? selectedOpt.value : null;
-            let channels = [];
-            if (selectedOpt && selectedOpt.dataset.channels) {
-                try { channels = JSON.parse(selectedOpt.dataset.channels); } catch(e) {}
-            }
-            const usedPorts = usedPortsMap[deviceId] || new Set();
-            portSelect.innerHTML = '<option value="">-- Bitte wählen --</option>';
-            if (Array.isArray(channels) && channels.length > 0) {
-                channels.forEach(ch => {
-                    const isUsed = usedPorts.has(String(ch));
-                    portSelect.innerHTML += `<option value="${ch}" ${isUsed ? 'disabled' : ''}>${ch}${isUsed ? ' (Belegt)' : ''}</option>`;
+        let locOptions = [{ value: '', label: '-- Nicht zugewiesen --' }];
+        locations.forEach(bldg => {
+            locOptions.push({ value: bldg.name, label: `🏢 ${bldg.name}` });
+            (bldg.floors || []).forEach(floor => {
+                locOptions.push({ value: floor.name, label: `&nbsp;&nbsp;🟰 ${floor.name}` });
+                (floor.rooms || []).forEach(room => {
+                    locOptions.push({ value: room.name, label: `&nbsp;&nbsp;&nbsp;&nbsp;🚪 ${room.name}` });
                 });
-            } else if (typeof channels === 'number' && channels > 0) {
-                for (let i = 1; i <= channels; i++) {
-                    const isUsed = usedPorts.has(String(i));
-                    portSelect.innerHTML += `<option value="${i}" ${isUsed ? 'disabled' : ''}>${i}${isUsed ? ' (Belegt)' : ''}</option>`;
-                }
-            }
+            });
+        });
+
+        const devOptions = [{ value: '', label: '-- Bitte wählen --' }];
+        devices.forEach(d => {
+            devOptions.push({ value: d.id, label: `${d.name} (${d.id.split('-')[0]}...)` });
         });
         
-        const msgEl = modal.querySelector('#modal-msg');
-        const btnConfirm = modal.querySelector('#modal-confirm');
+        const result = await window.Dialog.formWithTable({
+            title: 'Neuen Aktor erfassen',
+            saveText: 'Hinzufügen',
+            tables: [],
+            fields: [
+                { id: 'name', label: 'Name *', placeholder: 'Eigener Name (z.B. Deckenlampe)', fullWidth: true },
+                { id: 'location', label: 'Standort', type: 'select', options: locOptions, fullWidth: true },
+                { id: 'address', label: 'Master-Gerät (Hardware) *', type: 'select', options: devOptions, fullWidth: true },
+                { id: 'ioport', label: 'IO-Port (Channel) *', type: 'select', options: [{value: '', label: '-- Zuerst Gerät wählen --'}], fullWidth: true }
+            ],
+            onReady: (modal, formElements) => {
+                const devSelect = formElements['address'];
+                const portSelect = formElements['ioport'];
+                devSelect.addEventListener('change', () => {
+                    const deviceId = devSelect.value;
+                    const selectedDev = devices.find(d => d.id === deviceId);
+                    let channels = selectedDev ? (selectedDev.channels || []) : [];
+                    const usedPorts = usedPortsMap[deviceId] || new Set();
+                    portSelect.innerHTML = '<option value="">-- Bitte wählen --</option>';
+                    if (Array.isArray(channels) && channels.length > 0) {
+                        channels.forEach(ch => {
+                            const isUsed = usedPorts.has(String(ch));
+                            portSelect.innerHTML += `<option value="${ch}" ${isUsed ? 'disabled' : ''}>${ch}${isUsed ? ' (Belegt)' : ''}</option>`;
+                        });
+                    } else if (typeof channels === 'number' && channels > 0) {
+                        for (let i = 1; i <= channels; i++) {
+                            const isUsed = usedPorts.has(String(i));
+                            portSelect.innerHTML += `<option value="${i}" ${isUsed ? 'disabled' : ''}>${i}${isUsed ? ' (Belegt)' : ''}</option>`;
+                        }
+                    }
+                });
+            }
+        });
 
-        btnConfirm.onclick = async () => {
-            const name = modal.querySelector('#modal-name').value.trim();
-            const location = modal.querySelector('#modal-location').value;
-            const address = modal.querySelector('#modal-address').value.trim();
-            const port = modal.querySelector('#modal-ioport').value.trim();
-
-            if (!name || !address || !port) {
-                msgEl.className = 'modal-msg error';
-                msgEl.innerHTML = '✖ Bitte alle Pflichtfelder (*) ausfüllen.';
+        if (result) {
+            if (!result.name || !result.address || !result.ioport) {
+                window.Dialog.alert('Fehler', 'Bitte alle Pflichtfelder (*) ausfüllen.', true);
                 return;
             }
-
-            btnConfirm.disabled = true;
             
             const newEntry = {
-                deviceId: address, name: name, location: location, channel: port,
-                isSensor: false, isActuator: true, type: 'Aktor', value: '-', unit: '', status: 'active', updated: 'jetzt', timestamp: new Date().toISOString()
+                deviceId: result.address, name: result.name, location: result.location, channel: result.ioport,
+                canRead: true, canWrite: true, isSensor: false, isActuator: true, type: 'Aktor', state: '-', unit: '', status: 'active', updated: 'jetzt', timestamp: new Date().toISOString()
             };
             
-            const devObj = devices.find(d => d.id === address);
+            const devObj = devices.find(d => d.id === result.address);
             if (devObj) newEntry.deviceName = devObj.name;
                 
             try {
-                const res = await window.API.addActuator(newEntry);
+                const res = await window.API.addDatapoint(newEntry);
                 newEntry.id = res.id;
                 this.table._addRow(newEntry);
-                modal.remove();
             } catch (err) {
-                msgEl.className = 'modal-msg error';
-                msgEl.innerHTML = `✖ Fehler beim Speichern im System.`;
-                btnConfirm.disabled = false;
+                window.Dialog.alert('Fehler', 'Fehler beim Speichern im System.', true);
             }
-        };
+        }
     },
 
     async showEditModal(row) {
@@ -179,10 +143,14 @@ const ActuatorManager = {
         let locations = [];
         let usedPortsMap = {};
         try {
-            const [devs, sensors, actuators, locs] = await Promise.all([window.API.getDevices(), window.API.getSensors(), window.API.getActuators(), window.API.getLocations()]);
+            const [devs, datapoints, locs] = await Promise.all([
+                window.API.getDevices(), 
+                window.API.getDatapoints(), 
+                window.API.getLocations()
+            ]);
             devices = devs;
             locations = locs;
-            [...sensors, ...actuators].forEach(dp => {
+            datapoints.forEach(dp => {
                 if (dp.deviceId && dp.channel && dp.id !== row.id) {
                     if (!usedPortsMap[dp.deviceId]) usedPortsMap[dp.deviceId] = new Set();
                     usedPortsMap[dp.deviceId].add(String(dp.channel));
@@ -190,57 +158,96 @@ const ActuatorManager = {
             });
         } catch(e) {}
 
-        const modal = document.createElement('div');
-        modal.className = 'table-modal';
-        modal.innerHTML = `
-            <div class="table-modal-box">
-                <h3>Aktor bearbeiten</h3>
-                <div class="settings-group"><label>Name</label><input type="text" id="edit-name" value="${row.name || ''}"></div>
-                <div class="settings-group"><label>Standort</label><select id="edit-location"><option value="">-- Nicht zugewiesen --</option>
-                ${locations.map(bldg => 
-                    (bldg.floors || []).map(floor => 
-                        `<optgroup label="${bldg.name} - ${floor.name}">${(floor.rooms || []).map(room => `<option value="${room.name}" ${row.location === room.name ? 'selected' : ''}>${room.name}</option>`).join('')}</optgroup>`
-                    ).join('')
-                ).join('')}
-                </select></div>
-                <div class="settings-group"><label>Master-Gerät (Hardware)</label><select id="edit-address"><option value="">-- Bitte wählen --</option>${devices.map(d => `<option value="${d.id}" data-channels="${JSON.stringify(d.channels || []).replace(/"/g, '&quot;')}" ${d.id === row.deviceId ? 'selected' : ''}>${d.name} (${d.id.split('-')[0]}...)</option>`).join('')}</select></div>
-                <div class="settings-group"><label>IO-Port (Channel)</label><select id="edit-ioport"><option value="">-- Zuerst Gerät wählen --</option></select></div>
-                <div id="edit-msg" class="modal-msg"></div>
-                <div class="table-modal-actions"><button id="edit-cancel">Abbrechen</button><button id="edit-confirm" class="btn-add">Speichern</button></div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-        modal.querySelector('#edit-cancel').onclick = () => modal.remove();
-        
-        const devSelect = modal.querySelector('#edit-address');
-        const portSelect = modal.querySelector('#edit-ioport');
-        const updatePorts = () => {
-            const selectedOpt = devSelect.options[devSelect.selectedIndex];
-            let channels = [];
-            if (selectedOpt && selectedOpt.dataset.channels) { try { channels = JSON.parse(selectedOpt.dataset.channels); } catch(e) {} }
-            const usedPorts = usedPortsMap[selectedOpt ? selectedOpt.value : null] || new Set();
-            portSelect.innerHTML = '<option value="">-- Bitte wählen --</option>';
-            if (Array.isArray(channels) && channels.length > 0) channels.forEach(ch => portSelect.innerHTML += `<option value="${ch}" ${ch === row.channel ? 'selected' : ''} ${usedPorts.has(String(ch)) ? 'disabled' : ''}>${ch}${usedPorts.has(String(ch)) ? ' (Belegt)' : ''}</option>`);
-            else if (typeof channels === 'number' && channels > 0) for (let i = 1; i <= channels; i++) portSelect.innerHTML += `<option value="${i}" ${String(i) === String(row.channel) ? 'selected' : ''} ${usedPorts.has(String(i)) ? 'disabled' : ''}>${i}${usedPorts.has(String(i)) ? ' (Belegt)' : ''}</option>`;
-        };
-        devSelect.addEventListener('change', () => { row.channel = null; updatePorts(); });
-        updatePorts();
+        let locOptions = [{ value: '', label: '-- Nicht zugewiesen --' }];
+        locations.forEach(bldg => {
+            locOptions.push({ value: bldg.name, label: `🏢 ${bldg.name}` });
+            (bldg.floors || []).forEach(floor => {
+                locOptions.push({ value: floor.name, label: `&nbsp;&nbsp;🟰 ${floor.name}` });
+                (floor.rooms || []).forEach(room => {
+                    locOptions.push({ value: room.name, label: `&nbsp;&nbsp;&nbsp;&nbsp;🚪 ${room.name}` });
+                });
+            });
+        });
 
-        const msgEl = modal.querySelector('#edit-msg');
-        const btnConfirm = modal.querySelector('#edit-confirm');
-        btnConfirm.onclick = async () => {
-            if (!modal.querySelector('#edit-name').value.trim() || !modal.querySelector('#edit-address').value.trim()) { msgEl.className = 'modal-msg error'; msgEl.innerHTML = '✖ Bitte alle Pflichtfelder ausfüllen.'; return; }
-            btnConfirm.disabled = true;
-            row.name = modal.querySelector('#edit-name').value.trim(); row.location = modal.querySelector('#edit-location').value; row.deviceId = modal.querySelector('#edit-address').value.trim(); row.channel = modal.querySelector('#edit-ioport').value.trim();
-            const devObj = devices.find(d => d.id === row.deviceId); if (devObj) row.deviceName = devObj.name;
-            try { await window.API.updateActuator(row.id, row); this.table._render(); modal.remove(); } 
-            catch (err) { msgEl.className = 'modal-msg error'; msgEl.innerHTML = `✖ Fehler beim Speichern.`; btnConfirm.disabled = false; }
-        };
+        const devOptions = [{ value: '', label: '-- Bitte wählen --' }];
+        devices.forEach(d => {
+            devOptions.push({ value: d.id, label: `${d.name} (${d.id.split('-')[0]}...)` });
+        });
+
+        const result = await window.Dialog.formWithTable({
+            title: 'Aktor bearbeiten',
+            saveText: 'Speichern',
+            tables: [],
+            fields: [
+                { id: 'name', label: 'Name *', value: row.name || '', fullWidth: true },
+                { id: 'location', label: 'Standort', type: 'select', value: row.location, options: locOptions, fullWidth: true },
+                { id: 'address', label: 'Master-Gerät (Hardware) *', type: 'select', value: row.deviceId, options: devOptions, fullWidth: true },
+                { id: 'ioport', label: 'IO-Port (Channel) *', type: 'select', value: row.channel, options: [{value: row.channel || '', label: row.channel || '-- Zuerst Gerät wählen --'}], fullWidth: true }
+            ],
+            onReady: (modal, formElements) => {
+                const devSelect = formElements['address'];
+                const portSelect = formElements['ioport'];
+                
+                const updatePorts = () => {
+                    const deviceId = devSelect.value;
+                    const selectedDev = devices.find(d => d.id === deviceId);
+                    let channels = selectedDev ? (selectedDev.channels || []) : [];
+                    const usedPorts = usedPortsMap[deviceId] || new Set();
+                    
+                    const currentVal = portSelect.value; 
+                    portSelect.innerHTML = '<option value="">-- Bitte wählen --</option>';
+                    
+                    if (Array.isArray(channels) && channels.length > 0) {
+                        channels.forEach(ch => {
+                            const isUsed = usedPorts.has(String(ch));
+                            portSelect.innerHTML += `<option value="${ch}" ${String(ch) === String(currentVal) ? 'selected' : ''} ${isUsed ? 'disabled' : ''}>${ch}${isUsed ? ' (Belegt)' : ''}</option>`;
+                        });
+                    } else if (typeof channels === 'number' && channels > 0) {
+                        for (let i = 1; i <= channels; i++) {
+                            const isUsed = usedPorts.has(String(i));
+                            portSelect.innerHTML += `<option value="${i}" ${String(i) === String(currentVal) ? 'selected' : ''} ${isUsed ? 'disabled' : ''}>${i}${isUsed ? ' (Belegt)' : ''}</option>`;
+                        }
+                    }
+                };
+
+                devSelect.addEventListener('change', () => { 
+                    portSelect.value = ''; 
+                    updatePorts(); 
+                });
+                
+                if (devSelect.value) {
+                    portSelect.value = row.channel;
+                    updatePorts();
+                }
+            }
+        });
+
+        if (result) {
+            if (!result.name || !result.address || !result.ioport) {
+                window.Dialog.alert('Fehler', 'Bitte alle Pflichtfelder (*) ausfüllen.', true);
+                return;
+            }
+
+            row.name = result.name; 
+            row.location = result.location; 
+            row.deviceId = result.address; 
+            row.channel = result.ioport;
+            
+            const devObj = devices.find(d => d.id === row.deviceId); 
+            if (devObj) row.deviceName = devObj.name;
+            
+            try { 
+                await window.API.updateDatapoint(row.id, row); 
+                this.table._render(); 
+            } catch (err) { 
+                window.Dialog.alert('Fehler', 'Fehler beim Speichern.', true); 
+            }
+        }
     },
 
     async deleteActuator(rowId) {
         try {
-            await window.API.deleteActuator(rowId);
+            await window.API.deleteDatapoint(rowId);
             this.table.data = this.table.data.filter(r => r.id !== rowId);
             this.table.setData(this.table.data);
         } catch (err) {

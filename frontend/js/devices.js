@@ -70,14 +70,12 @@ const DeviceManager = {
 
     async loadData() {
         try {
-            const [devices, sensors, actuators] = await Promise.all([
+            const [devices, datapoints] = await Promise.all([
                 window.API.getDevices(),
-                window.API.getSensors(),
-                window.API.getActuators()
+                window.API.getDatapoints()
             ]);
-            const allDatapoints = [...sensors, ...actuators];
             const mergedDevices = devices.map(device => {
-                const deviceDatapoints = allDatapoints.filter(dp => dp.deviceId === device.id);
+                const deviceDatapoints = datapoints.filter(dp => dp.deviceId === device.id);
                 const usedChannels = deviceDatapoints.filter(dp => dp.channel != null).map(dp => String(dp.channel));
                 return { ...device, usedChannels };
             });
