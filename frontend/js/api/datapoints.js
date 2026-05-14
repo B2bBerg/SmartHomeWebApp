@@ -10,21 +10,13 @@ export const DatapointsAPI = {
         try {
             return await fetchApi('/datapoints');
         } catch (error) {
-            console.warn("Backend-API '/datapoints' nicht erreichbar. Nutze kombinierten Fallback.");
+            console.warn("Backend-API '/datapoints' nicht erreichbar. Nutze Datenpunkt-Fallback.");
             try {
-                // Fallback: Lade alte Mock-JSON Dateien und kombiniere sie
-                const [sRes, aRes] = await Promise.all([
-                    fetch('./testing/sensors/sensors.json?t=' + Date.now()),
-                    fetch('./testing/actuators/actuators.json?t=' + Date.now())
-                ]);
+                // Fallback: Lade neue kombinierte Mock-JSON Datei
+                const response = await fetch('./testing/datapoint/datapoint.json?t=' + Date.now());
+                if (!response.ok) throw new Error("HTTP Fehler beim Laden von datapoint.json");
                 
-                const sensors = sRes.ok ? await sRes.json() : [];
-                const actuators = aRes.ok ? await aRes.json() : [];
-                
-                const mappedSensors = sensors.map(s => ({ ...s, canRead: true, canWrite: false, isSensor: true, isActuator: false }));
-                const mappedActuators = actuators.map(a => ({ ...a, canRead: true, canWrite: true, isSensor: false, isActuator: true }));
-                
-                return [...mappedSensors, ...mappedActuators];
+                return await response.json();
             } catch (e) {
                 console.error("Fehler beim Fallback-Laden der Datenpunkte", e);
                 return [];
