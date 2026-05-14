@@ -8,10 +8,12 @@ import { ActuatorsAPI } from './api/actuators.js';
 import { LocationsAPI } from './api/locations.js';
 import { RulesAPI } from './api/rules.js';
 import { SystemAPI } from './api/system.js';
+import { AddressAPI } from './api/address.js';
 
 const API = {
     ...DevicesAPI,
     ...SensorsAPI,
+    ...AddressAPI,
     ...ActuatorsAPI,
     ...LocationsAPI,
     ...RulesAPI,

@@ -65,62 +65,6 @@ export const LocationsAPI = {
         }
     },
 
-    searchAddresses: async (query) => {
-        try {
-            return await fetchApi(`/addresses/search?q=${encodeURIComponent(query)}`);
-        } catch (error) {
-            console.warn("Backend-API '/addresses/search' nicht erreichbar. Nutze lokalen Fallback.");
-            try {
-                const response = await fetch('./testing/locations/locations.json?t=' + Date.now());
-                if (!response.ok) return [];
-                const data = await response.json();
-                
-                const results = [];
-                const queryTerms = query.toLowerCase().trim().split(/\s+/).filter(t => t.length > 0);
-                
-                (data || []).forEach(loc => {
-                    // Adress-Mapping analog zu dbStaticData.sql Table 'address'
-                    if (loc.address && loc.address.street) {
-                        const addrStr = `${loc.address.street} ${loc.address.number || ''} ${loc.address.zip || ''} ${loc.address.city || ''}`.trim();
-                        
-                        // Omni-Search (Jedes Suchwort muss vorkommen)
-                        const isMatch = queryTerms.every(term => addrStr.toLowerCase().includes(term));
-                        
-                        if (isMatch && !results.find(a => a.str === addrStr)) {
-                            results.push({ str: addrStr, obj: loc.address });
-                        }
-                    }
-                });
-                return results;
-            } catch (fallbackError) {
-                console.error("Fehler beim Mock der Adress-Suche:", fallbackError);
-                return [];
-            }
-        }
-    },
-
-    lookupCityByZip: async (zip, country = 'Schweiz') => {
-        const countryMap = {
-            'schweiz': 'ch', 'switzerland': 'ch',
-            'deutschland': 'de', 'germany': 'de',
-            'österreich': 'at', 'austria': 'at',
-            'usa': 'us', 'frankreich': 'fr', 'italien': 'it'
-        };
-        const cCode = countryMap[country.toLowerCase()] || 'ch';
-        
-        try {
-            // Externe API nutzen (Kein Backend notwendig)
-            const response = await fetch(`https://api.zippopotam.us/${cCode}/${zip}`);
-            if (response.ok) {
-                const data = await response.json();
-                return data.places.map(place => place['place name']);
-            }
-        } catch (error) {
-            console.warn("PLZ Lookup fehlgeschlagen:", error);
-        }
-        return [];
-    },
-
     addLocation: async (locationData) => {
         try {
             return await fetchApi('/locations', { method: 'POST', body: JSON.stringify(locationData) });
