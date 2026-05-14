@@ -52,7 +52,9 @@ function initDashboardTiles() {
         const button = document.getElementById(id);
         if (button) {
             button.addEventListener('click', () => {
-                navigate(DASHBOARD_TILE_MAP[id]);
+                if (window.Router) {
+                    window.Router.navigate(`#${DASHBOARD_TILE_MAP[id]}`);
+                }
             });
         }
     });
@@ -86,18 +88,25 @@ const VIEW_TITLE_MAP = {
     settings:  'Einstellungen'
 };
 
-function navigate(view) {
+window.updateActiveNav = function(view) {
     sidebar.querySelectorAll('li').forEach(li => li.classList.remove('active'));
     const title = VIEW_TITLE_MAP[view] || 'Dashboard';
     const li = sidebar.querySelector(`li[title="${title}"]`);
     if (li) li.classList.add('active');
-    (SIDEBAR_VIEWS_MAP[view] || renderDashboard)();
+};
+
+window.renderView = function(view) {
+    window.updateActiveNav(view);
+    const renderFunc = SIDEBAR_VIEWS_MAP[view] || renderDashboard;
+    renderFunc();
 };
 
 sidebar.querySelectorAll('li[title]').forEach(li => {
     li.addEventListener('click', () => {
         const viewKey = Object.keys(VIEW_TITLE_MAP).find(k => VIEW_TITLE_MAP[k] === li.title) || 'dashboard';
-        navigate(viewKey);
+        if (window.Router) {
+            window.Router.navigate(`#${viewKey}`);
+        }
     });
 });
 
@@ -182,6 +191,11 @@ function renderUsers() {
             <p class="page-placeholder">Benutzer-Ansicht – bald verfügbar</p>
         </div>
     `;
+}
+
+// --- Init Router ---
+if (window.Router) {
+    window.Router.init();
 }
 
 // ── Settings view ───────────────────────────────────────────────────────────

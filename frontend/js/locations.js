@@ -8,8 +8,58 @@ const LocationsManager = {
         this.isEditModeBuildings = false;
         this.isEditModeFloors = false;
         this.isEditModeRooms = false;
+        this.pendingRoute = null;
         this.createModal();
         this.loadData();
+    },
+
+    // --- Wird vom Router aufgerufen ---
+    loadView(pathParts, state) {
+        this.pendingRoute = { pathParts, state };
+        if (this.locations) {
+            this.applyPendingRoute();
+        }
+    },
+
+    applyPendingRoute() {
+        if (!this.pendingRoute) return;
+        const { pathParts, state } = this.pendingRoute;
+        this.pendingRoute = null;
+
+        if (state && Object.keys(state).length > 0 && state.view) {
+            this.restoreState(state);
+            return;
+        }
+
+        // URL Parsen (Fallback für direkte Bookmarks/Reloads der Seite)
+        if (pathParts.length >= 7 && pathParts[1] === 'building' && pathParts[3] === 'floor' && pathParts[5] === 'room') {
+            this.restoreState({ view: 'room', buildingId: pathParts[2], floorId: pathParts[4], roomId: pathParts[6] });
+        } else if (pathParts.length >= 5 && pathParts[1] === 'building' && pathParts[3] === 'floor') {
+            this.restoreState({ view: 'floor', buildingId: pathParts[2], floorId: pathParts[4] });
+        } else if (pathParts.length >= 3 && pathParts[1] === 'building') {
+            this.restoreState({ view: 'building', buildingId: pathParts[2] });
+        } else {
+            this.renderBuildings();
+        }
+    },
+
+    restoreState(state) {
+        if (!state || !this.locations) return;
+        
+        if (state.view === 'buildings') {
+            this.renderBuildings();
+        } else if (state.view === 'building' || state.view === 'floor' || state.view === 'room') {
+            const b = this.locations.find(x => x.id === state.buildingId);
+            if (b) {
+                if (state.floorId) this.activeFloorId = state.floorId;
+                if (state.roomId) this.activeRoomId = state.roomId;
+                this.isEditModeFloors = false;
+                this.isEditModeRooms = false;
+                this.renderBuildingDetails(b);
+            } else {
+                this.renderBuildings();
+            }
+        }
     },
 
     createModal() {
@@ -261,7 +311,11 @@ const LocationsManager = {
             const a = (actuators || []).map(x => ({ ...x, dpType: 'Aktor' }));
             this.allDatapoints = [...d, ...s, ...a];
             
-            this.renderBuildings();
+            if (this.pendingRoute) {
+                this.applyPendingRoute();
+            } else {
+                this.renderBuildings();
+            }
         } catch (err) {
             console.error("Fehler beim Laden der Locations-Struktur:", err);
             this.container.innerHTML = `<p class="page-placeholder error">Fehler beim Laden der Struktur</p>`;
@@ -383,11 +437,15 @@ const LocationsManager = {
         this.container.querySelectorAll('.building-card').forEach(card => {
             card.addEventListener('click', () => {
                 const buildingId = card.dataset.building;
-                const building = this.locations.find(b => b.id === buildingId);
-                if (building) {
-                    this.isEditModeFloors = false;
-                    this.isEditModeRooms = false;
-                    this.renderBuildingDetails(building);
+                if (window.Router) {
+                    window.Router.navigate(`#locations/building/${buildingId}`, { view: 'building', buildingId: buildingId });
+                } else {
+                    const building = this.locations.find(b => b.id === buildingId);
+                    if (building) {
+                        this.isEditModeFloors = false;
+                        this.isEditModeRooms = false;
+                        this.renderBuildingDetails(building);
+                    }
                 }
             });
         });
@@ -578,7 +636,13 @@ const LocationsManager = {
         `;
         
         this.container.innerHTML = html;
-        document.getElementById('bc-locations').addEventListener('click', () => this.renderBuildings());
+        document.getElementById('bc-locations').addEventListener('click', () => {
+            if (window.Router) {
+                window.Router.navigate('#locations', { view: 'buildings' });
+            } else {
+                this.renderBuildings();
+            }
+        });
         
         document.getElementById('btn-toggle-edit').addEventListener('click', () => {
             this.isEditModeFloors = !this.isEditModeFloors;
@@ -622,12 +686,16 @@ const LocationsManager = {
             tabs.forEach(tab => {
                 tab.addEventListener('click', (e) => {
                     if(e.target.tagName === 'BUTTON' && e.target.classList.contains('btn-icon')) return;
-                    tabs.forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
                     const floorId = tab.dataset.floor;
-                    this.activeFloorId = floorId;
-                    const floor = building.floors.find(f => f.id === floorId);
-                    if (floor) this.renderRooms(floor, building);
+                    if (window.Router) {
+                        window.Router.navigate(`#locations/building/${building.id}/floor/${floorId}`, { view: 'floor', buildingId: building.id, floorId: floorId });
+                    } else {
+                        tabs.forEach(t => t.classList.remove('active'));
+                        tab.classList.add('active');
+                        this.activeFloorId = floorId;
+                        const floor = building.floors.find(f => f.id === floorId);
+                        if (floor) this.renderRooms(floor, building);
+                    }
                 });
             });
 
@@ -771,12 +839,16 @@ const LocationsManager = {
         roomTabs.forEach(tab => {
             tab.addEventListener('click', (e) => {
                 if(e.target.tagName === 'BUTTON' && e.target.classList.contains('btn-icon')) return;
-                roomTabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
                 const roomId = tab.dataset.room;
-                this.activeRoomId = roomId;
-                const room = floor.rooms.find(r => r.id === roomId);
-                if (room) this.renderRoomDetails(room, floor, building);
+                if (window.Router) {
+                    window.Router.navigate(`#locations/building/${building.id}/floor/${floor.id}/room/${roomId}`, { view: 'room', buildingId: building.id, floorId: floor.id, roomId: roomId });
+                } else {
+                    roomTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    this.activeRoomId = roomId;
+                    const room = floor.rooms.find(r => r.id === roomId);
+                    if (room) this.renderRoomDetails(room, floor, building);
+                }
             });
         });
 
