@@ -133,13 +133,13 @@ const Dialog = {
             const { title, fields, onReady, saveText = 'Speichern' } = config;
             
             // Rückwärtskompatibilität für Dialoge, die nur eine Tabelle nutzen
-            const tables = config.tables || [{
+            const tables = config.tables || (config.tableColumns ? [{
                 id: 'default',
                 title: 'Oder aus Vorlage / Bestand wählen:',
                 columns: config.tableColumns,
                 data: config.tableData,
                 onRowSelect: config.onRowSelect
-            }];
+            }] : []);
 
             const modal = document.createElement('div');
             modal.className = 'table-modal';
@@ -153,36 +153,50 @@ const Dialog = {
                     return;
                 }
                 const colSpan = f.fullWidth ? 'grid-column: 1 / -1;' : '';
+                
+                let inputHtml = '';
+                if (f.type === 'select') {
+                    const optionsHtml = (f.options || []).map(opt => `<option value="${opt.value}" ${f.value === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('');
+                    inputHtml = `<select id="df_${f.id}" style="width: 100%;">${optionsHtml}</select>`;
+                } else {
+                    inputHtml = `<input type="${f.type || 'text'}" id="df_${f.id}" placeholder="${f.placeholder || ''}" ${f.readonly ? 'readonly' : ''} value="${f.value || ''}" style="width: 100%;">`;
+                }
+
                 fieldsHtml += `
                     <div class="settings-group" style="${colSpan} margin-bottom: 0;">
                         <label>${f.label}</label>
-                        <input type="${f.type || 'text'}" id="df_${f.id}" placeholder="${f.placeholder || ''}" ${f.readonly ? 'readonly' : ''} value="${f.value || ''}" style="width: 100%;">
+                        ${inputHtml}
                     </div>
                 `;
             });
 
-            // Tabs rendern, falls mehr als eine Tabelle konfiguriert wurde
-            let tabsHtml = '';
-            if (tables.length > 1) {
-                tabsHtml = `<div class="dialog-tabs" style="display:flex; gap:0.5rem; margin-bottom:0.5rem; border-bottom:1px solid var(--border-color);">` +
-                    tables.map((t, i) => `<button type="button" class="dialog-tab-btn" data-target="${t.id}" style="background:none; border:none; border-bottom:2px solid ${i===0?'var(--accent-blue)':'transparent'}; color:${i===0?'var(--text-primary)':'var(--text-secondary)'}; font-weight:600; cursor:pointer; padding:0.5rem 1rem; transition:all 0.2s;">${t.title}</button>`).join('') +
-                    `</div>`;
-            } else if (tables.length === 1 && tables[0].title) {
-                tabsHtml = `<label style="display:block; margin-bottom:0.5rem; color:var(--text-primary); font-weight:600;">${tables[0].title}</label>`;
-            }
-
-            modal.innerHTML = `
-                <div class="table-modal-box" style="max-width: 900px; width: 90%; max-height: 90vh; display: flex; flex-direction: column;">
-                    <h3 style="margin-bottom: 1rem; color: var(--text-primary); flex-shrink: 0;">${title}</h3>
-                    
-                    <div class="dialog-form-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem; flex-shrink: 0; margin-bottom: 1rem;">
-                        ${fieldsHtml}
-                    </div>
-
+            let tableSectionHtml = '';
+            if (tables.length > 0) {
+                let tabsHtml = '';
+                if (tables.length > 1) {
+                    tabsHtml = `<div class="dialog-tabs" style="display:flex; gap:0.5rem; margin-bottom:0.5rem; border-bottom:1px solid var(--border-color);">` +
+                        tables.map((t, i) => `<button type="button" class="dialog-tab-btn" data-target="${t.id}" style="background:none; border:none; border-bottom:2px solid ${i===0?'var(--accent-blue)':'transparent'}; color:${i===0?'var(--text-primary)':'var(--text-secondary)'}; font-weight:600; cursor:pointer; padding:0.5rem 1rem; transition:all 0.2s;">${t.title}</button>`).join('') +
+                        `</div>`;
+                } else if (tables.length === 1 && tables[0].title) {
+                    tabsHtml = `<label style="display:block; margin-bottom:0.5rem; color:var(--text-primary); font-weight:600;">${tables[0].title}</label>`;
+                }
+                tableSectionHtml = `
                     <div style="flex-grow: 1; display: flex; flex-direction: column; min-height: 0; border-top: 1px solid var(--border-color); padding-top: 1rem;">
                         ${tabsHtml}
                         <div id="dialog-table-container" style="overflow-y: auto; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem;"></div>
                     </div>
+                `;
+            }
+
+            modal.innerHTML = `
+                <div class="table-modal-box" style="max-width: ${tables.length > 0 ? '900px' : '450px'}; width: 90%; max-height: 90vh; display: flex; flex-direction: column;">
+                    <h3 style="margin-bottom: 1rem; color: var(--text-primary); flex-shrink: 0;">${title}</h3>
+                    
+                    <div class="dialog-form-grid" style="display:grid; grid-template-columns: ${tables.length > 0 ? '1fr 1fr' : '1fr'}; gap: 1rem; flex-shrink: 0; margin-bottom: 1rem;">
+                        ${fieldsHtml}
+                    </div>
+
+                    ${tableSectionHtml}
 
                     <div class="table-modal-actions" style="margin-top: 1.5rem; flex-shrink: 0;">
                         <button class="btn-primary dialog-btn-save">${saveText}</button>
@@ -198,10 +212,11 @@ const Dialog = {
 
             const tableContainer = modal.querySelector('#dialog-table-container');
             let currentTableInstance = null;
-            let activeTabId = tables[0].id;
+            let activeTabId = tables.length > 0 ? tables[0].id : null;
 
             // Logik zum Wechseln der sichtbaren Tabelle
             const renderTabTable = (tabId) => {
+                if (!tableContainer) return;
                 const tabConfig = tables.find(t => t.id === tabId);
                 if (!tabConfig) return;
                 activeTabId = tabId;
@@ -242,7 +257,7 @@ const Dialog = {
                 }
             };
 
-            renderTabTable(activeTabId);
+            if (activeTabId) renderTabTable(activeTabId);
             modal.querySelectorAll('.dialog-tab-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => { e.preventDefault(); switchToTab(btn.dataset.target); });
             });

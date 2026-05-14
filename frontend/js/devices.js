@@ -91,149 +91,112 @@ const DeviceManager = {
         let locations = [];
         try { locations = await window.API.getLocations(); } catch(e) {}
         
-        const modal = document.createElement('div');
-        modal.className = 'table-modal';
-        modal.innerHTML = `
-            <div class="table-modal-box">
-                <h3>Neues Hardware-Gerät erfassen</h3>
-                <p>Das System sucht anschliessend im Hintergrund nach dem Gerät.</p>
-                <div class="settings-group">
-                    <label>Name *</label>
-                    <input type="text" id="modal-name" placeholder="Eigener Name (z.B. Deckenlampe)">
-                </div>
-                <div class="settings-group">
-                    <label>Standort</label>
-                    <select id="modal-location">
-                        <option value="">-- Nicht zugewiesen --</option>
-                        ${locations.map(bldg => `
-                            <option value="${bldg.name}">🏢 ${bldg.name}</option>
-                            ${(bldg.floors || []).map(floor => `
-                                <option value="${floor.name}">&nbsp;&nbsp;🟰 ${floor.name}</option>
-                                ${(floor.rooms || []).map(room => `<option value="${room.name}">&nbsp;&nbsp;&nbsp;&nbsp;🚪 ${room.name}</option>`).join('')}
-                            `).join('')}
-                        `).join('')}
-                    </select>
-                </div>
-                <div class="settings-group">
-                    <label>MAC- oder Bus-Adresse *</label>
-                    <input type="text" id="modal-address" placeholder="z.B. AA:BB:CC... oder 0x05">
-                </div>
-                <div class="settings-group">
-                    <label>Netzwerk (Bus) *</label>
-                    <select id="modal-bustype">
-                        <option value="WIFI">WIFI</option>
-                        <option value="Thread">Thread</option>
-                        <option value="RS485">RS485</option>
-                        <option value="Ethernet">Ethernet</option>
-                    </select>
-                </div>
-                <div id="modal-msg" class="modal-msg"></div>
-                <div class="table-modal-actions">
-                    <button id="modal-cancel">Abbrechen</button>
-                    <button id="modal-confirm" class="btn-add">Hinzufügen</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
+        let locOptions = [{ value: '', label: '-- Nicht zugewiesen --' }];
+        locations.forEach(bldg => {
+            locOptions.push({ value: bldg.name, label: `🏢 ${bldg.name}` });
+            (bldg.floors || []).forEach(floor => {
+                locOptions.push({ value: floor.name, label: `&nbsp;&nbsp;🟰 ${floor.name}` });
+                (floor.rooms || []).forEach(room => {
+                    locOptions.push({ value: room.name, label: `&nbsp;&nbsp;&nbsp;&nbsp;🚪 ${room.name}` });
+                });
+            });
+        });
 
-        modal.querySelector('#modal-cancel').onclick = () => modal.remove();
-        
-        const msgEl = modal.querySelector('#modal-msg');
-        const btnConfirm = modal.querySelector('#modal-confirm');
+        const result = await window.Dialog.formWithTable({
+            title: 'Neues Hardware-Gerät erfassen',
+            saveText: 'Hinzufügen',
+            tables: [], // Wir nutzen das Modal im Kompakt-Modus ohne Tabelle
+            fields: [
+                { id: 'name', label: 'Name *', placeholder: 'Eigener Name (z.B. Deckenlampe)', fullWidth: true },
+                { id: 'location', label: 'Standort', type: 'select', options: locOptions, fullWidth: true },
+                { id: 'address', label: 'MAC- oder Bus-Adresse *', placeholder: 'z.B. AA:BB:CC... oder 0x05', fullWidth: true },
+                { id: 'busType', label: 'Netzwerk (Bus) *', type: 'select', options: [
+                    { value: 'WIFI', label: 'WIFI' },
+                    { value: 'Thread', label: 'Thread' },
+                    { value: 'RS485', label: 'RS485' },
+                    { value: 'Ethernet', label: 'Ethernet' }
+                ], fullWidth: true }
+            ]
+        });
 
-        btnConfirm.onclick = async () => {
-            const name = modal.querySelector('#modal-name').value.trim();
-            const location = modal.querySelector('#modal-location').value;
-            const address = modal.querySelector('#modal-address').value.trim();
-            const busType = modal.querySelector('#modal-bustype').value;
-
-            if (!name || !address) {
-                msgEl.className = 'modal-msg error';
-                msgEl.innerHTML = '✖ Bitte alle Pflichtfelder (*) ausfüllen.';
+        if (result) {
+            if (!result.name || !result.address) {
+                window.Dialog.alert('Fehler', 'Bitte alle Pflichtfelder (*) ausfüllen.', true);
                 return;
             }
-
-            btnConfirm.disabled = true;
             
             const newEntry = {
-                timestamp: new Date().toISOString(), name: name, location: location, status: 'searching', updated: 'jetzt',
-                macAddress: address.includes(':') ? address : '',
-                busAddress: !address.includes(':') ? address : '',
-                busType: busType, health: '—', battery: null, signal: null, channels: []
+                timestamp: new Date().toISOString(), name: result.name, location: result.location, status: 'searching', updated: 'jetzt',
+                macAddress: result.address.includes(':') ? result.address : '',
+                busAddress: !result.address.includes(':') ? result.address : '',
+                busType: result.busType, health: '—', battery: null, signal: null, channels: []
             };
 
             try {
                 const res = await window.API.addDevice(newEntry);
                 newEntry.id = res.id;
                 this.table._addRow(newEntry);
-                modal.remove();
                 this.triggerSearch(newEntry);
             } catch (err) {
-                msgEl.className = 'modal-msg error';
-                msgEl.innerHTML = `✖ Fehler beim Speichern im System.`;
-                btnConfirm.disabled = false;
+                window.Dialog.alert('Fehler', 'Fehler beim Speichern im System.', true);
             }
-        };
+        }
     },
 
     async showEditModal(row) {
         let locations = [];
         try { locations = await window.API.getLocations(); } catch(e) {}
         
-        const modal = document.createElement('div');
-        modal.className = 'table-modal';
+        let locOptions = [{ value: '', label: '-- Nicht zugewiesen --' }];
+        locations.forEach(bldg => {
+            locOptions.push({ value: bldg.name, label: `🏢 ${bldg.name}` });
+            (bldg.floors || []).forEach(floor => {
+                locOptions.push({ value: floor.name, label: `&nbsp;&nbsp;🟰 ${floor.name}` });
+                (floor.rooms || []).forEach(room => {
+                    locOptions.push({ value: room.name, label: `&nbsp;&nbsp;&nbsp;&nbsp;🚪 ${room.name}` });
+                });
+            });
+        });
+
         const addrValue = row.macAddress || row.busAddress || '';
         
-        modal.innerHTML = `
-            <div class="table-modal-box">
-                <h3>Gerät bearbeiten</h3>
-                <div class="settings-group"><label>Name</label><input type="text" id="edit-name" value="${row.name || ''}"></div>
-                <div class="settings-group">
-                    <label>Standort</label>
-                    <select id="edit-location">
-                        <option value="">-- Nicht zugewiesen --</option>
-                        ${locations.map(bldg => `
-                            <option value="${bldg.name}" ${row.location === bldg.name ? 'selected' : ''}>🏢 ${bldg.name}</option>
-                            ${(bldg.floors || []).map(floor => `
-                                <option value="${floor.name}" ${row.location === floor.name ? 'selected' : ''}>&nbsp;&nbsp;🟰 ${floor.name}</option>
-                                ${(floor.rooms || []).map(room => `<option value="${room.name}" ${row.location === room.name ? 'selected' : ''}>&nbsp;&nbsp;&nbsp;&nbsp;🚪 ${room.name}</option>`).join('')}
-                            `).join('')}
-                        `).join('')}
-                    </select>
-                </div>
-                <div class="settings-group"><label>MAC- oder Bus-Adresse</label><input type="text" id="edit-address" value="${addrValue}"></div>
-                <div class="settings-group">
-                    <label>Netzwerk (Bus)</label>
-                    <select id="edit-bustype">
-                        <option value="WIFI" ${row.busType === 'WIFI' ? 'selected' : ''}>WIFI</option>
-                        <option value="Thread" ${row.busType === 'Thread' ? 'selected' : ''}>Thread</option>
-                        <option value="RS485" ${row.busType === 'RS485' ? 'selected' : ''}>RS485</option>
-                        <option value="Ethernet" ${row.busType === 'Ethernet' ? 'selected' : ''}>Ethernet</option>
-                    </select>
-                </div>
-                <div id="edit-msg" class="modal-msg"></div>
-                <div class="table-modal-actions"><button id="edit-cancel">Abbrechen</button><button id="edit-confirm" class="btn-add">Speichern & Suchen</button></div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-        modal.querySelector('#edit-cancel').onclick = () => modal.remove();
+        const result = await window.Dialog.formWithTable({
+            title: 'Gerät bearbeiten',
+            saveText: 'Speichern & Suchen',
+            tables: [],
+            fields: [
+                { id: 'name', label: 'Name *', value: row.name, fullWidth: true },
+                { id: 'location', label: 'Standort', type: 'select', value: row.location, options: locOptions, fullWidth: true },
+                { id: 'address', label: 'MAC- oder Bus-Adresse *', value: addrValue, fullWidth: true },
+                { id: 'busType', label: 'Netzwerk (Bus) *', type: 'select', value: row.busType, options: [
+                    { value: 'WIFI', label: 'WIFI' },
+                    { value: 'Thread', label: 'Thread' },
+                    { value: 'RS485', label: 'RS485' },
+                    { value: 'Ethernet', label: 'Ethernet' }
+                ], fullWidth: true }
+            ]
+        });
 
-        const msgEl = modal.querySelector('#edit-msg');
-        const btnConfirm = modal.querySelector('#edit-confirm');
-
-        btnConfirm.onclick = async () => {
-            const newName = modal.querySelector('#edit-name').value.trim();
-            const newAddr = modal.querySelector('#edit-address').value.trim();
-            if (!newName || !newAddr) { msgEl.className = 'modal-msg error'; msgEl.innerHTML = '✖ Bitte alle Pflichtfelder ausfüllen.'; return; }
+        if (result) {
+            if (!result.name || !result.address) {
+                window.Dialog.alert('Fehler', 'Bitte alle Pflichtfelder (*) ausfüllen.', true);
+                return;
+            }
             
-            btnConfirm.disabled = true;
-            row.name = newName; row.location = modal.querySelector('#edit-location').value;
-            row.macAddress = newAddr.includes(':') ? newAddr : ''; row.busAddress = !newAddr.includes(':') ? newAddr : '';
-            row.busType = modal.querySelector('#edit-bustype').value;
+            row.name = result.name; 
+            row.location = result.location;
+            row.macAddress = result.address.includes(':') ? result.address : ''; 
+            row.busAddress = !result.address.includes(':') ? result.address : '';
+            row.busType = result.busType;
 
-            try { await window.API.updateDevice(row.id, row); this.table._render(); modal.remove(); this.triggerSearch(row); } 
-            catch (err) { msgEl.className = 'modal-msg error'; msgEl.innerHTML = `✖ Fehler beim Speichern.`; btnConfirm.disabled = false; }
-        };
+            try { 
+                await window.API.updateDevice(row.id, row); 
+                this.table._render(); 
+                this.triggerSearch(row); 
+            } catch (err) { 
+                window.Dialog.alert('Fehler', 'Fehler beim Speichern.', true); 
+            }
+        }
     },
 
     async deleteDevice(rowId) {
