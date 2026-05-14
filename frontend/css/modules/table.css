@@ -195,6 +195,13 @@
     background: var(--table-row-hover-bg); 
 }
 
+.data-table tbody tr.selected-row {
+    background: var(--palette-surface1) !important;
+    border-left: 3px solid var(--accent-blue);
+    transition: background 0.15s, border-left 0.1s;
+}
+.data-table tbody tr[style*="cursor: pointer"]:hover { cursor: pointer; }
+
 .data-table td {
     padding: 0.55rem 1rem;
     white-space: normal;
@@ -227,6 +234,35 @@
     font-size: 0.8rem;
     margin-left: auto;
 }
+
+/* --- Paginierung (Seitenaufteilung) --- */
+.data-table-pagination {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 1rem;
+    border-top: 1px solid var(--bg-surface);
+}
+
+.pagination-btn {
+    background: var(--palette-surface0);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    border-radius: 6px;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: var(--palette-surface1);
+    border-color: var(--accent-blue);
+}
+
+.pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.pagination-info { font-size: 0.85rem; color: var(--text-secondary); }
 
 /* Badges */
 .data-table .badge {

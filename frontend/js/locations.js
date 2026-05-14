@@ -9,7 +9,6 @@ const LocationsManager = {
         this.isEditModeFloors = false;
         this.isEditModeRooms = false;
         this.pendingRoute = null;
-        this.createModal();
         this.loadData();
     },
 
@@ -62,234 +61,145 @@ const LocationsManager = {
         }
     },
 
-    createModal() {
-        if (document.getElementById('location-modal')) return;
-        const modalHtml = `
-            <div id="location-modal" class="table-modal hidden">
-                <div class="table-modal-box">
-                    <h3 id="loc-modal-title">Bearbeiten</h3>
-                    <div class="settings-group">
-                        <label>Typ / Vorlage <span style="font-size:0.8em; color:var(--text-muted); font-weight:normal;">(Suchen oder <a href="#" id="loc-modal-clear-name-link" style="color:var(--accent-blue); text-decoration:none;">Felder leeren</a>)</span></label>
-                        <input id="loc-modal-type-search" type="text" placeholder="Gespeicherten Typ suchen..." list="loc-modal-type-list">
-                        <datalist id="loc-modal-type-list"></datalist>
-                    </div>
-                    <div id="loc-modal-name-fields" style="display:flex; flex-direction:column; gap:0.5rem; margin-top: 0.5rem; padding: 1rem; border: 1px dashed var(--border-color); border-radius: 8px; background: var(--bg-mantle);">
-                        <div class="settings-group">
-                            <label>Name *</label>
-                            <input id="loc-modal-input" type="text" placeholder="Eigener Name (z.B. Wohnzimmer)...">
-                        </div>
-                    </div>
-                <div id="loc-modal-address-container" style="display:none; flex-direction:column; gap:0.5rem; margin-top: 0.5rem;">
-                    <div class="settings-group">
-                        <label>Adresse <span style="font-size:0.8em; color:var(--text-muted); font-weight:normal;">(Suchen oder <a href="#" id="loc-modal-new-address-link" style="color:var(--accent-blue); text-decoration:none;">Felder leeren</a>)</span></label>
-                        <input id="loc-modal-address-search" type="text" placeholder="Gespeicherte Adresse suchen..." list="loc-modal-address-list">
-                        <datalist id="loc-modal-address-list"></datalist>
-                    </div>
-                    <div id="loc-modal-address-fields" style="display:flex; flex-direction:column; gap:0.5rem; margin-top: 0.5rem; padding: 1rem; border: 1px dashed var(--border-color); border-radius: 8px; background: var(--bg-mantle);">
-                        <div class="settings-group">
-                            <label>Strasse & Hausnummer</label>
-                            <div style="display:flex; gap:0.5rem; width:100%;">
-                                <input id="loc-modal-street" type="text" placeholder="Strasse" style="flex: 1; min-width: 0;">
-                                <input id="loc-modal-number" type="text" placeholder="Nr." style="width: 70px; flex: none;">
-                            </div>
-                        </div>
-                        <div class="settings-group">
-                            <label>PLZ & Ort</label>
-                            <div style="display:flex; gap:0.5rem; width:100%;">
-                                <input id="loc-modal-zip" type="text" placeholder="PLZ" style="width: 90px; flex: none;">
-                                <input id="loc-modal-city" type="text" placeholder="Ort" style="flex: 1; min-width: 0;" list="loc-modal-city-list">
-                            </div>
-                            <datalist id="loc-modal-city-list"></datalist>
-                        </div>
-                        <div class="settings-group">
-                            <label>Land</label>
-                            <input id="loc-modal-country" type="text" placeholder="z.B. Schweiz" value="">
-                        </div>
-                    </div>
-                    </div>
-                    <div class="table-modal-actions">
-                        <button id="loc-modal-save" class="btn-primary">Speichern</button>
-                        <button id="loc-modal-cancel">Abbrechen</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-        document.getElementById('loc-modal-zip').addEventListener('blur', async (e) => {
-            const zip = e.target.value.trim();
-            const country = document.getElementById('loc-modal-country').value.trim() || 'Schweiz';
-            if (zip.length >= 4) {
-                const cities = await window.API.lookupCityByZip(zip, country);
-                const dataList = document.getElementById('loc-modal-city-list');
-                dataList.innerHTML = ''; // Vorherige Einträge löschen
-                if (cities && cities.length > 0) {
-                    cities.forEach(city => {
-                        dataList.insertAdjacentHTML('beforeend', `<option value="${city}">`);
-                    });
-                    
-                    if (cities.length === 1) {
-                        document.getElementById('loc-modal-city').value = cities[0];
-                    } else {
-                        document.getElementById('loc-modal-city').value = '';
-                        document.getElementById('loc-modal-city').placeholder = 'Bitte wählen...';
-                    }
-                }
-            }
-        });
-
-        document.getElementById('loc-modal-clear-name-link').addEventListener('click', (e) => {
-            e.preventDefault();
-            document.getElementById('loc-modal-type-search').value = '';
-            document.getElementById('loc-modal-input').value = '';
-        });
-
-        document.getElementById('loc-modal-type-search').addEventListener('input', (e) => {
-            // Füllt das Namens-Feld automatisch aus, wenn ein Typ gesucht/gewählt wird
-            document.getElementById('loc-modal-input').value = e.target.value;
-        });
-
-        document.getElementById('loc-modal-new-address-link').addEventListener('click', (e) => {
-            e.preventDefault();
-            document.getElementById('loc-modal-address-search').value = '';
-            document.getElementById('loc-modal-street').value = '';
-            document.getElementById('loc-modal-number').value = '';
-            document.getElementById('loc-modal-zip').value = '';
-            document.getElementById('loc-modal-city').value = '';
-            document.getElementById('loc-modal-country').value = '';
-        });
-
-        let addressSearchTimeout;
-        document.getElementById('loc-modal-address-search').addEventListener('input', (e) => {
-            const query = e.target.value.trim();
-            const datalist = document.getElementById('loc-modal-address-list');
+    async openModal(type, title, defaultData, callback) {
+        if (type === 'building') {
+            const addr = defaultData.address || {};
             
-            // 1. Prüfen, ob die Auswahl direkt im Cache ist (Passiert bei Klick auf einen Vorschlag)
-            const found = (this.addressCache || []).find(a => a.str === query);
-            if (found) {
-                document.getElementById('loc-modal-street').value = found.obj.street || '';
-                document.getElementById('loc-modal-number').value = found.obj.number || '';
-                document.getElementById('loc-modal-zip').value = found.obj.zip || '';
-                document.getElementById('loc-modal-city').value = found.obj.city || '';
-                document.getElementById('loc-modal-country').value = found.obj.country || '';
-                return;
-            }
+            // 1. Array: Gebäude-Vorlagen laden
+            const templates = await window.API.getLocationTypes('building') || [];
             
-            // Erst ab 3 Zeichen anfangen zu suchen (schont die Datenbank)
-            if (query.length < 3) {
-                datalist.innerHTML = '';
-                return;
-            }
-
-            // 2. Serverseitige Live-Suche über API ausführen (Debounced um Spam zu verhindern)
-            clearTimeout(addressSearchTimeout);
-            addressSearchTimeout = setTimeout(async () => {
-                try {
-                    const results = await window.API.searchAddresses(query);
-                    this.addressCache = results || [];
-                    
-                    datalist.innerHTML = '';
-                    this.addressCache.forEach(addr => {
-                        datalist.insertAdjacentHTML('beforeend', `<option value="${addr.str}">`);
-                    });
-                } catch (err) {
-                    console.error("Fehler bei der Adress-Suche in der API:", err);
-                    this.addressCache = null;
-                    datalist.innerHTML = '';
+            // 2. Array: Bereits erfasste Gebäude-Adressen extrahieren (ohne Namen, nur Adressen)
+            const existingAddresses = [];
+            (this.locations || []).forEach(l => {
+                if (l.address && l.address.street && !existingAddresses.find(a => a.street === l.address.street && a.zip === l.address.zip)) {
+                    existingAddresses.push(l.address);
                 }
-            }, 400); // 400ms warten nach dem letzten Tastendruck
-        });
+            });
 
-        document.getElementById('loc-modal-cancel').addEventListener('click', () => {
-            document.getElementById('location-modal').classList.add('hidden');
-        });
-        document.getElementById('loc-modal-save').addEventListener('click', async () => {
-            if (this.modalCallback) {
-                const name = document.getElementById('loc-modal-input').value.trim();
-                const typeValue = document.getElementById('loc-modal-type-search').value.trim();
-                const isBuilding = document.getElementById('loc-modal-address-container').style.display !== 'none';
-                
-                if (name) {
-                    // Prüfen, ob ein neuer Typ eingetippt wurde, und diesen via API in der DB speichern
-                    const typeToSave = typeValue || name;
-                    if (this.currentLocationTypes && !this.currentLocationTypes.find(t => t.name.toLowerCase() === typeToSave.toLowerCase())) {
-                        if (window.API.addLocationType) {
-                            try {
-                                await window.API.addLocationType({ name: typeToSave, group: this.currentLocationGroup });
-                            } catch (e) {
-                                console.error("Fehler beim Speichern des neuen Location-Types", e);
-                            }
+            const result = await window.Dialog.formWithTable({
+                title: title,
+                fields: [
+                    { id: 'id', type: 'hidden', value: defaultData.id || '' },
+                    { id: 'name', label: 'Gebäude Name *', value: defaultData.name || '', fullWidth: true },
+                    { id: 'street', label: 'Strasse', value: addr.street || '' },
+                    { id: 'number', label: 'Hausnummer', value: addr.number || '' },
+                    { id: 'zip', label: 'PLZ', value: addr.zip || '' },
+                    { id: 'city', label: 'Ort', value: addr.city || '' },
+                    { id: 'country', label: 'Land', value: addr.country || 'Schweiz', fullWidth: true }
+                ],
+                tables: [
+                    {
+                        id: 'templates',
+                        title: '📋 Gebäude-Vorlagen',
+                        columns: [{ key: 'name', label: 'Verfügbare Haus-Typen' }],
+                        data: templates,
+                        onRowSelect: (row, fields) => {
+                            fields.name.value = row.name || '';
+                            fields.id.value = row.id || ''; // Speichert DB ID ab, falls Vorlage ausgewählt
+                        }
+                    },
+                    {
+                        id: 'addresses',
+                        title: '📍 Adress-Datenbank',
+                        columns: [
+                            { key: 'street', label: 'Strasse', render: (v) => v || '—' },
+                            { key: 'number', label: 'Nummer', render: (v) => v || '—' },
+                            { key: 'zip', label: 'PLZ', render: (v) => v || '—' },
+                            { key: 'city', label: 'Ort', render: (v) => v || '—' },
+                            { key: 'country', label: 'Land', render: (v) => v || 'Schweiz' }
+                        ],
+                        data: existingAddresses,
+                        onRowSelect: (row, fields) => {
+                            fields.street.value = row.street || '';
+                            fields.number.value = row.number || '';
+                            fields.zip.value = row.zip || '';
+                            fields.city.value = row.city || '';
+                            fields.country.value = row.country || 'Schweiz';
                         }
                     }
+                ],
+                onReady: (modal, fields, updateTableData, switchToTab, filterTable) => {
+                    // Automatische PLZ Auflösung einhängen
+                    fields.zip.addEventListener('blur', async () => {
+                        if (fields.zip.value.length >= 4 && window.API.lookupCityByZip) {
+                            const cities = await window.API.lookupCityByZip(fields.zip.value, fields.country.value);
+                            if (cities && cities.length > 0) fields.city.value = cities[0];
+                        }
+                    });
 
-                    if (isBuilding) {
-                        const address = {
-                            street: document.getElementById('loc-modal-street').value.trim(),
-                            number: document.getElementById('loc-modal-number').value.trim(),
-                            zip: document.getElementById('loc-modal-zip').value.trim(),
-                            city: document.getElementById('loc-modal-city').value.trim(),
-                            country: document.getElementById('loc-modal-country').value.trim()
-                        };
-                        this.modalCallback({ name, address });
-                    } else {
-                        this.modalCallback({ name });
-                    }
+                    // Gebäude-Name: Wechselt zu Vorlagen und filtert
+                    const handleNameInput = (e) => {
+                        switchToTab('templates');
+                        filterTable(e.target.value);
+                    };
+                    fields.name.addEventListener('focus', handleNameInput);
+                    fields.name.addEventListener('input', handleNameInput);
+                    
+                    const addressFields = [fields.street, fields.number, fields.zip, fields.city, fields.country];
+                    let searchTimeout;
+
+                    // Baut einen kombinierten Suchstring aus allen Adress-Feldern
+                    const getCombinedAddressQuery = () => {
+                        return `${fields.street.value} ${fields.number.value} ${fields.zip.value} ${fields.city.value}`.trim();
+                    };
+
+                    addressFields.forEach(f => {
+                        f.addEventListener('focus', (e) => {
+                            switchToTab('addresses');
+                            filterTable(getCombinedAddressQuery());
+                        });
+
+                        f.addEventListener('input', (e) => {
+                            switchToTab('addresses');
+                            filterTable(getCombinedAddressQuery()); // Tabelle sofort lokal filtern
+
+                            // Live-API Abfrage im Hintergrund starten (ab 3 Zeichen kombinierter Länge)
+                            const apiQuery = `${fields.street.value} ${fields.city.value}`.trim();
+                            if (apiQuery.length >= 3) {
+                                clearTimeout(searchTimeout);
+                                searchTimeout = setTimeout(async () => {
+                                    try {
+                                        const results = await window.API.searchAddresses(apiQuery);
+                                        const mapped = results.map(r => r.obj);
+                                        
+                                        // Caching: Eigene (bereits erfasste) Adressen mit API-Treffern mischen, um keine zu verlieren
+                                        const combined = [...existingAddresses];
+                                        mapped.forEach(m => {
+                                            if (!combined.find(c => c.street === m.street && c.zip === m.zip)) combined.push(m);
+                                        });
+                                        
+                                        updateTableData('addresses', combined);
+                                        filterTable(getCombinedAddressQuery()); // Nach Daten-Update Filter erneut anwenden
+                                    } catch (err) {
+                                        console.error("Fehler bei Adress-Suche", err);
+                                    }
+                                }, 400);
+                            }
+                        });
+                    });
                 }
-            }
-            document.getElementById('location-modal').classList.add('hidden');
-        });
-    },
+            });
 
-    openModal(type, title, defaultData, callback) {
-        document.getElementById('loc-modal-title').textContent = title;
-        document.getElementById('loc-modal-input').value = defaultData.name || '';
-        document.getElementById('loc-modal-type-search').value = defaultData.name || '';
-        
-        const typeList = document.getElementById('loc-modal-type-list');
-        typeList.innerHTML = '';
-        this.currentLocationTypes = [];
-        this.currentLocationGroup = type;
-
-        if (window.API && window.API.getLocationTypes) {
-            window.API.getLocationTypes(type).then(types => {
-                this.currentLocationTypes = types || [];
-                (types || []).forEach(t => {
-                    typeList.insertAdjacentHTML('beforeend', `<option value="${t.name}">`);
-                });
-            }).catch(err => console.error("Fehler beim Laden der Location-Types:", err));
-        }
-
-        const addressContainer = document.getElementById('loc-modal-address-container');
-        const addressFields = document.getElementById('loc-modal-address-fields');
-        const searchInput = document.getElementById('loc-modal-address-search');
-        
-        if (type === 'building') {
-            addressContainer.style.display = 'flex';
-            
-            // Datalist und Cache beim Öffnen zurücksetzen (wird nun per API Live-Search geladen)
-            const datalist = document.getElementById('loc-modal-address-list');
-            datalist.innerHTML = '';
-            this.addressCache = null;
-
-            const addr = defaultData.address || {};
-            document.getElementById('loc-modal-street').value = addr.street || '';
-            document.getElementById('loc-modal-number').value = addr.number || '';
-            document.getElementById('loc-modal-zip').value = addr.zip || '';
-            document.getElementById('loc-modal-city').value = addr.city || '';
-            document.getElementById('loc-modal-country').value = addr.country || '';
-            
-            if (addr.street) {
-                searchInput.value = `${addr.street} ${addr.number || ''}, ${addr.zip || ''} ${addr.city || ''}`.trim();
-            } else {
-                searchInput.value = '';
+            if (result && result.name) {
+                callback({ name: result.name, templateId: result.id, address: { street: result.street, number: result.number, zip: result.zip, city: result.city, country: result.country }});
             }
         } else {
-            addressContainer.style.display = 'none';
-        }
+            // Für Stockwerke & Räume
+            const tableData = await window.API.getLocationTypes(type) || [];
+            
+            const result = await window.Dialog.formWithTable({
+                title: title,
+                fields: [
+                    { id: 'id', type: 'hidden', value: defaultData.id || '' },
+                    { id: 'name', label: 'Name / Bezeichnung *', value: defaultData.name || '', fullWidth: true }
+                ],
+                tableColumns: [{ key: 'name', label: 'Verfügbare Vorlagen' }],
+                tableData: tableData,
+                onRowSelect: (row, fields) => { fields.name.value = row.name || ''; fields.id.value = row.id || ''; }
+            });
 
-        this.modalCallback = callback;
-        document.getElementById('location-modal').classList.remove('hidden');
-        document.getElementById('loc-modal-type-search').focus();
+            if (result && result.name) callback({ name: result.name, templateId: result.id });
+        }
     },
 
     async loadData() {

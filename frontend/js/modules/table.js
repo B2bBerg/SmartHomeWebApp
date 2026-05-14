@@ -26,6 +26,8 @@ class DataTable {
         this.filtered  = [];
         this.sortKey   = null;
         this.sortAsc   = true;
+        this.currentPage = 1;
+        this.pageSize = this.options.pageSize || 10; // Standard: 10 Einträge pro Seite
         this._build();
     }
 
@@ -87,6 +89,11 @@ class DataTable {
         this.tbody = document.createElement('tbody');
         this.table.appendChild(this.tbody);
         wrapper.appendChild(this.table);
+        
+        this.paginationContainer = document.createElement('div');
+        this.paginationContainer.className = 'data-table-pagination';
+        wrapper.appendChild(this.paginationContainer);
+
         this.container.appendChild(wrapper);
     }
 
@@ -118,8 +125,27 @@ class DataTable {
         this.tbody.innerHTML = '';
         this.countEl.textContent = `${this.filtered.length} / ${this.data.length}`;
         
-        this.filtered.forEach(row => {
+        const totalPages = Math.ceil(this.filtered.length / this.pageSize) || 1;
+        if (this.currentPage > totalPages) this.currentPage = totalPages;
+        
+        const startIndex = (this.currentPage - 1) * this.pageSize;
+        const endIndex = startIndex + this.pageSize;
+        const pageRows = this.filtered.slice(startIndex, endIndex);
+        
+        pageRows.forEach(row => {
             const tr = document.createElement('tr');
+            
+            // Neu: Zeile klickbar machen für Auswahlen (Master/Detail Logik)
+            if (typeof this.options.onRowClick === 'function') {
+                tr.style.cursor = 'pointer';
+                tr.addEventListener('click', (e) => {
+                    if (e.target.closest('button')) return; // Klicks auf Aktionen ignorieren
+                    this.tbody.querySelectorAll('tr').forEach(r => r.classList.remove('selected-row'));
+                    tr.classList.add('selected-row');
+                    this.options.onRowClick(row);
+                });
+            }
+
             this.columns.forEach(col => {
                 const td = document.createElement('td');
                 td.innerHTML = col.render ? col.render(row[col.key], row) : (row[col.key] ?? '—');
@@ -135,15 +161,67 @@ class DataTable {
             });
             this.tbody.appendChild(tr);
         });
+        
+        this._renderPagination(totalPages);
+    }
+
+    _renderPagination(totalPages) {
+        this.paginationContainer.innerHTML = '';
+        if (this.filtered.length <= this.pageSize) return; // Verstecken, wenn alles auf eine Seite passt
+
+        const btnPrev = document.createElement('button');
+        btnPrev.className = 'pagination-btn';
+        btnPrev.innerHTML = '&#9664;'; // Pfeil links
+        btnPrev.disabled = this.currentPage === 1;
+        btnPrev.onclick = () => {
+            if (this.currentPage > 1) {
+                this.currentPage--;
+                this._render();
+            }
+        };
+
+        const info = document.createElement('span');
+        info.className = 'pagination-info';
+        info.textContent = `Seite ${this.currentPage} von ${totalPages}`;
+
+        const btnNext = document.createElement('button');
+        btnNext.className = 'pagination-btn';
+        btnNext.innerHTML = '&#9654;'; // Pfeil rechts
+        btnNext.disabled = this.currentPage === totalPages;
+        btnNext.onclick = () => {
+            if (this.currentPage < totalPages) {
+                this.currentPage++;
+                this._render();
+            }
+        };
+
+        this.paginationContainer.appendChild(btnPrev);
+        this.paginationContainer.appendChild(info);
+        this.paginationContainer.appendChild(btnNext);
     }
 
     _onSearch() {
-        const q = this.searchInput.value.toLowerCase();
-        this.filtered = this.data.filter(row =>
-            this.columns.some(col => String(row[col.key] ?? '').toLowerCase().includes(q))
-        );
+        // Suchanfrage in einzelne Wörter aufteilen (Trennzeichen: Leerzeichen)
+        const queryTerms = this.searchInput.value.toLowerCase().trim().split(/\s+/).filter(t => t.length > 0);
+        
+        if (queryTerms.length === 0) {
+            this.filtered = [...this.data];
+        } else {
+            this.filtered = this.data.filter(row =>
+                // JEDES Suchwort muss in MINDESTENS EINER Spalte der Zeile vorkommen
+                queryTerms.every(term => this.columns.some(col => String(row[col.key] ?? '').toLowerCase().includes(term)))
+            );
+        }
+        this.currentPage = 1; // Bei neuer Suche immer auf Seite 1 springen
         this._applySort();
         this._render();
+    }
+
+    setSearchQuery(query) {
+        if (this.searchInput) {
+            this.searchInput.value = query || '';
+            this._onSearch();
+        }
     }
 
     _onSort(key, th) {
@@ -153,6 +231,7 @@ class DataTable {
             this.sortKey = key;
             this.sortAsc = true;
         }
+        this.currentPage = 1; // Bei Sortierung auf Seite 1 springen
         // update header classes
         this.table.querySelectorAll('th').forEach(t => {
             t.classList.remove('sorted');
