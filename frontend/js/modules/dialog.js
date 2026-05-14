@@ -256,6 +256,15 @@ const Dialog = {
             if (typeof onReady === 'function') onReady(modal, formElements, updateTableData, switchToTab, filterTable);
 
             // 5. Speicher-Logik
+            
+            // Klick ausserhalb des Fensters schliesst das Modal (Abbruch)
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                    resolve(null);
+                }
+            });
+
             modal.querySelector('.dialog-btn-cancel').onclick = () => { modal.remove(); resolve(null); };
             modal.querySelector('.dialog-btn-save').onclick = () => {
                 const result = {};
