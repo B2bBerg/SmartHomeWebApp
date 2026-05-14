@@ -78,6 +78,7 @@ const LocationsManager = {
 
             const result = await window.Dialog.formWithTable({
                 title: title,
+                searchable: false, // Deaktiviert das redundante Tabellen-Suchfeld (Omni-Search aktiv)
                 fields: [
                     { id: 'id', type: 'hidden', value: defaultData.id || '' },
                     { id: 'name', label: 'Gebäude Name *', value: defaultData.name || '', fullWidth: true },
@@ -189,13 +190,22 @@ const LocationsManager = {
             
             const result = await window.Dialog.formWithTable({
                 title: title,
+                searchable: false, // Deaktiviert das redundante Tabellen-Suchfeld (Omni-Search aktiv)
                 fields: [
                     { id: 'id', type: 'hidden', value: defaultData.id || '' },
                     { id: 'name', label: 'Name / Bezeichnung *', value: defaultData.name || '', fullWidth: true }
                 ],
                 tableColumns: [{ key: 'name', label: 'Verfügbare Vorlagen' }],
                 tableData: tableData,
-                onRowSelect: (row, fields) => { fields.name.value = row.name || ''; fields.id.value = row.id || ''; }
+                onRowSelect: (row, fields) => { fields.name.value = row.name || ''; fields.id.value = row.id || ''; },
+                onReady: (modal, fields, updateTableData, switchToTab, filterTable) => {
+                    // Omni-Search: Filtere die Tabelle basierend auf der Eingabe im Feld "Name"
+                    const handleNameInput = (e) => {
+                        filterTable(e.target.value);
+                    };
+                    fields.name.addEventListener('focus', handleNameInput);
+                    fields.name.addEventListener('input', handleNameInput);
+                }
             });
 
             if (result && result.name) callback({ name: result.name, templateId: result.id });

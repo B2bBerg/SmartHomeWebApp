@@ -209,7 +209,8 @@ const Dialog = {
                 tableContainer.innerHTML = '';
                 if (typeof DataTable !== 'undefined') {
                     currentTableInstance = new DataTable(tableContainer, tabConfig.columns, {
-                        hasAdd: false, hasActions: false, searchable: true,
+                        hasAdd: false, hasActions: false, 
+                        searchable: config.searchable !== false, // Übernimmt Option aus der Config
                         pageSize: 5, // Im Modal nur 5 Einträge pro Seite anzeigen
                         onRowClick: (row) => { if (typeof tabConfig.onRowSelect === 'function') tabConfig.onRowSelect(row, formElements); }
                     });

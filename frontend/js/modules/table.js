@@ -26,6 +26,7 @@ class DataTable {
         this.filtered  = [];
         this.sortKey   = null;
         this.sortAsc   = true;
+        this.searchQuery = ''; // Speichert Suchanfragen auch wenn das DOM-Input deaktiviert ist
         this.currentPage = 1;
         this.pageSize = this.options.pageSize || 10; // Standard: 10 Einträge pro Seite
         this._build();
@@ -200,9 +201,12 @@ class DataTable {
         this.paginationContainer.appendChild(btnNext);
     }
 
-    _onSearch() {
-        // Suchanfrage in einzelne Wörter aufteilen (Trennzeichen: Leerzeichen)
-        const queryTerms = this.searchInput.value.toLowerCase().trim().split(/\s+/).filter(t => t.length > 0);
+    _onSearch(queryOverride) {
+        const queryStr = typeof queryOverride !== 'undefined' ? queryOverride : (this.searchInput ? this.searchInput.value : this.searchQuery);
+        this.searchQuery = queryStr;
+        
+        // Suchanfrage in einzelne Wörter aufteilen
+        const queryTerms = queryStr.toLowerCase().trim().split(/\s+/).filter(t => t.length > 0);
         
         if (queryTerms.length === 0) {
             this.filtered = [...this.data];
@@ -220,8 +224,8 @@ class DataTable {
     setSearchQuery(query) {
         if (this.searchInput) {
             this.searchInput.value = query || '';
-            this._onSearch();
         }
+        this._onSearch(query || ''); // Aufruf mit explizitem Wert, auch ohne UI-Element
     }
 
     _onSort(key, th) {
