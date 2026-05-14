@@ -8,7 +8,7 @@ OPTIONS (host 'dbStatic', port '5432', dbname 'smarthome_static');
 
 -- Import foreign schema tables (only those needed for joins)
 IMPORT FOREIGN SCHEMA public 
-LIMIT TO (datapoint, devices, location)
+LIMIT TO (datapoint, devices, location, obis_definition)
 FROM SERVER meta_db_link 
 INTO public;
 
@@ -47,10 +47,10 @@ SELECT add_retention_policy('datapoint_states_binary', INTERVAL '5 years');
 -- Table for numeric datapoints (e.g., temperature, humidity, energy)
 CREATE TABLE datapoint_values
 (
-  recorded_at  timestamptz NOT NULL,
-  datapoint_id uuid        NOT NULL,
-  val          DOUBLE PRECISION NOT NULL,
-  quality_code smallint    NOT NULL DEFAULT 0,
+  recorded_at  timestamptz      NOT NULL,
+  datapoint_id uuid             NOT NULL,
+  val          double precision NOT NULL,
+  quality_code smallint         NOT NULL DEFAULT 0,
   PRIMARY KEY (recorded_at, datapoint_id)
 );
 
@@ -198,9 +198,13 @@ CREATE TRIGGER trg_upsert_latest_state AFTER INSERT ON datapoint_states_binary
 FOR EACH ROW EXECUTE FUNCTION update_latest_state();
 
 CREATE OR REPLACE VIEW view_latest_datapoint_values AS
-SELECT v.datapoint_id, d.datapoint_name, v.latest_value, v.last_updated
-FROM datapoint_latest_values v JOIN datapoint d ON v.datapoint_id = d.datapoint_id;
+SELECT v.datapoint_id, d.datapoint_name, d.obis_code, o.name AS obis_name, v.latest_value, v.last_updated
+FROM datapoint_latest_values v 
+JOIN datapoint d ON v.datapoint_id = d.datapoint_id
+LEFT JOIN obis_definition o ON d.obis_code = o.obis_code;
 
 CREATE OR REPLACE VIEW view_latest_datapoint_states AS
-SELECT s.datapoint_id, d.datapoint_name, s.current_state, s.last_updated
-FROM datapoint_latest_states s JOIN datapoint d ON s.datapoint_id = d.datapoint_id;
+SELECT s.datapoint_id, d.datapoint_name, d.obis_code, o.name AS obis_name, s.current_state, s.last_updated
+FROM datapoint_latest_states s 
+JOIN datapoint d ON s.datapoint_id = d.datapoint_id
+LEFT JOIN obis_definition o ON d.obis_code = o.obis_code;
