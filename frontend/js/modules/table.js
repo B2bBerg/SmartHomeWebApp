@@ -55,6 +55,17 @@ class DataTable {
             toolbar.appendChild(addBtn);
         }
 
+        // CUSTOM BUTTONS (z.B. Netzwerk-Scan)
+        if (this.options.customButtons && Array.isArray(this.options.customButtons)) {
+            this.options.customButtons.forEach(btnConfig => {
+                const btn = document.createElement('button');
+                btn.className = btnConfig.className || 'btn-outline';
+                btn.innerHTML = btnConfig.html;
+                btn.onclick = btnConfig.onClick;
+                toolbar.appendChild(btn);
+            });
+        }
+
         if (this.options.searchable !== false) {
             this.searchInput = document.createElement('input');
             this.searchInput.className   = 'data-table-search';

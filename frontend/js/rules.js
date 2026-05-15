@@ -65,7 +65,7 @@ const RuleManager = {
                 </div>
 
                 <div class="table-modal-actions">
-                    <button onclick="this.closest('.table-modal').remove()">Abbrechen</button>
+                    <button class="btn-outline" onclick="this.closest('.table-modal').remove()">Abbrechen</button>
                     <button class="btn-primary" id="save-rule">Regel speichern</button>
                 </div>
             </div>

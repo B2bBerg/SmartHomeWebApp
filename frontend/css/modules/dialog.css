@@ -1,0 +1,198 @@
+/* --- Dialog Base Styles --- */
+.table-modal {
+    position: fixed;
+    inset: 0;
+    background: var(--modal-overlay-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.table-modal.hidden {
+    display: none;
+}
+
+.table-modal-box {
+    background: var(--bg-base);
+    border: 1px solid var(--border-color);
+    padding: 1.5rem;
+    border-radius: 12px;
+    min-width: min(320px, 90vw);
+    width: fit-content;
+    max-width: 90vw;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.table-modal-box h3 { margin: 0; color: var(--text-primary); font-size: 1.1rem; }
+.table-modal-box p { color: var(--text-secondary); font-size: 0.9rem; margin: 0; }
+
+.table-modal-box select {
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: var(--input-text);
+    padding: 0.5rem;
+    border-radius: 6px;
+    outline: none;
+}
+
+.table-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.table-modal-box .settings-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.table-modal-box label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.table-modal-box input {
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: var(--input-text);
+    padding: 0.5rem;
+    border-radius: 6px;
+    outline: none;
+}
+
+/* --- Dialog Helper Classes --- */
+.dialog-alert-box {
+    text-align: center;
+    max-width: 400px;
+}
+.dialog-alert-box h3 {
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+.dialog-alert-box h3.header-error {
+    color: var(--error-red);
+}
+.dialog-alert-box h3.header-info {
+    color: var(--accent-blue);
+}
+.dialog-alert-box p {
+    margin-bottom: 1.5rem;
+    color: var(--text-secondary);
+}
+.dialog-alert-box .table-modal-actions {
+    justify-content: center;
+}
+
+.dialog-select-box {
+    max-width: 500px;
+}
+.dialog-select-list {
+    max-height: 300px;
+    overflow-y: auto;
+    text-align: left;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-base);
+}
+.dialog-select-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.dialog-select-item:last-child {
+    border-bottom: none;
+}
+.dialog-select-item:hover {
+    background: var(--palette-surface0);
+}
+.dialog-select-empty {
+    padding: 1rem;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.dialog-form-box {
+    max-width: 450px;
+    width: 90%;
+    max-height: 90vh;
+}
+.dialog-form-box.with-tables {
+    max-width: 900px;
+}
+.dialog-form-box > h3 {
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+    flex-shrink: 0;
+}
+.dialog-form-grid {
+    display: grid;
+    gap: 1rem;
+    flex-shrink: 0;
+    margin-bottom: 1rem;
+}
+.dialog-form-box.with-tables .dialog-form-grid {
+    grid-template-columns: 1fr 1fr;
+}
+.dialog-form-grid .settings-group {
+    margin-bottom: 0;
+}
+.dialog-form-grid .full-width {
+    grid-column: 1 / -1;
+}
+.dialog-form-grid input,
+.dialog-form-grid select {
+    width: 100%;
+}
+
+.dialog-table-section {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+}
+.dialog-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.dialog-tabs label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+.dialog-tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-secondary);
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    transition: all 0.2s;
+}
+.dialog-tab-btn.active {
+    border-bottom-color: var(--accent-blue);
+    color: var(--text-primary);
+}
+.dialog-table-container {
+    overflow-y: auto;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.5rem;
+}
+.dialog-form-box .table-modal-actions {
+    margin-top: 1.5rem;
+    flex-shrink: 0;
+}

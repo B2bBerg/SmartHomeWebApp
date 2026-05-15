@@ -20,6 +20,12 @@
     --palette-red: #f38ba8;
     --palette-error: #e64553;
     
+    /* RGB-Komponenten für Transparenzen (rgba) in anderen Modulen */
+    --palette-green-rgb: 166, 227, 161;
+    --palette-blue-rgb: 137, 180, 250;
+    --palette-yellow-rgb: 249, 226, 175;
+    --palette-red-rgb: 243, 139, 168;
+
     /* Transparenzen & Utilities */
     --shadow-color-rgb: 0, 0, 0;
     --white-rgb: 255, 255, 255;
@@ -29,11 +35,13 @@
        2. APP & LAYOUT HINTERGRÜNDE
        ========================================================================== */
     --bg-base: var(--palette-base);
+    --bg-base-rgb: 30, 30, 46;
     --bg-mantle: var(--palette-mantle);
     --bg-crust: var(--palette-crust);
     --bg-sidebar: var(--palette-mantle);
     --bg-content: var(--palette-base);
     --bg-surface: #2a2a3e; /* Historische Fallback-Farbe */
+    --bg-surface-rgb: 42, 42, 62;
 
     /* ==========================================================================
        3. TYPOGRAFIE (Texte)
@@ -50,6 +58,7 @@
        4. UI ELEMENTE (Buttons, Inputs, Borders)
        ========================================================================== */
     --border-color: #3a3a52;
+    --border-color-rgb: 58, 58, 82;
     
     --bg-button: #33334a;
     --border-button: #444465;
@@ -88,4 +97,12 @@
     
     --table-header-bg: var(--palette-crust);
     --table-row-hover-bg: var(--palette-surface0);
+
+        /* ==========================================================================
+           8. DATENPUNKT BUTTONS (Sensoren & Aktoren)
+           ========================================================================== */
+        --btn-sensor-bg: var(--palette-green);
+        --btn-sensor-text: var(--palette-crust);
+        --btn-actuator-bg: var(--palette-yellow);
+        --btn-actuator-text: var(--palette-crust);
 }

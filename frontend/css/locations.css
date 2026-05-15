@@ -70,58 +70,6 @@
 .breadcrumb-sep { color: var(--text-secondary); user-select: none; }
 .breadcrumb-active { color: var(--text-primary); pointer-events: none; font-weight: 600; }
 
-/* --- Standard Outline Action Buttons (Header/Controls) --- */
-.btn-outline {
-    background: none;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    color: var(--text-secondary);
-    font-size: 0.8rem;
-    padding: 3px 8px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    transition: color 0.2s, border-color 0.2s;
-}
-
-.btn-outline img {
-    width: 12px;
-    height: 12px;
-    filter: invert(0.5);
-    transition: filter 0.2s;
-}
-
-.btn-outline:hover, .btn-outline.active {
-    color: var(--text-primary);
-    border-color: var(--text-primary);
-}
-
-.btn-outline:hover img, .btn-outline.active img {
-    filter: invert(1);
-}
-
-/* --- Kachel Action Buttons (Hardware / Sensors) --- */
-.btn-show-devices,
-.btn-show-datapoints {
-    flex: 1;
-    background: var(--palette-surface0);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    border-radius: 6px;
-    padding: 6px 10px;
-    font-size: 0.85em;
-    cursor: pointer;
-    transition: background 0.2s, border-color 0.2s, color 0.2s;
-}
-
-.btn-show-devices:hover,
-.btn-show-datapoints:hover {
-    background: var(--palette-surface1);
-    border-color: var(--accent-blue);
-    color: var(--white);
-}
-
 /* Verhindere Kachel-Hover-Effekt, wenn man auf Action-Buttons klickt */
 .location-card:has(.btn-show-devices:hover),
 .location-card:has(.btn-show-datapoints:hover),
@@ -134,7 +82,7 @@
 .tabs-container {
     display: flex;
     gap: 0.5rem;
-    border-bottom: 1px solid #3a3a52;
+    border-bottom: 1px solid var(--border-color);
     padding-bottom: 0;
     margin-bottom: 1rem;
     overflow-x: auto;
@@ -223,7 +171,7 @@
 /* --- Standardisierte Edit / Remove Buttons für Kacheln und Tabs --- */
 .btn-edit,
 .btn-delete {
-    background: rgba(42, 42, 62, 0.9);
+    background: rgba(var(--bg-surface-rgb), 0.9);
     border: 1px solid var(--border-color);
     border-radius: 6px;
     cursor: pointer;
@@ -242,18 +190,6 @@
     box-shadow: 0 4px 12px rgba(var(--shadow-color-rgb), 0.2);
 }
 
-.btn-edit img,
-.btn-delete img {
-    width: 14px;
-    height: 14px;
-    filter: invert(0.8);
-    transition: filter 0.2s ease;
-}
-
-.btn-edit:hover img,
-.btn-delete:hover img {
-    filter: invert(1);
-}
 
 .btn-delete {
     color: var(--accent-red);

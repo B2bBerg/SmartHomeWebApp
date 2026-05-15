@@ -60,6 +60,13 @@ const DeviceManager = {
 
         this.table = new DataTable(container, columns, {
             searchable: true,
+            customButtons: [
+                {
+                    className: 'btn-add',
+                    html: '<span><img src="assets/icons/refresh-cw-alt-2-svgrepo-com.svg" alt="Scan"></span> Netzwerk-Scan',
+                    onClick: () => this.scanAllNetworks()
+                }
+            ],
             onAdd: () => this.showAddModal(),
             onEdit: (row) => this.showEditModal(row),
             onDelete: (rowId) => this.deleteDevice(rowId)
@@ -291,27 +298,71 @@ const DeviceManager = {
         this.table.data[index].status = 'searching';
         this.table.setData(this.table.data);
         
+        this.executeDeviceScan(this.table.data[index]);
+    },
+
+    scanAllNetworks() {
+        if (!this.table || !this.table.data || this.table.data.length === 0) return;
+        
+        // Setze alle Geräte optisch auf Such-Status und rendere einmal gesammelt neu
+        this.table.data.forEach(row => row.status = 'searching');
+        this.table.setData(this.table.data);
+        
+        // Bereite die Daten für den Bulk-Scan vor
+        const devicesToScan = this.table.data.map(row => ({
+            address: row.macAddress || row.busAddress || '',
+            busType: row.busType || ''
+        }));
+
+        // Führe den Bulk-Scan aus
         (async () => {
             try {
-                const addr = this.table.data[index].macAddress || this.table.data[index].busAddress || '';
-                const bType = this.table.data[index].busType || '';
-                const found = await window.API.scanDevice(addr, bType);
+                const scanResults = await window.API.scanDevicesBulk(devicesToScan);
                 
-                if (found) {
-                    this.table.data[index].status = 'active';
-                    this.table.data[index].health = 'OK';
-                    if (found.battery !== undefined) this.table.data[index].battery = found.battery;
-                    if (found.signal !== undefined) this.table.data[index].signal = found.signal;
-                    if (found.channels) this.table.data[index].channels = found.channels;
-                } else {
-                    this.table.data[index].status = 'not_reachable';
-                }
+                // Verarbeite die Ergebnisse und update die Tabelle
+                scanResults.forEach(foundDevice => {
+                    const originalDeviceRow = this.table.data.find(row => (row.macAddress || row.busAddress) === foundDevice.originalAddress);
+                    if (originalDeviceRow) {
+                        if (!foundDevice.id) { // Gerät wurde im Scan nicht gefunden
+                            originalDeviceRow.status = 'not_reachable';
+                        } else {
+                            originalDeviceRow.status = 'active';
+                            originalDeviceRow.health = 'OK';
+                            if (foundDevice.battery !== undefined) originalDeviceRow.battery = foundDevice.battery;
+                            if (foundDevice.signal !== undefined) originalDeviceRow.signal = foundDevice.signal;
+                            if (foundDevice.channels) originalDeviceRow.channels = foundDevice.channels;
+                        }
+                        window.API.updateDevice(originalDeviceRow.id, originalDeviceRow);
+                    }
+                });
             } catch (e) {
-                this.table.data[index].status = 'not_reachable';
+                this.table.data.forEach(row => row.status = 'not_reachable');
+            } finally {
+                this.table._render();
             }
-            
-            await window.API.updateDevice(this.table.data[index].id, this.table.data[index]);
-            this.table.setData(this.table.data);
         })();
+    },
+
+    async executeDeviceScan(deviceRow) {
+        try {
+            const addr = deviceRow.macAddress || deviceRow.busAddress || '';
+            const bType = deviceRow.busType || '';
+            const found = await window.API.scanDevice(addr, bType);
+            
+            if (found) {
+                deviceRow.status = 'active';
+                deviceRow.health = 'OK';
+                if (found.battery !== undefined) deviceRow.battery = found.battery;
+                if (found.signal !== undefined) deviceRow.signal = found.signal;
+                if (found.channels) deviceRow.channels = found.channels;
+            } else {
+                deviceRow.status = 'not_reachable';
+            }
+        } catch (e) {
+            deviceRow.status = 'not_reachable';
+        }
+        
+        await window.API.updateDevice(deviceRow.id, deviceRow);
+        this.table._render(); // Aktualisiert die Tabelle ressourcenschonend ohne Pagination-Verlust
     }
 };

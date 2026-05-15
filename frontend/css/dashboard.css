@@ -36,37 +36,3 @@
     margin: 0;
     flex-grow: 1;
 }
-
-#edit-mode-btn,
-#add-tile-btn {
-    background: none;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    color: var(--text-secondary);
-    font-size: 0.8rem;
-    padding: 3px 8px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    transition: color 0.2s, border-color 0.2s;
-}
-
-#edit-mode-btn img,
-#add-tile-btn img {
-    width: 12px;
-    height: 12px;
-    filter: invert(0.5);
-    transition: filter 0.2s;
-}
-
-#edit-mode-btn:hover, #edit-mode-btn.active,
-#add-tile-btn:hover {
-    color: var(--text-primary);
-    border-color: var(--text-primary);
-}
-
-#edit-mode-btn:hover img, #edit-mode-btn.active img,
-#add-tile-btn:hover img {
-    filter: invert(1);
-}

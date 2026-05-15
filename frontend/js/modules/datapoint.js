@@ -25,8 +25,12 @@ class DatapointManager {
             { key: 'updated',    label: 'Letztes Update' }
         ];
 
+        const addIconStr = this.mode === 'sensor' ? 'mobile-signal-out-svgrepo-com.svg' : 'mobile-signal-svgrepo-com.svg';
+
         this.table = new DataTable(container, columns, {
             searchable: true,
+            addBtnClass: this.mode === 'sensor' ? 'btn-add btn-add-sensor' : 'btn-add btn-add-actuator',
+            addBtnHtml: `<span><img src="assets/icons/${addIconStr}"></span> ${this.title} hinzufügen`,
             onAdd: () => this.showAddModal(),
             onEdit: (row) => this.showEditModal(row),
             onDelete: (rowId) => this.deleteDatapoint(rowId)

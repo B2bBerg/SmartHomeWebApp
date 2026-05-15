@@ -16,10 +16,12 @@
     <link rel="stylesheet" href="css/page.css">
 
     <!-- 4. Wiederverwendbare UI-Komponenten (Module) -->
+    <link rel="stylesheet" href="css/modules/button.css">
     <link rel="stylesheet" href="css/modules/table.css">
     <link rel="stylesheet" href="css/modules/tile.css">
     <link rel="stylesheet" href="css/modules/switch.css">
     <link rel="stylesheet" href="css/modules/graph.css">
+    <link rel="stylesheet" href="css/modules/dialog.css">
 
     <!-- 5. Spezifische Seiten/Ansichten -->
     <link rel="stylesheet" href="css/dashboard.css">
@@ -81,8 +83,8 @@
         </div>
         <div class="overview-header">
             <h2>Übersicht</h2>
-            <button id="edit-mode-btn" title="Layout bearbeiten"><img src="assets/icons/gear-svgrepo-com.svg" alt="edit">Bearbeiten</button>
-            <button id="add-tile-btn" title="Kachel hinzufügen"><img src="assets/icons/grid-plus-svgrepo-com.svg" alt="add">Kachel hinzufügen</button>
+            <button id="edit-mode-btn" class="btn-outline" title="Layout bearbeiten"><img src="assets/icons/gear-svgrepo-com.svg" alt="edit">Bearbeiten</button>
+            <button id="add-tile-btn" class="btn-add" title="Kachel hinzufügen"><span><img src="assets/icons/grid-plus-svgrepo-com.svg" alt="add"></span> Kachel hinzufügen</button>
         </div>
         <div class="overview-container"></div>
 
@@ -122,8 +124,8 @@
                     </select>
                 </div>
                 <div class="tile-modal-actions">
-                    <button id="tile-modal-confirm">Hinzufügen</button>
-                    <button id="tile-modal-cancel">Abbrechen</button>
+                    <button id="tile-modal-confirm" class="btn-primary">Hinzufügen</button>
+                    <button id="tile-modal-cancel" class="btn-outline">Abbrechen</button>
                 </div>
             </div>
         </div>
@@ -157,7 +159,7 @@
                 <div class="tile-modal-actions">
                     <button id="tile-settings-delete" class="btn-danger">Löschen</button>
                     <div style="flex-grow:1"></div>
-                    <button id="tile-settings-close">Schliessen</button>
+                    <button id="tile-settings-close" class="btn-outline">Schliessen</button>
                 </div>
             </div>
         </div>

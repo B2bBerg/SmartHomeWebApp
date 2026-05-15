@@ -80,6 +80,31 @@ export const DevicesAPI = {
         }
     },
     
+    scanDevicesBulk: async (devicesToScan) => {
+        try {
+            // devicesToScan ist ein Array von { address, busType }
+            return await fetchApi(`/devices/scan-bulk`, { method: 'POST', body: JSON.stringify(devicesToScan) });
+        } catch (apiError) {
+            console.warn(`Fallback: scanDevicesBulk fehlgeschlagen, nutze Mock-Daten.`);
+            try {
+                // Simuliere Netzwerklatenz für einen kompletten Scan
+                await new Promise(resolve => setTimeout(resolve, 3500));
+                const response = await fetch('./testing/devices/network_devices.json?t=' + Date.now());
+                if (!response.ok) throw new Error("HTTP Fehler " + response.status);
+                const mockDatabase = await response.json();
+                
+                // Finde alle übereinstimmenden Geräte aus der Mock-DB
+                return devicesToScan.map(devToScan => {
+                    const found = mockDatabase.find(d => devToScan.address && (d.macAddress === devToScan.address || d.busAddress === devToScan.address) && (!devToScan.busType || d.busType === devToScan.busType));
+                    return found ? { ...found, originalAddress: devToScan.address } : { originalAddress: devToScan.address };
+                });
+            } catch (mockError) {
+                console.error("Fehler beim Laden der Mock-Daten für Bulk-Scan:", mockError);
+                return devicesToScan.map(d => ({ originalAddress: d.address, error: true }));
+            }
+        }
+    },
+
     addDevice: async (deviceData) => {
         try {
             return await fetchApi('/devices', { method: 'POST', body: JSON.stringify(deviceData) });

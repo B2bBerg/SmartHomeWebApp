@@ -1,149 +1,5 @@
 /* --- table.css – Zusammengeführtes Styling für Datentabellen und Modals --- */
 
-/* Toolbar & Buttons */
-.btn-add {
-    background: var(--accent-green);
-    color: var(--bg-base);
-    border: none;
-    border-radius: 6px;
-    padding: 0.4rem 0.8rem;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.2s ease;
-}
-
-.btn-add:hover { 
-    opacity: 0.9; 
-    box-shadow: 0 4px 12px rgba(var(--shadow-color-rgb), 0.2);
-}
-
-.btn-icon {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    font-size: 1rem;
-    padding: 4px;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-}
-
-.btn-edit:hover { background: rgba(137, 180, 250, 0.2); color: var(--accent-blue); }
-.btn-delete:hover { background: rgba(243, 139, 168, 0.2); color: var(--accent-red); }
-
-/* --- Table Modal (Add Window) --- */
-.table-modal {
-    position: fixed;
-    inset: 0;
-    background: var(--modal-overlay-bg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-
-.table-modal.hidden {
-    display: none;
-}
-
-.table-modal-box {
-    background: var(--bg-base);
-    border: 1px solid var(--border-color);
-    padding: 1.5rem;
-    border-radius: 12px;
-    width: 320px;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.table-modal-box h3 { margin: 0; color: var(--text-primary); font-size: 1.1rem; }
-.table-modal-box p { color: var(--text-secondary); font-size: 0.9rem; margin: 0; }
-
-.table-modal-box select {
-    background: var(--input-bg);
-    border: 1px solid var(--border-color);
-    color: var(--input-text);
-    padding: 0.5rem;
-    border-radius: 6px;
-    outline: none;
-}
-
-.table-modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-}
-
-.table-modal-actions button {
-    background: var(--bg-button);
-    border: none;
-    color: var(--text-primary);
-    padding: 0.4rem 1rem;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.table-modal-actions button:hover {
-    background: var(--btn-hover-bg);
-    box-shadow: 0 4px 12px rgba(var(--shadow-color-rgb), 0.2);
-}
-
-.btn-primary { background: var(--accent-green) !important; color: var(--palette-crust) !important; }
-
-/* --- Table Modal Form Elements --- */
-.table-modal-box .settings-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
-}
-
-.table-modal-box label {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-}
-
-.table-modal-box input {
-    background: var(--input-bg);
-    border: 1px solid var(--border-color);
-    color: var(--input-text);
-    padding: 0.5rem;
-    border-radius: 6px;
-    outline: none;
-}
-
-.table-modal-search-row {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.table-modal-search-row input {
-    flex: 1;
-}
-
-.modal-config-area {
-    display: none;
-    flex-direction: column;
-    gap: 1rem;
-    border-top: 1px solid var(--border-color);
-    padding-top: 1rem;
-    margin-top: 0.5rem;
-}
-
-.modal-msg {
-    font-size: 0.85rem;
-    min-height: 1.5rem;
-    margin-top: 0.5rem;
-    line-height: 1.3;
-}
-
-.modal-msg.error { color: var(--accent-red); }
-.modal-msg.success { color: var(--accent-green); }
-
 /* --- Table Base Styles (aus alter data-table.css) --- */
 .data-table-wrapper {
     width: 100%;
@@ -276,7 +132,7 @@
 .badge--inactive { background: var(--badge-inactive-bg); color: var(--accent-red); }
 .badge--warning  { background: var(--badge-warning-bg); color: var(--accent-yellow); }
 .badge--searching{ background: var(--badge-searching-bg); color: var(--accent-blue); }
-.badge--error    { background: rgba(243, 139, 168, 0.2); color: var(--error-red); }
+.badge--error    { background: rgba(var(--palette-red-rgb), 0.2); color: var(--error-red); }
 
 /* --- IO-Ports --- */
 .io-port {
@@ -286,13 +142,13 @@
     border-radius: 4px;
     font-size: 0.85rem;
     font-family: monospace;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--white-rgb), 0.05);
     border: 1px solid transparent;
     cursor: default;
 }
 .io-port--free {
     color: var(--accent-green);
-    border-color: rgba(166, 227, 161, 0.2);
+    border-color: rgba(var(--palette-green-rgb), 0.2);
 }
 .io-port--used {
     color: var(--text-secondary);
@@ -300,5 +156,5 @@
 }
 .io-port--assigned {
     color: var(--accent-yellow);
-    border-color: rgba(249, 226, 175, 0.2);
+    border-color: rgba(var(--palette-yellow-rgb), 0.2);
 }

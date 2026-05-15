@@ -8,11 +8,11 @@ const Dialog = {
             modal.className = 'table-modal';
             modal.style.zIndex = '100000'; // Behebt das Überlappungs-Problem mit anderen Modals
             modal.innerHTML = `
-                <div class="table-modal-box" style="max-width: 400px; text-align: center;">
-                    <h3 style="margin-bottom: 0.5rem; color: var(--text-primary);">${title}</h3>
-                    <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">${message}</p>
-                    <div class="table-modal-actions" style="justify-content: center;">
-                        <button class="btn-primary dialog-btn-yes" style="background: var(--error-red) !important; color: white !important; border: none;">Ja</button>
+                <div class="table-modal-box dialog-alert-box">
+                    <h3>${title}</h3>
+                    <p>${message}</p>
+                    <div class="table-modal-actions">
+                        <button class="btn-danger dialog-btn-yes">Ja</button>
                         <button class="btn-outline dialog-btn-no">Nein</button>
                     </div>
                 </div>
@@ -37,13 +37,14 @@ const Dialog = {
             const modal = document.createElement('div');
             modal.className = 'table-modal';
             modal.style.zIndex = '100000'; // Behebt das Überlappungs-Problem mit anderen Modals
-            const headerColor = isError ? 'var(--error-red)' : 'var(--accent-blue)';
+            const headerClass = isError ? 'header-error' : 'header-info';
+            const btnClass = isError ? 'btn-danger' : 'btn-primary';
             modal.innerHTML = `
-                <div class="table-modal-box" style="max-width: 400px; text-align: center;">
-                    <h3 style="margin-bottom: 0.5rem; color: ${headerColor};">${title}</h3>
-                    <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">${message}</p>
-                    <div class="table-modal-actions" style="justify-content: center;">
-                        <button class="btn-primary dialog-btn-ok" style="background: ${headerColor} !important; color: white !important; border: none;">OK</button>
+                <div class="table-modal-box dialog-alert-box">
+                    <h3 class="${headerClass}">${title}</h3>
+                    <p>${message}</p>
+                    <div class="table-modal-actions">
+                        <button class="${btnClass} dialog-btn-ok">OK</button>
                     </div>
                 </div>
             `;
@@ -74,14 +75,14 @@ const Dialog = {
             modal.className = 'table-modal';
             modal.style.zIndex = '100001'; // Höher als normale Modals (falls doch mal Stacked Modals nötig sind)
             
-            let listHtml = `<div class="select-list-container" style="max-height: 300px; overflow-y: auto; text-align: left; margin-bottom: 1.5rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-base);">`;
+            let listHtml = `<div class="dialog-select-list">`;
             
             if (!items || items.length === 0) {
-                listHtml += `<div style="padding: 1rem; color: var(--text-muted); text-align: center;">Keine Einträge gefunden.</div>`;
+                listHtml += `<div class="dialog-select-empty">Keine Einträge gefunden.</div>`;
             } else {
                 items.forEach((item, index) => {
                     // renderItem() wird vom Aufrufer definiert (z.B. locations.js) und baut das HTML pro Zeile
-                    listHtml += `<div class="select-list-item" data-index="${index}" style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background 0.2s;">
+                    listHtml += `<div class="dialog-select-item" data-index="${index}">
                         ${renderItem(item)}
                     </div>`;
                 });
@@ -89,10 +90,10 @@ const Dialog = {
             listHtml += `</div>`;
 
             modal.innerHTML = `
-                <div class="table-modal-box" style="max-width: 500px; text-align: center;">
-                    <h3 style="margin-bottom: 1rem; color: var(--text-primary);">${title}</h3>
+                <div class="table-modal-box dialog-alert-box dialog-select-box">
+                    <h3>${title}</h3>
                     ${listHtml}
-                    <div class="table-modal-actions" style="justify-content: center;">
+                    <div class="table-modal-actions">
                         <button class="btn-outline dialog-btn-cancel">Abbrechen</button>
                     </div>
                 </div>
@@ -100,10 +101,8 @@ const Dialog = {
             document.body.appendChild(modal);
 
             // Hover-Effekte und Klick-Events für die Listen-Elemente
-            const listElements = modal.querySelectorAll('.select-list-item');
+            const listElements = modal.querySelectorAll('.dialog-select-item');
             listElements.forEach(el => {
-                el.addEventListener('mouseenter', () => el.style.background = 'var(--palette-surface0)');
-                el.addEventListener('mouseleave', () => el.style.background = 'transparent');
                 el.addEventListener('click', () => {
                     const selectedItem = items[el.dataset.index];
                     modal.remove();
@@ -152,18 +151,18 @@ const Dialog = {
                     fieldsHtml += `<input type="hidden" id="df_${f.id}" value="${f.value || ''}">`;
                     return;
                 }
-                const colSpan = f.fullWidth ? 'grid-column: 1 / -1;' : '';
+                const colSpanClass = f.fullWidth ? 'full-width' : '';
                 
                 let inputHtml = '';
                 if (f.type === 'select') {
                     const optionsHtml = (f.options || []).map(opt => `<option value="${opt.value}" ${f.value === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('');
-                    inputHtml = `<select id="df_${f.id}" style="width: 100%;">${optionsHtml}</select>`;
+                    inputHtml = `<select id="df_${f.id}">${optionsHtml}</select>`;
                 } else {
-                    inputHtml = `<input type="${f.type || 'text'}" id="df_${f.id}" placeholder="${f.placeholder || ''}" ${f.readonly ? 'readonly' : ''} value="${f.value || ''}" style="width: 100%;">`;
+                    inputHtml = `<input type="${f.type || 'text'}" id="df_${f.id}" placeholder="${f.placeholder || ''}" ${f.readonly ? 'readonly' : ''} value="${f.value || ''}">`;
                 }
 
                 fieldsHtml += `
-                    <div class="settings-group" style="${colSpan} margin-bottom: 0;">
+                    <div class="settings-group ${colSpanClass}">
                         <label>${f.label}</label>
                         ${inputHtml}
                     </div>
@@ -174,31 +173,32 @@ const Dialog = {
             if (tables.length > 0) {
                 let tabsHtml = '';
                 if (tables.length > 1) {
-                    tabsHtml = `<div class="dialog-tabs" style="display:flex; gap:0.5rem; margin-bottom:0.5rem; border-bottom:1px solid var(--border-color);">` +
-                        tables.map((t, i) => `<button type="button" class="dialog-tab-btn" data-target="${t.id}" style="background:none; border:none; border-bottom:2px solid ${i===0?'var(--accent-blue)':'transparent'}; color:${i===0?'var(--text-primary)':'var(--text-secondary)'}; font-weight:600; cursor:pointer; padding:0.5rem 1rem; transition:all 0.2s;">${t.title}</button>`).join('') +
+                    tabsHtml = `<div class="dialog-tabs">` +
+                        tables.map((t, i) => `<button type="button" class="dialog-tab-btn ${i===0 ? 'active' : ''}" data-target="${t.id}">${t.title}</button>`).join('') +
                         `</div>`;
                 } else if (tables.length === 1 && tables[0].title) {
-                    tabsHtml = `<label style="display:block; margin-bottom:0.5rem; color:var(--text-primary); font-weight:600;">${tables[0].title}</label>`;
+                    tabsHtml = `<div class="dialog-tabs"><label>${tables[0].title}</label></div>`;
                 }
                 tableSectionHtml = `
-                    <div style="flex-grow: 1; display: flex; flex-direction: column; min-height: 0; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                    <div class="dialog-table-section">
                         ${tabsHtml}
-                        <div id="dialog-table-container" style="overflow-y: auto; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem;"></div>
+                        <div id="dialog-table-container" class="dialog-table-container"></div>
                     </div>
                 `;
             }
 
+            const boxClass = tables.length > 0 ? 'dialog-form-box with-tables' : 'dialog-form-box';
             modal.innerHTML = `
-                <div class="table-modal-box" style="max-width: ${tables.length > 0 ? '900px' : '450px'}; width: 90%; max-height: 90vh; display: flex; flex-direction: column;">
-                    <h3 style="margin-bottom: 1rem; color: var(--text-primary); flex-shrink: 0;">${title}</h3>
+                <div class="table-modal-box ${boxClass}">
+                    <h3>${title}</h3>
                     
-                    <div class="dialog-form-grid" style="display:grid; grid-template-columns: ${tables.length > 0 ? '1fr 1fr' : '1fr'}; gap: 1rem; flex-shrink: 0; margin-bottom: 1rem;">
+                    <div class="dialog-form-grid">
                         ${fieldsHtml}
                     </div>
 
                     ${tableSectionHtml}
 
-                    <div class="table-modal-actions" style="margin-top: 1.5rem; flex-shrink: 0;">
+                    <div class="table-modal-actions">
                         <button class="btn-primary dialog-btn-save">${saveText}</button>
                         <button class="btn-outline dialog-btn-cancel">Abbrechen</button>
                     </div>
@@ -237,11 +237,9 @@ const Dialog = {
                 const tabBtns = modal.querySelectorAll('.dialog-tab-btn');
                 tabBtns.forEach(b => {
                     if (b.dataset.target === tabId) {
-                        b.style.borderBottomColor = 'var(--accent-blue)';
-                        b.style.color = 'var(--text-primary)';
+                        b.classList.add('active');
                     } else {
-                        b.style.borderBottomColor = 'transparent';
-                        b.style.color = 'var(--text-secondary)';
+                        b.classList.remove('active');
                     }
                 });
                 renderTabTable(tabId);

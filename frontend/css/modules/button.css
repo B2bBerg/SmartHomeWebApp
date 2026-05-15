@@ -1,0 +1,155 @@
+/* --- button.css – Zentrale Button-Styles für die gesamte App --- */
+
+/* 1. Primary Button (Hauptaktionen wie Speichern) */
+.btn-primary {
+    background: var(--accent-green) !important;
+    color: var(--palette-crust) !important;
+    border: none;
+    border-radius: 6px;
+    padding: 0.4rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: fit-content;
+    max-width: 100%;
+    line-height: 1.2;
+}
+
+.btn-primary:hover {
+    opacity: 0.9;
+    box-shadow: 0 4px 12px rgba(var(--shadow-color-rgb), 0.2);
+}
+
+/* 2. Outline Button (Dezente Aktionen, ideal für die Gebäudestruktur) */
+.btn-outline {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    border-radius: 6px;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    width: fit-content;
+    white-space: nowrap;
+}
+
+.btn-outline:hover, .btn-outline.active {
+    background: var(--btn-hover-bg);
+    border-color: var(--text-primary);
+    box-shadow: 0 4px 12px rgba(var(--shadow-color-rgb), 0.2);
+}
+
+/* 3. Add Button (Auffälliger Button in Tabellen-Toolbars) */
+.btn-add {
+    background: var(--accent-green);
+    color: var(--bg-base);
+    border: none;
+    border-radius: 6px;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    width: fit-content;
+    white-space: nowrap;
+}
+
+.btn-add:hover { 
+    opacity: 0.9; 
+    box-shadow: 0 4px 12px rgba(var(--shadow-color-rgb), 0.2);
+}
+
+/* 3.1 Spezifische Add-Button Overrides für Sensoren/Aktoren */
+.btn-add-sensor {
+    background: var(--btn-sensor-bg) !important;
+    color: var(--btn-sensor-text) !important;
+}
+.btn-add-sensor span {
+    background: rgba(var(--shadow-color-rgb), 0.15) !important;
+}
+.btn-add-actuator {
+    background: var(--btn-actuator-bg) !important;
+    color: var(--btn-actuator-text) !important;
+}
+.btn-add-actuator span {
+    background: rgba(var(--shadow-color-rgb), 0.15) !important;
+}
+
+/* 4. Danger Button (Gefährliche Aktionen wie Löschen in Modals) */
+.btn-danger {
+    background: var(--error-red) !important;
+    border: none;
+    color: var(--white) !important;
+    border-radius: 6px;
+    padding: 0.4rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: fit-content;
+    max-width: 100%;
+    line-height: 1.2;
+}
+
+.btn-danger:hover {
+    opacity: 0.9;
+    box-shadow: 0 4px 12px rgba(var(--shadow-color-rgb), 0.2);
+}
+
+/* 5. Icon Buttons (Sehr dezente Aktionen für Tabellen-Zeilen & Gebäude-Cards) */
+.btn-icon {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.btn-edit:hover { 
+    background: rgba(var(--palette-blue-rgb), 0.2); 
+    color: var(--accent-blue); 
+}
+
+.btn-delete:hover { 
+    background: rgba(var(--palette-red-rgb), 0.2); 
+    color: var(--accent-red); 
+}
+
+/* Globale Image-Filter für Icons in Buttons */
+.btn-outline img,
+.btn-icon img,
+.btn-edit img,
+.btn-delete img {
+    width: 14px;
+    height: 14px;
+    filter: invert(0.6);
+    transition: filter 0.2s ease;
+}
+
+.btn-outline:hover img, .btn-outline.active img,
+.btn-icon:hover img,
+.btn-edit:hover img,
+.btn-delete:hover img {
+    filter: invert(1);
+}
+
+/* Icons in Primary und Add Buttons (grüner Hintergrund -> schwarzes Icon) */
+.btn-primary img,
+.btn-add img {
+    width: 12px;
+    height: 12px;
+    filter: brightness(0); /* Macht das Icon schwarz */
+}

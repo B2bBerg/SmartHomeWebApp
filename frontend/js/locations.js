@@ -266,7 +266,7 @@ const LocationsManager = {
                 <span class="breadcrumb-active">Standorte</span>
                 <div style="flex-grow:1"></div>
                 <button id="btn-toggle-edit" class="btn-outline ${this.isEditModeBuildings ? 'active' : ''}" title="Layout bearbeiten"><img src="assets/icons/gear-svgrepo-com.svg" alt="edit">Gebäude bearbeiten</button>
-                <button id="btn-add-building" class="btn-outline" title="Gebäude hinzufügen"><img src="assets/icons/grid-plus-svgrepo-com.svg" alt="add">Gebäude hinzufügen</button>
+                <button id="btn-add-building" class="btn-add" title="Gebäude hinzufügen"><span><img src="assets/icons/grid-plus-svgrepo-com.svg" alt="add"></span> Gebäude hinzufügen</button>
             </div>
             <div class="floor-grid ${this.isEditModeBuildings ? 'edit-mode' : ''}">`;
         
@@ -288,11 +288,11 @@ const LocationsManager = {
                         <h3>${building.name}</h3>
                         <p>${floorCount} Stockwerke</p>
                         ${addressText}
-                        <div style="display:flex; gap:0.5rem; margin-top: 12px; width: 100%;">
-                            <button class="btn-show-devices" data-id="${building.id}">
+                        <div style="display:flex; gap:0.5rem; margin-top: 12px; width: 100%; flex-wrap: wrap;">
+                            <button class="btn-outline btn-show-devices" data-id="${building.id}" style="flex:1; justify-content:center; width:100%; min-width:120px;">
                                 Hardware
                             </button>
-                            <button class="btn-show-datapoints" data-id="${building.id}">
+                            <button class="btn-outline btn-show-datapoints" data-id="${building.id}" style="flex:1; justify-content:center; width:100%; min-width:120px;">
                                 Sensoren / Aktoren
                             </button>
                         </div>
@@ -563,7 +563,7 @@ const LocationsManager = {
                 <div style="flex-grow:1"></div>
                 <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom: 0.4rem;">
                     <button id="btn-toggle-edit" class="btn-outline ${this.isEditModeFloors ? 'active' : ''}" title="Layout bearbeiten"><img src="assets/icons/gear-svgrepo-com.svg" alt="edit">Stockwerke bearbeiten</button>
-                    <button id="btn-add-floor" class="btn-outline" title="Stockwerk/Wohnung hinzufügen"><img src="assets/icons/grid-plus-svgrepo-com.svg" alt="add">Stockwerk/Wohnung hinzufügen</button>
+                    <button id="btn-add-floor" class="btn-add" title="Stockwerk/Wohnung hinzufügen"><span><img src="assets/icons/grid-plus-svgrepo-com.svg" alt="add"></span> Stockwerk/Wohnung hinzufügen</button>
                 </div>
             </div>
             <div id="rooms-container"></div>
@@ -700,7 +700,7 @@ const LocationsManager = {
                 <div style="flex-grow:1"></div>
                 <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom: 0.4rem;">
                     <button id="btn-toggle-edit-rooms" class="btn-outline ${this.isEditModeRooms ? 'active' : ''}" title="Layout bearbeiten"><img src="assets/icons/gear-svgrepo-com.svg" alt="edit">Räume bearbeiten</button>
-                    <button id="btn-add-room" class="btn-outline" title="Raum hinzufügen"><img src="assets/icons/grid-plus-svgrepo-com.svg" alt="add">Raum hinzufügen</button>
+                    <button id="btn-add-room" class="btn-add" title="Raum hinzufügen"><span><img src="assets/icons/grid-plus-svgrepo-com.svg" alt="add"></span> Raum hinzufügen</button>
                 </div>
             </div>
             <div id="active-room-content"></div>
@@ -810,7 +810,7 @@ const LocationsManager = {
                 </div>
                 <div style="display:flex; gap:0.5rem;">
                     <button id="room-edit-mode-btn" class="btn-outline" title="Kachel-Layout bearbeiten"><img src="assets/icons/gear-svgrepo-com.svg" alt="edit">Kachel bearbeiten</button>
-                    <button id="room-add-tile-btn" class="btn-outline" title="Kachel hinzufügen"><img src="assets/icons/grid-plus-svgrepo-com.svg" alt="add">Kachel hinzufügen</button>
+                    <button id="room-add-tile-btn" class="btn-add" title="Kachel hinzufügen"><span><img src="assets/icons/grid-plus-svgrepo-com.svg" alt="add"></span> Kachel hinzufügen</button>
                 </div>
             </div>
             <div id="room-dashboard-grid" class="overview-container" style="background:transparent; border:none; padding:0;"></div>
