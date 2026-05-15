@@ -73,14 +73,22 @@ const RuleManager = {
         document.body.appendChild(modal);
 
         modal.querySelector('#save-rule').onclick = () => {
+            const ruleName = document.getElementById('rule-name').value.trim();
+            const ruleVal = modal.querySelector('.rule-val').value.trim();
+            
+            if (!ruleName || !ruleVal) {
+                window.Dialog.alert('Fehler', 'Bitte alle Pflichtfelder ausfüllen.', true);
+                return; // Verhindert das Schließen des Modals
+            }
+
             const newRule = {
-                name: document.getElementById('rule-name').value,
+                name: ruleName,
                 active: true,
                 logic: document.getElementById('rule-logic').value,
                 conditions: [{
                     datapoint: modal.querySelector('.rule-dp').value,
                     operator: modal.querySelector('.rule-op').value,
-                    value: modal.querySelector('.rule-val').value
+                    value: ruleVal
                 }]
             };
             window.API.addRule(newRule).then((res) => {

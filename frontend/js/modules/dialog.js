@@ -282,9 +282,15 @@ const Dialog = {
             });
 
             modal.querySelector('.dialog-btn-cancel').onclick = () => { modal.remove(); resolve(null); };
-            modal.querySelector('.dialog-btn-save').onclick = () => {
+            modal.querySelector('.dialog-btn-save').onclick = async () => {
                 const result = {};
                 fields.forEach(f => result[f.id] = formElements[f.id].value);
+                
+                if (typeof config.validate === 'function') {
+                    const isValid = await config.validate(result);
+                    if (!isValid) return; // Validation failed, do not close modal
+                }
+                
                 modal.remove();
                 resolve(result);
             };

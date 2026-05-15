@@ -178,10 +178,17 @@ const LocationsManager = {
                             }
                         });
                     });
+                },
+                validate: (res) => {
+                    if (!res.name) {
+                        window.Dialog.alert('Fehler', 'Bitte alle Pflichtfelder (*) ausfüllen.', true);
+                        return false;
+                    }
+                    return true;
                 }
             });
 
-            if (result && result.name) {
+            if (result) {
                 callback({ name: result.name, templateId: result.id, address: { street: result.street, number: result.number, zip: result.zip, city: result.city, country: result.country }});
             }
         } else {
@@ -205,10 +212,17 @@ const LocationsManager = {
                     };
                     fields.name.addEventListener('focus', handleNameInput);
                     fields.name.addEventListener('input', handleNameInput);
+                },
+                validate: (res) => {
+                    if (!res.name) {
+                        window.Dialog.alert('Fehler', 'Bitte alle Pflichtfelder (*) ausfüllen.', true);
+                        return false;
+                    }
+                    return true;
                 }
             });
 
-            if (result && result.name) callback({ name: result.name, templateId: result.id });
+            if (result) callback({ name: result.name, templateId: result.id });
         }
     },
 
