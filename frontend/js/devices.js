@@ -85,10 +85,10 @@ const DeviceManager = {
         }
     },
 
-    async showAddModal() {
+    async getFormattedLocationOptions() {
         let locations = [];
-        try { locations = await window.API.getLocations(); } catch(e) {}
-        
+        try { locations = await window.API.getLocations(); } catch (e) { console.warn("Fehler beim Laden der Standorte", e); }
+
         let locOptions = [{ value: '', label: '-- Nicht zugewiesen --' }];
         locations.forEach(bldg => {
             locOptions.push({ value: bldg.name, label: `🏢 ${bldg.name}` });
@@ -99,30 +99,120 @@ const DeviceManager = {
                 });
             });
         });
+        return locOptions;
+    },
+
+    async getBusTypeOptions(includeEmpty = false) {
+        let types = [];
+        try {
+            types = await window.API.getBusTypes();
+        } catch (e) {
+            types = ['WIFI', 'Thread', 'RS485', 'Ethernet']; // Not-Fallback
+        }
+        
+        const options = types.map(t => ({ value: t, label: t }));
+        if (includeEmpty) {
+            options.unshift({ value: '', label: '-- Bitte wählen --' });
+        }
+        return options;
+    },
+
+    async showAddModal() {
+        const locOptions = await this.getFormattedLocationOptions();
+        const busOptions = await this.getBusTypeOptions(true);
 
         const result = await window.Dialog.formWithTable({
             title: 'Neues Hardware-Gerät erfassen',
             saveText: 'Hinzufügen',
-            tables: [], // Wir nutzen das Modal im Kompakt-Modus ohne Tabelle
             fields: [
                 { id: 'name', label: 'Name *', placeholder: 'Eigener Name (z.B. Deckenlampe)', fullWidth: true },
                 { id: 'location', label: 'Standort', type: 'select', options: locOptions, fullWidth: true },
-                { id: 'address', label: 'MAC- oder Bus-Adresse *', placeholder: 'z.B. AA:BB:CC... oder 0x05', fullWidth: true },
-                { id: 'busType', label: 'Netzwerk (Bus) *', type: 'select', options: [
-                    { value: 'WIFI', label: 'WIFI' },
-                    { value: 'Thread', label: 'Thread' },
-                    { value: 'RS485', label: 'RS485' },
-                    { value: 'Ethernet', label: 'Ethernet' }
-                ], fullWidth: true }
-            ]
+                { id: 'busType', label: 'Netzwerk (Bus) *', type: 'select', options: busOptions, fullWidth: false },
+                { id: 'address', label: 'MAC- oder Bus-Adresse *', placeholder: 'z.B. AA:BB:CC... oder 0x05', fullWidth: false }
+            ],
+            tables: [
+                {
+                    id: 'scanResults',
+                    title: '🔍 Gefundene, nicht registrierte Geräte',
+                    columns: [
+                        { key: 'name', label: 'Typ / Name' },
+                        { key: 'busType', label: 'Netzwerk' },
+                        { key: 'address', label: 'Adresse', render: (val, row) => row.macAddress || row.busAddress || val }
+                    ],
+                    data: [],
+                    onRowSelect: (row, fields) => {
+                        if (row.address === '—' || row.address === '⏳') return; // Platzhalter-Klicks ignorieren
+                        fields.address.value = row.macAddress || row.busAddress || '';
+                        fields.busType.value = row.busType || '';
+                        if (!fields.name.value) fields.name.value = row.name || row.type || '';
+                    }
+                }
+            ],
+            onReady: (modal, fields, updateTableData, switchToTab) => {
+                const busTypeSelect = fields.busType;
+                const addressInput = fields.address;
+                let fullScanResults = []; // Cache für alle gefundenen Geräte
+                
+                const applyFilter = () => {
+                    const bType = busTypeSelect.value;
+                    const addrQuery = addressInput.value.trim().toLowerCase();
+                    const existingDevices = this.table.data || [];
+                    
+                    // Filtere Geräte nach ausgewähltem Bus und entferne bereits registrierte
+                    const filtered = fullScanResults.filter(netDev => {
+                        if (bType && netDev.busType !== bType) return false;
+                        
+                        const netAddr = netDev.macAddress || netDev.busAddress || '';
+                        
+                        // Filter nach eingetippter Adresse anwenden (Teilübereinstimmung)
+                        if (addrQuery && !netAddr.toLowerCase().includes(addrQuery)) return false;
+
+                        return !existingDevices.some(regDev => 
+                            (regDev.macAddress === netAddr || regDev.busAddress === netAddr)
+                        );
+                    });
+                    
+                    if (filtered.length === 0) {
+                        updateTableData('scanResults', [{ name: 'Keine neuen Geräte gefunden', busType: bType || '-', address: '—' }]);
+                    } else {
+                        updateTableData('scanResults', filtered);
+                    }
+                };
+
+                const initialScan = async () => {
+                    updateTableData('scanResults', [{ name: 'Scanne Netzwerk...', busType: '-', address: '⏳' }]);
+                    try {
+                        fullScanResults = await window.API.scanNetwork(''); // Lade initial ALLE Geräte
+                        applyFilter();
+                    } catch (e) {
+                        updateTableData('scanResults', [{ name: 'Fehler beim Scan', busType: '-', address: '—' }]);
+                    }
+                };
+
+                // Scan sofort beim Öffnen ausführen
+                initialScan();
+
+                busTypeSelect.addEventListener('change', () => {
+                    switchToTab('scanResults');
+                    applyFilter();
+                });
+
+                // Live-Suche bei der Eingabe einer Adresse
+                addressInput.addEventListener('input', () => {
+                    switchToTab('scanResults');
+                    applyFilter();
+                });
+            },
+            validate: (res) => {
+                if (!res.name || !res.address || !res.busType) {
+                    window.Dialog.alert('Fehler', 'Bitte alle Pflichtfelder (*) ausfüllen.', true);
+                    return false;
+                }
+                return true;
+            }
         });
 
         if (result) {
-            if (!result.name || !result.address) {
-                window.Dialog.alert('Fehler', 'Bitte alle Pflichtfelder (*) ausfüllen.', true);
-                return;
-            }
-            
             const newEntry = {
                 timestamp: new Date().toISOString(), name: result.name, location: result.location, status: 'searching', updated: 'jetzt',
                 macAddress: result.address.includes(':') ? result.address : '',
@@ -142,19 +232,8 @@ const DeviceManager = {
     },
 
     async showEditModal(row) {
-        let locations = [];
-        try { locations = await window.API.getLocations(); } catch(e) {}
-        
-        let locOptions = [{ value: '', label: '-- Nicht zugewiesen --' }];
-        locations.forEach(bldg => {
-            locOptions.push({ value: bldg.name, label: `🏢 ${bldg.name}` });
-            (bldg.floors || []).forEach(floor => {
-                locOptions.push({ value: floor.name, label: `&nbsp;&nbsp;🟰 ${floor.name}` });
-                (floor.rooms || []).forEach(room => {
-                    locOptions.push({ value: room.name, label: `&nbsp;&nbsp;&nbsp;&nbsp;🚪 ${room.name}` });
-                });
-            });
-        });
+        const locOptions = await this.getFormattedLocationOptions();
+        const busOptions = await this.getBusTypeOptions(false);
 
         const addrValue = row.macAddress || row.busAddress || '';
         
@@ -166,21 +245,18 @@ const DeviceManager = {
                 { id: 'name', label: 'Name *', value: row.name, fullWidth: true },
                 { id: 'location', label: 'Standort', type: 'select', value: row.location, options: locOptions, fullWidth: true },
                 { id: 'address', label: 'MAC- oder Bus-Adresse *', value: addrValue, fullWidth: true },
-                { id: 'busType', label: 'Netzwerk (Bus) *', type: 'select', value: row.busType, options: [
-                    { value: 'WIFI', label: 'WIFI' },
-                    { value: 'Thread', label: 'Thread' },
-                    { value: 'RS485', label: 'RS485' },
-                    { value: 'Ethernet', label: 'Ethernet' }
-                ], fullWidth: true }
-            ]
+                { id: 'busType', label: 'Netzwerk (Bus) *', type: 'select', value: row.busType, options: busOptions, fullWidth: true }
+            ],
+            validate: (res) => {
+                if (!res.name || !res.address || !res.busType) {
+                    window.Dialog.alert('Fehler', 'Bitte alle Pflichtfelder (*) ausfüllen.', true);
+                    return false;
+                }
+                return true;
+            }
         });
 
         if (result) {
-            if (!result.name || !result.address) {
-                window.Dialog.alert('Fehler', 'Bitte alle Pflichtfelder (*) ausfüllen.', true);
-                return;
-            }
-            
             row.name = result.name; 
             row.location = result.location;
             row.macAddress = result.address.includes(':') ? result.address : ''; 

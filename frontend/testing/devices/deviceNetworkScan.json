@@ -1,0 +1,13 @@
+[
+    { "macAddress": "AA:BB:CC:DD:EE:FF", "busAddress": "", "channels": ["AI_1", "DI_1"], "type": "Temperature", "name": "WLAN Multisensor", "location": "Unassigned", "busType": "WIFI", "battery": 85, "signal": 90 },
+    { "macAddress": "11:22:33:44:55:66", "busAddress": "", "channels": [1], "type": "Switch", "name": "WLAN Steckdose", "location": "Unassigned", "busType": "WIFI", "battery": 100, "signal": 75 },
+    { "macAddress": "", "busAddress": "0x05", "channels": ["DO_1"], "type": "Switch", "name": "RS485 Relais", "location": "Unassigned", "busType": "RS485" },
+    { "macAddress": "", "busAddress": "0x0A", "channels": ["AI_1"], "type": "Sensor", "name": "RS485 Temp", "location": "Unassigned", "busType": "RS485" },
+    { "macAddress": "FE:DC:BA:98:76:54", "busAddress": "", "channels": [1], "type": "Light", "name": "Thread Bulb", "location": "Unassigned", "busType": "Thread", "battery": 60, "signal": 80 },
+    { "macAddress": "00:1A:2B:3C:4D:5E", "busAddress": "", "channels": [1, 2, 3], "type": "Switch", "name": "Ethernet Switch 3-Port", "location": "Unassigned", "busType": "Ethernet" },
+    { "macAddress": "", "busAddress": "0x11", "channels": ["AI_1", "AI_2", "DI_1"], "type": "Sensor", "name": "KNX Wetterstation", "location": "Unassigned", "busType": "KNX" },
+    { "macAddress": "", "busAddress": "0x12", "channels": ["DO_1", "DO_2"], "type": "Actuator", "name": "KNX Jalousieaktor", "location": "Unassigned", "busType": "KNX" },
+    { "macAddress": "C0:FF:EE:C0:FF:EE", "busAddress": "", "channels": ["DI_1"], "type": "Sensor", "name": "Thread Türsensor", "location": "Unassigned", "busType": "Thread", "battery": 95, "signal": 65 },
+    { "macAddress": "99:88:77:66:55:44", "busAddress": "", "channels": ["AI_1", "AI_2", "AI_3"], "type": "Sensor", "name": "RS485 Stromzähler", "location": "Unassigned", "busType": "RS485" },
+    { "macAddress": "88:22:33:44:55:66", "busAddress": "", "channels": ["AI_1"], "type": "Sensor", "name": "WLAN Bewegungsmelder", "location": "Unassigned", "busType": "WIFI", "battery": 70, "signal": 85 }
+]
