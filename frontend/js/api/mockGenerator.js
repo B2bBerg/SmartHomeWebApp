@@ -2,7 +2,7 @@
  * mockGenerator.js - Generiert realistische Kurven für Graphen
  */
 export const MockDataGenerator = {
-    generateTimeSeriesData(sensorId, days = 35) {
+    generateTimeSeriesData(type, days = 35) {
         const data = [];
         const now = new Date();
         const start = new Date(now.getTime() - (days * 24 * 60 * 60 * 1000));
@@ -10,18 +10,20 @@ export const MockDataGenerator = {
         let baseValue = 0;
         let variance = 1;
 
-        if (sensorId.includes('temp')) { baseValue = 21; variance = 3; }
-        else if (sensorId.includes('co2')) { baseValue = 500; variance = 150; }
-        else if (sensorId.includes('energy')) { baseValue = 1000; variance = 2; }
-        else if (sensorId.includes('water_')) { baseValue = 300; variance = 0.5; }
-        else if (sensorId.includes('waterquality')) { baseValue = 7.0; variance = 0.2; }
+        const t = (type || '').toLowerCase();
+
+        if (t.includes('temp')) { baseValue = 21; variance = 3; }
+        else if (t.includes('co2')) { baseValue = 500; variance = 150; }
+        else if (t.includes('energy')) { baseValue = 1000; variance = 2; }
+        else if (t.includes('water') && !t.includes('quality')) { baseValue = 300; variance = 0.5; }
+        else if (t.includes('quality')) { baseValue = 7.0; variance = 0.2; }
 
         for (let d = new Date(start); d <= now; d.setHours(d.getHours() + 1)) {
             let val;
-            if (sensorId.includes('energy') || sensorId.includes('water_')) {
+            if (t.includes('energy') || (t.includes('water') && !t.includes('quality'))) {
                 baseValue += Math.random() * variance; 
                 val = baseValue;
-            } else if (sensorId.includes('presence') || sensorId.includes('contact') || sensorId.includes('flood')) {
+            } else if (t.includes('presence') || t.includes('motion') || t.includes('contact') || t.includes('flood') || t.includes('switch')) {
                 val = Math.random() > 0.85 ? 1 : 0; 
             } else {
                 const timeOfDay = d.getHours();

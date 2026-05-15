@@ -57,18 +57,23 @@ export const DatapointsAPI = {
         return all.filter(dp => dp.isSensor || (dp.canRead && !dp.canWrite));
     },
 
-    getSensorData: async (datapoint) => {
+    getSensorData: async (datapointId) => {
         try {
-            // Hier z.B. später echter Aufruf: return await fetchApi(`/datapoints/${datapoint}/history`);
+            // Echter Aufruf ans Backend:
+            // return await fetchApi(`/datapoints/${datapointId}/history`);
             const response = await fetch('./testing/sensors/sensordata.json?t=' + Date.now());
             if (!response.ok) throw new Error("HTTP Fehler");
             const allData = await response.json();
             
-            if (allData && allData[datapoint]) return allData[datapoint];
-            return MockDataGenerator.generateTimeSeriesData(datapoint);
+            if (allData && allData[datapointId]) return allData[datapointId];
+            
+            throw new Error("Datenpunkt in statischer Mock-Datei nicht gefunden.");
         } catch (error) {
-            console.warn(`Nutze generierte Fallback-Daten für Graphen (${datapoint}).`);
-            return MockDataGenerator.generateTimeSeriesData(datapoint);
+            console.warn(`Nutze generierte Fallback-Daten für Graphen (${datapointId}).`);
+            const dps = await DatapointsAPI.getDatapoints();
+            const dp = dps.find(d => d.id === datapointId);
+            const type = dp ? dp.type : 'temperature';
+            return MockDataGenerator.generateTimeSeriesData(type);
         }
     },
 
@@ -82,10 +87,13 @@ export const DatapointsAPI = {
         return all.filter(dp => dp.isActuator || dp.canWrite);
     },
 
-    setActuatorState: async (datapoint, state) => {
-        // Späterer Aufruf ans Backend: return await fetchApi(`/datapoints/${datapoint}/state`, { method: 'PUT', body: JSON.stringify({ state }) });
-        console.log(`API Call: setActuatorState für ${datapoint} ->`, state);
-        return { success: true };
+    setActuatorState: async (datapointId, state) => {
+        try {
+            return await fetchApi(`/datapoints/${datapointId}/state`, { method: 'PUT', body: JSON.stringify({ state }) });
+        } catch (error) {
+            console.warn(`Backend nicht erreichbar. Fallback: setActuatorState für ${datapointId} ->`, state);
+            return { success: true };
+        }
     },
 
     addActuator: async (actuatorData) => DatapointsAPI.addDatapoint({ ...actuatorData, canRead: true, canWrite: true }),
