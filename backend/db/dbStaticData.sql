@@ -3,6 +3,7 @@ CREATE TABLE address
 (
   address_id     uuid         NOT NULL DEFAULT uuidv7(),
   street         varchar(255),
+  street_number  varchar(20) ,
   city           varchar(255),
   state          varchar(255),
   zip_code       varchar(20) ,
