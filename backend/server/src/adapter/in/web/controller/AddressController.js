@@ -4,52 +4,29 @@ export class AddressController {
     }
 
     async getAddresses(req, res) {
-        try {
-            res.json(await this.addressService.getAddresses());
-        } catch (error) {
-            res.status(500).json({ message: "Fehler beim Abrufen der Adressen", error: error.message });
-        }
+        res.json(await this.addressService.getAddresses());
     }
 
     async getAddressById(req, res) {
-        try {
-            const address = await this.addressService.getAddressById(req.params.id);
-            if (!address) return res.status(404).json({ message: "Adresse nicht gefunden" });
-            res.json(address);
-        } catch (error) {
-            res.status(500).json({ message: "Fehler", error: error.message });
-        }
+        const address = await this.addressService.getAddressById(req.params.id);
+        if (!address) return res.status(404).json({ message: "Adresse nicht gefunden" });
+        res.json(address);
     }
 
     async searchAddresses(req, res) {
-        try {
-            res.json(await this.addressService.searchAddresses(req.query.q || ''));
-        } catch (error) {
-            res.status(500).json({ message: "Fehler bei der Adresssuche", error: error.message });
-        }
+        res.json(await this.addressService.searchAddresses(req.query.q || ''));
     }
 
     async addAddress(req, res) {
-        try {
-            res.status(201).json(await this.addressService.addAddress(req.body));
-        } catch (error) {
-            res.status(500).json({ message: "Fehler", error: error.message });
-        }
+        const newAddress = await this.addressService.addAddress(req.body);
+        res.status(201).json(newAddress);
     }
 
     async updateAddress(req, res) {
-        try {
-            res.json(await this.addressService.updateAddress(req.params.id, req.body));
-        } catch (error) {
-            res.status(error.status || 500).json({ message: "Fehler", error: error.message });
-        }
+        res.json(await this.addressService.updateAddress(req.params.id, req.body));
     }
 
     async deleteAddress(req, res) {
-        try {
-            res.json(await this.addressService.deleteAddress(req.params.id));
-        } catch (error) {
-            res.status(error.status || 500).json({ message: "Fehler", error: error.message });
-        }
+        res.json(await this.addressService.deleteAddress(req.params.id));
     }
 }

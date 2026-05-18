@@ -1,3 +1,4 @@
+import { ValidationError } from '../errors/ValidationError.js';
 /**
  * core/domain/Address.js
  * 
@@ -23,13 +24,13 @@ export class Address {
      */
     validate() {
         if (!this.street || this.street.trim() === '') {
-            throw new Error("Validierungsfehler: 'street' (Strasse) ist ein Pflichtfeld.");
+            throw new ValidationError("'street' (Strasse) ist ein Pflichtfeld.");
         }
         if (!this.zip_code || this.zip_code.trim() === '') {
-            throw new Error("Validierungsfehler: 'zip_code' (PLZ) ist ein Pflichtfeld.");
+            throw new ValidationError("'zip_code' (PLZ) ist ein Pflichtfeld.");
         }
         if (!this.city || this.city.trim() === '') {
-            throw new Error("Validierungsfehler: 'city' (Stadt) ist ein Pflichtfeld.");
+            throw new ValidationError("'city' (Stadt) ist ein Pflichtfeld.");
         }
     }
 

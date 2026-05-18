@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 /**
  * adapter/in/web/routes/locationRoutes.js
@@ -10,13 +11,13 @@ export const createLocationRoutes = (locationController) => {
     const router = Router();
 
     // Routen an den Controller binden
-    router.get('/locations', (req, res) => locationController.getAllLocations(req, res));
-    router.post('/locations/batch', (req, res) => locationController.batchUpdateLocations(req, res));
-    router.post('/locations', (req, res) => locationController.addLocation(req, res));
-    router.put('/locations/:id', (req, res) => locationController.updateLocation(req, res));
-    router.delete('/locations/:id', (req, res) => locationController.deleteLocation(req, res));
-    router.get('/location-types', (req, res) => locationController.getLocationTypes(req, res));
-    router.post('/location-types', (req, res) => locationController.addLocationType(req, res));
+    router.get('/locations', asyncHandler((req, res) => locationController.getAllLocations(req, res)));
+    router.post('/locations/batch', asyncHandler((req, res) => locationController.batchUpdateLocations(req, res)));
+    router.post('/locations', asyncHandler((req, res) => locationController.addLocation(req, res)));
+    router.put('/locations/:id', asyncHandler((req, res) => locationController.updateLocation(req, res)));
+    router.delete('/locations/:id', asyncHandler((req, res) => locationController.deleteLocation(req, res)));
+    router.get('/location-types', asyncHandler((req, res) => locationController.getLocationTypes(req, res)));
+    router.post('/location-types', asyncHandler((req, res) => locationController.addLocationType(req, res)));
 
     return router;
 };

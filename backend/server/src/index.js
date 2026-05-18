@@ -14,6 +14,9 @@ import { AddressService } from './core/services/AddressService.js';
 import { AddressController } from './adapter/in/web/controllers/AddressController.js';
 import { createAddressRoutes } from './adapter/in/web/routes/addressRoutes.js';
 
+// Importiere die zentrale Error-Handling Middleware
+import { errorHandler } from './adapter/in/web/middlewares/errorHandler.js';
+
 const app = express();
 const port = 3001; // Wir nehmen einen anderen Port als das Frontend
 
@@ -55,6 +58,9 @@ const addressRoutes = createAddressRoutes(addressController);
 // --- Routen registrieren ---
 app.use('/api', locationRoutes);
 app.use('/api', addressRoutes);
+
+// --- Zentrale Fehlerbehandlung (muss nach den Routen registriert werden!) ---
+app.use(errorHandler);
 
 app.listen(port, () => {
     console.log(`Backend-Server läuft auf http://localhost:${port}`);
