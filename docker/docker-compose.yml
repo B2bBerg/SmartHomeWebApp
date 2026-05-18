@@ -51,6 +51,17 @@ services:
       - dbStatic-data:/var/lib/postgresql/data
       - ../backend/db/dbStaticData.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
       - ../backend/db/dbStaticUsers.sh:/docker-entrypoint-initdb.d/02_users.sh:ro
+      - ../backend/db/Inserts/permissionType.sql:/docker-entrypoint-initdb.d/03_permissionType.sql:ro
+      - ../backend/db/Inserts/tileType.sql:/docker-entrypoint-initdb.d/04_tileType.sql:ro
+      - ../backend/db/Inserts/unitType.sql:/docker-entrypoint-initdb.d/05_unitType.sql:ro
+      - ../backend/db/Inserts/datapointType.sql:/docker-entrypoint-initdb.d/06_datapointType.sql:ro
+      - ../backend/db/Inserts/busType.sql:/docker-entrypoint-initdb.d/07_busType.sql:ro
+      - ../backend/db/Inserts/channelType.sql:/docker-entrypoint-initdb.d/08_channelType.sql:ro
+      - ../backend/db/Inserts/manufacturer.sql:/docker-entrypoint-initdb.d/09_manufacturer.sql:ro
+      - ../backend/db/Inserts/locationGroup.sql:/docker-entrypoint-initdb.d/10_locationGroup.sql:ro
+      - ../backend/db/Inserts/locationType.sql:/docker-entrypoint-initdb.d/11_locationType.sql:ro
+      - ../backend/db/Inserts/modelType.sql:/docker-entrypoint-initdb.d/12_modelType.sql:ro
+      - ../backend/db/Inserts/obisDefinition.sql:/docker-entrypoint-initdb.d/13_obisDefinition.sql:ro
     environment:
       POSTGRES_USER: ${DB_USER?Bitte DB_USER in .env setzen}
       POSTGRES_PASSWORD: ${DB_PASSWORD?Bitte DB_PASSWORD in .env setzen}
