@@ -5,15 +5,29 @@ services:
   web-app:
     container_name: smarthome-web-app
     restart: unless-stopped
-    build: .
+    build: ../backend/server
     ports:
-      - "8080:8080"
+      - "3001:3001"
     depends_on:
-      - dbStatic
-      - dbTimeseries
+      dbStatic:
+        condition: service_healthy
+      dbTimeseries:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgres://${APP_DB_USER?Bitte APP_DB_USER in .env setzen}:${APP_DB_PASSWORD?Bitte APP_DB_PASSWORD in .env setzen}@dbStatic:5432/${DB_STATIC_NAME:-smarthome_static}
       TIMESERIES_URL: postgres://${APP_DB_USER?Bitte APP_DB_USER in .env setzen}:${APP_DB_PASSWORD?Bitte APP_DB_PASSWORD in .env setzen}@dbTimeseries:5432/${DB_TIME_NAME:-smarthome_time}
+    networks:
+      - backend
+
+  # Das Frontend (Web-UI)
+  frontend:
+    container_name: smarthome-frontend
+    build: ../frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    # Für echtes Hot-Reloading empfiehlt sich ein dediziertes 'docker-compose.override.yml', 
+    # welches das Frontend Image überschreibt und einen Node-Dev-Server startet.
     networks:
       - backend
 
@@ -43,6 +57,11 @@ services:
       POSTGRES_DB: ${DB_STATIC_NAME:-smarthome_static}
       APP_DB_USER: ${APP_DB_USER?Bitte APP_DB_USER in .env setzen}
       APP_DB_PASSWORD: ${APP_DB_PASSWORD?Bitte APP_DB_PASSWORD in .env setzen}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - backend
 
@@ -71,6 +90,11 @@ services:
       POSTGRES_DB: ${DB_TIME_NAME:-smarthome_time}
       APP_DB_USER: ${APP_DB_USER?Bitte APP_DB_USER in .env setzen}
       APP_DB_PASSWORD: ${APP_DB_PASSWORD?Bitte APP_DB_PASSWORD in .env setzen}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - backend
 
