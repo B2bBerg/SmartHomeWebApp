@@ -1,7 +1,7 @@
 import { Router } from 'express';
 
 /**
- * adapters/in/web/locationRoutes.js
+ * adapter/in/web/routes/locationRoutes.js
  *
  * Definiert die REST-Endpunkte für die "Locations"-Domäne.
  * Leitet Anfragen an den Controller weiter.

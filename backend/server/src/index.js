@@ -6,13 +6,13 @@ const { Pool } = pkg;
 // Importiere die einzelnen Teile der Architektur
 import { PostgresLocationAdapter } from './adapter/out/db/PostgresLocationAdapter.js';
 import { LocationService } from './core/services/LocationService.js';
-import { LocationController } from './adapter/in/web/LocationController.js';
-import { createLocationRoutes } from './adapter/in/web/locationRoutes.js';
+import { LocationController } from './adapter/in/web/controllers/LocationController.js';
+import { createLocationRoutes } from './adapter/in/web/routes/locationRoutes.js';
 
 import { PostgresAddressAdapter } from './adapter/out/db/PostgresAddressAdapter.js';
 import { AddressService } from './core/services/AddressService.js';
-import { AddressController } from './adapter/in/web/AddressController.js';
-import { createAddressRoutes } from './adapter/in/web/addressRoutes.js';
+import { AddressController } from './adapter/in/web/controllers/AddressController.js';
+import { createAddressRoutes } from './adapter/in/web/routes/addressRoutes.js';
 
 const app = express();
 const port = 3001; // Wir nehmen einen anderen Port als das Frontend
