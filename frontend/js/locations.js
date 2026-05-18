@@ -71,7 +71,7 @@ const LocationsManager = {
             // 2. Array: Bereits erfasste Gebäude-Adressen extrahieren (ohne Namen, nur Adressen)
             const existingAddresses = [];
             (this.locations || []).forEach(l => {
-                if (l.address && l.address.street && !existingAddresses.find(a => a.street === l.address.street && a.zip === l.address.zip)) {
+                if (l.address && l.address.street && !existingAddresses.find(a => a.street === l.address.street && a.zip_code === l.address.zip_code)) {
                     existingAddresses.push(l.address);
                 }
             });
@@ -82,10 +82,10 @@ const LocationsManager = {
                 fields: [
                     { id: 'id', type: 'hidden', value: defaultData.id || '' },
                     { id: 'name', label: 'Gebäude Name *', value: defaultData.name || '', fullWidth: true },
-                    { id: 'street', label: 'Strasse', value: addr.street || '' },
-                    { id: 'number', label: 'Hausnummer', value: addr.number || '' },
-                    { id: 'zip', label: 'PLZ', value: addr.zip || '' },
-                    { id: 'city', label: 'Ort', value: addr.city || '' },
+                    { id: 'street', label: 'Strasse *', value: addr.street || '' },
+                    { id: 'street_number', label: 'Hausnummer', value: addr.street_number || '' },
+                    { id: 'zip_code', label: 'PLZ *', value: addr.zip_code || '' },
+                    { id: 'city', label: 'Ort *', value: addr.city || '' },
                     { id: 'country', label: 'Land', value: addr.country || 'Schweiz', fullWidth: true }
                 ],
                 tables: [
@@ -104,16 +104,16 @@ const LocationsManager = {
                         title: '📍 Adress-Datenbank',
                         columns: [
                             { key: 'street', label: 'Strasse', render: (v) => v || '—' },
-                            { key: 'number', label: 'Nummer', render: (v) => v || '—' },
-                            { key: 'zip', label: 'PLZ', render: (v) => v || '—' },
+                            { key: 'street_number', label: 'Nummer', render: (v) => v || '—' },
+                            { key: 'zip_code', label: 'PLZ', render: (v) => v || '—' },
                             { key: 'city', label: 'Ort', render: (v) => v || '—' },
                             { key: 'country', label: 'Land', render: (v) => v || 'Schweiz' }
                         ],
                         data: existingAddresses,
                         onRowSelect: (row, fields) => {
                             fields.street.value = row.street || '';
-                            fields.number.value = row.number || '';
-                            fields.zip.value = row.zip || '';
+                            fields.street_number.value = row.street_number || '';
+                            fields.zip_code.value = row.zip_code || '';
                             fields.city.value = row.city || '';
                             fields.country.value = row.country || 'Schweiz';
                         }
@@ -121,9 +121,9 @@ const LocationsManager = {
                 ],
                 onReady: (modal, fields, updateTableData, switchToTab, filterTable) => {
                     // Automatische PLZ Auflösung einhängen
-                    fields.zip.addEventListener('blur', async () => {
-                        if (fields.zip.value.length >= 4 && window.API.lookupCityByZip) {
-                            const cities = await window.API.lookupCityByZip(fields.zip.value, fields.country.value);
+                    fields.zip_code.addEventListener('blur', async () => {
+                        if (fields.zip_code.value.length >= 4 && window.API.lookupCityByZip) {
+                            const cities = await window.API.lookupCityByZip(fields.zip_code.value, fields.country.value);
                             if (cities && cities.length > 0) fields.city.value = cities[0];
                         }
                     });
@@ -136,12 +136,12 @@ const LocationsManager = {
                     fields.name.addEventListener('focus', handleNameInput);
                     fields.name.addEventListener('input', handleNameInput);
                     
-                    const addressFields = [fields.street, fields.number, fields.zip, fields.city, fields.country];
+                    const addressFields = [fields.street, fields.street_number, fields.zip_code, fields.city, fields.country];
                     let searchTimeout;
 
                     // Baut einen kombinierten Suchstring aus allen Adress-Feldern
                     const getCombinedAddressQuery = () => {
-                        return `${fields.street.value} ${fields.number.value} ${fields.zip.value} ${fields.city.value}`.trim();
+                        return `${fields.street.value} ${fields.street_number.value} ${fields.zip_code.value} ${fields.city.value}`.trim();
                     };
 
                     addressFields.forEach(f => {
@@ -166,7 +166,7 @@ const LocationsManager = {
                                         // Caching: Eigene (bereits erfasste) Adressen mit API-Treffern mischen, um keine zu verlieren
                                         const combined = [...existingAddresses];
                                         mapped.forEach(m => {
-                                            if (!combined.find(c => c.street === m.street && c.zip === m.zip)) combined.push(m);
+                                            if (!combined.find(c => c.street === m.street && c.zip_code === m.zip_code)) combined.push(m);
                                         });
                                         
                                         updateTableData('addresses', combined);
@@ -180,7 +180,7 @@ const LocationsManager = {
                     });
                 },
                 validate: (res) => {
-                    if (!res.name) {
+                    if (!res.name || !res.street || !res.zip_code || !res.city) {
                         window.Dialog.alert('Fehler', 'Bitte alle Pflichtfelder (*) ausfüllen.', true);
                         return false;
                     }
@@ -189,7 +189,7 @@ const LocationsManager = {
             });
 
             if (result) {
-                callback({ name: result.name, templateId: result.id, address: { street: result.street, number: result.number, zip: result.zip, city: result.city, country: result.country }});
+                callback({ name: result.name, templateId: result.id, address: { street: result.street, street_number: result.street_number, zip_code: result.zip_code, city: result.city, country: result.country }});
             }
         } else {
             // Für Stockwerke & Räume
@@ -276,7 +276,7 @@ const LocationsManager = {
             this.locations.forEach((building, index) => {
                 const floorCount = building.floors ? building.floors.length : 0;
                 const addressText = building.address && building.address.street 
-                    ? `<span style="display:block; font-size:0.8rem; color:var(--text-muted); margin-top: 5px;">${building.address.street} ${building.address.number}<br>${building.address.zip} ${building.address.city}</span>`
+                    ? `<span style="display:block; font-size:0.8rem; color:var(--text-muted); margin-top: 5px;">${building.address.street} ${building.address.street_number}<br>${building.address.zip_code} ${building.address.city}</span>`
                     : '';
                 
                 html += `
@@ -527,7 +527,7 @@ const LocationsManager = {
         const defaultFloor = (building.floors && building.floors.length > 0) ? building.floors[0] : null;
         
         const addressText = building.address && building.address.street 
-            ? `<div style="font-size:0.85rem; color:var(--text-muted); font-weight: normal; margin-top: 4px;">${building.address.street} ${building.address.number}, ${building.address.zip} ${building.address.city}</div>`
+            ? `<div style="font-size:0.85rem; color:var(--text-muted); font-weight: normal; margin-top: 4px;">${building.address.street} ${building.address.street_number}, ${building.address.zip_code} ${building.address.city}</div>`
             : '';
 
         let html = `

@@ -39,7 +39,7 @@ export const AddressAPI = {
                 (data || []).forEach(loc => {
                     if (loc.address && loc.address.street) {
                         // Concatenated String für Omni-Search
-                        const addrStr = `${loc.address.street} ${loc.address.number || ''} ${loc.address.zip || ''} ${loc.address.city || ''}`.trim();
+                        const addrStr = `${loc.address.street} ${loc.address.street_number || ''} ${loc.address.zip_code || ''} ${loc.address.city || ''}`.trim();
                         const isMatch = queryTerms.every(term => addrStr.toLowerCase().includes(term));
                         
                         if (isMatch && !results.find(a => a.str === addrStr)) {
