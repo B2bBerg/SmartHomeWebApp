@@ -77,14 +77,17 @@ const DeviceManager = {
 
     async loadData() {
         try {
-            const [devices, datapoints] = await Promise.all([
+            const [devices, datapoints, models] = await Promise.all([
                 window.API.getDevices(),
-                window.API.getDatapoints()
+                window.API.getDatapoints(),
+                this.getModelTypeOptions()
             ]);
             const mergedDevices = devices.map(device => {
                 const deviceDatapoints = datapoints.filter(dp => dp.deviceId === device.id);
                 const usedChannels = deviceDatapoints.filter(dp => dp.channel != null).map(dp => String(dp.channel));
-                return { ...device, usedChannels };
+                const currentModel = models.find(m => m.id === device.modelTypeId);
+                const modelName = currentModel ? currentModel.name : '—';
+                return { ...device, usedChannels, modelName };
             });
             this.table.setData(mergedDevices);
         } catch (err) {
@@ -109,6 +112,20 @@ const DeviceManager = {
         return locOptions;
     },
 
+    async getModelTypeOptions() {
+        let types = [];
+        try {
+            types = await window.API.getModelTypes();
+        } catch (e) {
+            console.warn("Fallback: Lade Mock-Modelle", e);
+            types = [
+                { id: 'mock-uuid-1', name: 'WIFI Sensor Basic' },
+                { id: 'mock-uuid-2', name: 'Smart Thermostat' }
+            ];
+        }
+        return types;
+    },
+
     async getBusTypeOptions(includeEmpty = false) {
         let types = [];
         try {
@@ -127,12 +144,16 @@ const DeviceManager = {
     async showAddModal() {
         const locOptions = await this.getFormattedLocationOptions();
         const busOptions = await this.getBusTypeOptions(true);
+        const modelOptions = await this.getModelTypeOptions();
 
         const result = await window.Dialog.formWithTable({
             title: 'Neues Hardware-Gerät erfassen',
             saveText: 'Hinzufügen',
             fields: [
-                { id: 'name', label: 'Name *', placeholder: 'Eigener Name (z.B. Deckenlampe)', fullWidth: true },
+                { id: 'name', label: 'Eigener Name *', placeholder: 'z.B. Deckenlampe', fullWidth: true },
+                { id: 'modelName', label: 'Modell *', placeholder: 'Bitte Modell aus der Tabelle wählen', fullWidth: false },
+                { id: 'modelTypeId', type: 'hidden' },
+                { id: 'serialNumber', label: 'Seriennummer', placeholder: 'S/N (optional)', fullWidth: false },
                 { id: 'location', label: 'Standort', type: 'select', options: locOptions, fullWidth: true },
                 { id: 'busType', label: 'Netzwerk (Bus) *', type: 'select', options: busOptions, fullWidth: false },
                 { id: 'address', label: 'MAC- oder Bus-Adresse *', placeholder: 'z.B. AA:BB:CC... oder 0x05', fullWidth: false }
@@ -142,7 +163,6 @@ const DeviceManager = {
                     id: 'scanResults',
                     title: '🔍 Gefundene, nicht registrierte Geräte',
                     columns: [
-                        { key: 'name', label: 'Typ / Name' },
                         { key: 'busType', label: 'Netzwerk' },
                         { key: 'address', label: 'Adresse', render: (val, row) => row.macAddress || row.busAddress || val }
                     ],
@@ -151,15 +171,34 @@ const DeviceManager = {
                         if (row.address === '—' || row.address === '⏳') return; // Platzhalter-Klicks ignorieren
                         fields.address.value = row.macAddress || row.busAddress || '';
                         fields.busType.value = row.busType || '';
-                        if (!fields.name.value) fields.name.value = row.name || row.type || '';
+                    }
+                },
+                {
+                    id: 'modelList',
+                    title: '🏷️ Freigegebene Modelle',
+                    columns: [
+                        { key: 'name', label: 'Modellname' }
+                    ],
+                    data: modelOptions,
+                    onRowSelect: (row, fields) => {
+                        fields.modelName.value = row.name || '';
+                        fields.modelTypeId.value = row.id || '';
                     }
                 }
             ],
-            onReady: (modal, fields, updateTableData, switchToTab) => {
+            onReady: (modal, fields, updateTableData, switchToTab, filterTable) => {
                 const busTypeSelect = fields.busType;
                 const addressInput = fields.address;
                 let fullScanResults = []; // Cache für alle gefundenen Geräte
                 
+                // Wechsel zum Modell-Tab und Omni-Suche, wenn das Feld fokussiert wird
+                const handleModelInput = (e) => {
+                    switchToTab('modelList');
+                    if (filterTable) filterTable(e.target.value);
+                };
+                fields.modelName.addEventListener('focus', handleModelInput);
+                fields.modelName.addEventListener('input', handleModelInput);
+
                 const applyFilter = () => {
                     const bType = busTypeSelect.value;
                     const addrQuery = addressInput.value.trim().toLowerCase();
@@ -180,19 +219,19 @@ const DeviceManager = {
                     });
                     
                     if (filtered.length === 0) {
-                        updateTableData('scanResults', [{ name: 'Keine neuen Geräte gefunden', busType: bType || '-', address: '—' }]);
+                        updateTableData('scanResults', [{ busType: bType || '-', address: '—' }]);
                     } else {
                         updateTableData('scanResults', filtered);
                     }
                 };
 
                 const initialScan = async () => {
-                    updateTableData('scanResults', [{ name: 'Scanne Netzwerk...', busType: '-', address: '⏳' }]);
+                    updateTableData('scanResults', [{ busType: '-', address: '⏳' }]);
                     try {
                         fullScanResults = await window.API.scanNetwork(''); // Lade initial ALLE Geräte
                         applyFilter();
                     } catch (e) {
-                        updateTableData('scanResults', [{ name: 'Fehler beim Scan', busType: '-', address: '—' }]);
+                        updateTableData('scanResults', [{ busType: '-', address: '—' }]);
                     }
                 };
 
@@ -204,14 +243,18 @@ const DeviceManager = {
                     applyFilter();
                 });
 
-                // Live-Suche bei der Eingabe einer Adresse
+                // Fokussieren oder Eingabe im Adress-Feld wechselt zur Scan-Tabelle
+                addressInput.addEventListener('focus', () => {
+                    switchToTab('scanResults');
+                    applyFilter();
+                });
                 addressInput.addEventListener('input', () => {
                     switchToTab('scanResults');
                     applyFilter();
                 });
             },
             validate: (res) => {
-                if (!res.name || !res.address || !res.busType) {
+                if (!res.name || !res.address || !res.busType || !res.modelTypeId) {
                     window.Dialog.alert('Fehler', 'Bitte alle Pflichtfelder (*) ausfüllen.', true);
                     return false;
                 }
@@ -222,6 +265,7 @@ const DeviceManager = {
         if (result) {
             const newEntry = {
                 timestamp: new Date().toISOString(), name: result.name, location: result.location, status: 'searching', updated: 'jetzt',
+                modelTypeId: result.modelTypeId, serialNumber: result.serialNumber,
                 macAddress: result.address.includes(':') ? result.address : '',
                 busAddress: !result.address.includes(':') ? result.address : '',
                 busType: result.busType, health: '—', battery: null, signal: null, channels: []
@@ -241,21 +285,50 @@ const DeviceManager = {
     async showEditModal(row) {
         const locOptions = await this.getFormattedLocationOptions();
         const busOptions = await this.getBusTypeOptions(false);
+        const modelOptions = await this.getModelTypeOptions();
+
+        // Finde den Namen des aktuell gesetzten Modells (falls vorhanden)
+        const currentModel = modelOptions.find(m => m.id === row.modelTypeId);
+        const modelNameValue = currentModel ? currentModel.name : '';
 
         const addrValue = row.macAddress || row.busAddress || '';
         
         const result = await window.Dialog.formWithTable({
             title: 'Gerät bearbeiten',
             saveText: 'Speichern & Suchen',
-            tables: [],
             fields: [
                 { id: 'name', label: 'Name *', value: row.name, fullWidth: true },
+                { id: 'modelName', label: 'Modell *', value: modelNameValue, fullWidth: false },
+                { id: 'modelTypeId', type: 'hidden', value: row.modelTypeId || '' },
+                { id: 'serialNumber', label: 'Seriennummer', value: row.serialNumber || '', fullWidth: false },
                 { id: 'location', label: 'Standort', type: 'select', value: row.location, options: locOptions, fullWidth: true },
                 { id: 'address', label: 'MAC- oder Bus-Adresse *', value: addrValue, fullWidth: true },
                 { id: 'busType', label: 'Netzwerk (Bus) *', type: 'select', value: row.busType, options: busOptions, fullWidth: true }
             ],
+            tables: [
+                {
+                    id: 'modelList',
+                    title: '🏷️ Freigegebene Modelle',
+                    columns: [
+                        { key: 'name', label: 'Modellname' }
+                    ],
+                    data: modelOptions,
+                    onRowSelect: (r, fields) => {
+                        fields.modelName.value = r.name || '';
+                        fields.modelTypeId.value = r.id || '';
+                    }
+                }
+            ],
+            onReady: (modal, fields, updateTableData, switchToTab, filterTable) => {
+                const handleModelInput = (e) => {
+                    switchToTab('modelList');
+                    if (filterTable) filterTable(e.target.value);
+                };
+                fields.modelName.addEventListener('focus', handleModelInput);
+                fields.modelName.addEventListener('input', handleModelInput);
+            },
             validate: (res) => {
-                if (!res.name || !res.address || !res.busType) {
+                if (!res.name || !res.address || !res.busType || !res.modelTypeId) {
                     window.Dialog.alert('Fehler', 'Bitte alle Pflichtfelder (*) ausfüllen.', true);
                     return false;
                 }
@@ -265,6 +338,8 @@ const DeviceManager = {
 
         if (result) {
             row.name = result.name; 
+            row.modelTypeId = result.modelTypeId;
+            row.serialNumber = result.serialNumber;
             row.location = result.location;
             row.macAddress = result.address.includes(':') ? result.address : ''; 
             row.busAddress = !result.address.includes(':') ? result.address : '';
