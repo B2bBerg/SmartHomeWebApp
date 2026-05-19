@@ -6,12 +6,12 @@ const { Pool } = pkg;
 // Importiere die einzelnen Teile der Architektur
 import { PostgresLocationAdapter } from './adapter/out/db/PostgresLocationAdapter.js';
 import { LocationService } from './core/services/LocationService.js';
-import { LocationController } from './adapter/in/web/controllers/LocationController.js';
+import { LocationController } from './adapter/in/web/controller/LocationController.js';
 import { createLocationRoutes } from './adapter/in/web/routes/locationRoutes.js';
 
 import { PostgresAddressAdapter } from './adapter/out/db/PostgresAddressAdapter.js';
 import { AddressService } from './core/services/AddressService.js';
-import { AddressController } from './adapter/in/web/controllers/AddressController.js';
+import { AddressController } from './adapter/in/web/controller/AddressController.js';
 import { createAddressRoutes } from './adapter/in/web/routes/addressRoutes.js';
 
 // Importiere die zentrale Error-Handling Middleware
@@ -28,10 +28,10 @@ app.use(express.json());
 const dbConfig = process.env.DATABASE_URL 
     ? { connectionString: process.env.DATABASE_URL }
     : {
-        user: 'postgres',
-        host: 'localhost',
-        database: 'smarthome',
-        password: 'dein_passwort',
+        user: process.env.APP_DB_USER || 'postgres',
+        password: process.env.APP_DB_PASSWORD || 'dein_passwort',
+        host: process.env.DB_HOST || 'localhost',
+        database: process.env.DB_STATIC_NAME || 'smarthome',
         port: 5432,
     };
 const dbPool = new Pool(dbConfig);

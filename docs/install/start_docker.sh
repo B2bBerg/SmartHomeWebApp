@@ -15,5 +15,5 @@ fi
 echo "Building and starting Docker containers..."
 docker compose up -d --build
 
-echo "Application started! You can access it at http://localhost:8080"
+echo "Application started! You can access the frontend at http://localhost:3000 and the API at http://localhost:3001"
 echo "To view logs, run: docker compose logs -f web-app"
