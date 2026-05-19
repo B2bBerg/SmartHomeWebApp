@@ -1,7 +1,7 @@
 /**
  * core.js - Zentrale Konfiguration und Fetch-Wrapper
  */
-export const BASE_URL = '/api'; // Später anpassbar, z.B. 'http://192.168.1.100:8080/api'
+export const BASE_URL = 'http://localhost:3001/api'; // Verweist direkt auf das Backend (Port 3001)
 
 export async function fetchApi(endpoint, options = {}) {
     try {
