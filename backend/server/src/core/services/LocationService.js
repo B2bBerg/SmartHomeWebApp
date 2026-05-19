@@ -1,4 +1,5 @@
 import { ILocationService } from '../../ports/in/ILocationService.js';
+import { Location } from '../domain/Location.js';
 
 /**
  * core/services/LocationService.js
@@ -32,14 +33,20 @@ export class LocationService extends ILocationService {
     }
 
     async addLocation(locationData) {
-        return await this.locationRepository.addLocation(locationData);
+        // Geschäftslogik: Erstelle und validiere das Domänenobjekt
+        const location = new Location(locationData);
+        location.validate();
+        // TODO: Hier könnte man auch die Hierarchie validieren (z.B. Raum darf nicht in Gebäude)
+        return await this.locationRepository.addLocation(location);
     }
 
     async updateLocation(id, locationData) {
-        return await this.locationRepository.updateLocation(id, locationData);
+        const location = new Location({ ...locationData, id });
+        location.validate();
+        return await this.locationRepository.updateLocation(id, location);
     }
 
-    async deleteLocation(id) {
-        return await this.locationRepository.deleteLocation(id);
+    async deactivateLocation(id) {
+        return await this.locationRepository.deactivateLocation(id);
     }
 }
