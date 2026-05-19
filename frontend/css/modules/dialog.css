@@ -38,6 +38,14 @@
     outline: none;
 }
 
+.table-modal-box select option {
+    background: var(--bg-base);
+    color: var(--text-primary);
+    border-radius: 6px;
+    margin-bottom: 4px;
+    padding: 6px 10px;
+}
+
 .table-modal-actions {
     display: flex;
     justify-content: flex-end;

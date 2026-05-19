@@ -85,7 +85,7 @@ const LocationsManager = {
                     { id: 'street', label: 'Strasse *', value: addr.street || '' },
                     { id: 'street_number', label: 'Hausnummer', value: addr.street_number || '' },
                     { id: 'zip_code', label: 'PLZ *', value: addr.zip_code || '' },
-                    { id: 'city', label: 'Ort *', value: addr.city || '' },
+                    { id: 'city', label: 'Ort *', type: 'select', options: [{ value: addr.city || '', label: addr.city || '-- Bitte wählen --' }] },
                     { id: 'country', label: 'Land', value: addr.country || 'Schweiz', fullWidth: true }
                 ],
                 tables: [
@@ -114,6 +114,15 @@ const LocationsManager = {
                             fields.street.value = row.street || '';
                             fields.street_number.value = row.street_number || '';
                             fields.zip_code.value = row.zip_code || '';
+                            
+                            // Da das Feld nun ein Select ist, stellen wir sicher, dass die Option existiert, bevor wir den Wert setzen
+                            let exists = Array.from(fields.city.options).some(opt => opt.value === row.city);
+                            if (!exists && row.city) {
+                                const opt = document.createElement('option');
+                                opt.value = row.city;
+                                opt.textContent = row.city;
+                                fields.city.appendChild(opt);
+                            }
                             fields.city.value = row.city || '';
                             fields.country.value = row.country || 'Schweiz';
                         }
@@ -124,7 +133,22 @@ const LocationsManager = {
                     fields.zip_code.addEventListener('blur', async () => {
                         if (fields.zip_code.value.length >= 4 && window.API.lookupCityByZip) {
                             const cities = await window.API.lookupCityByZip(fields.zip_code.value, fields.country.value);
-                            if (cities && cities.length > 0) fields.city.value = cities[0];
+                            if (cities && cities.length > 0) {
+                                fields.city.innerHTML = ''; // Vorherige Suchergebnisse löschen
+                                
+                                cities.forEach(c => {
+                                    const opt = document.createElement('option');
+                                    opt.value = c;
+                                    opt.textContent = c;
+                                    fields.city.appendChild(opt);
+                                });
+                                
+                                fields.city.value = cities[0]; // Setzt weiterhin den ersten Treffer als Standard
+                                
+                                // Falls mehrere Orte gefunden wurden: Setze den Fokus auf das Feld, 
+                                // um dem User zu signalisieren, dass er aus dem Dropdown wählen kann.
+                                if (cities.length > 1) fields.city.focus();
+                            }
                         }
                     });
 
