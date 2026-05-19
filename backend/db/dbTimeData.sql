@@ -1,11 +1,4 @@
 -- Enable extension
-CREATE EXTENSION postgres_fdw;
-
--- Define the server link to the meta database instance
-CREATE SERVER meta_db_link
-FOREIGN DATA WRAPPER postgres_fdw
-OPTIONS (host 'dbStatic', port '5432', dbname 'smarthome_static');
-
 -- Import foreign schema tables (only those needed for joins)
 IMPORT FOREIGN SCHEMA public 
 LIMIT TO (datapoint, devices, location, obis_definition)

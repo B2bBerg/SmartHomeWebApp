@@ -27,9 +27,9 @@ CREATE TABLE app_page
   PRIMARY KEY (app_page_id)
 );
 
-COMMENT ON COLUMN app_page.name IS 'z.B. 'Dashboard', 'Location Overview', 'Energy'';
+COMMENT ON COLUMN app_page.name IS 'z.B. "Dashboard", "Location Overview", "Energy"';
 
-COMMENT ON COLUMN app_page.slug IS 'z.B. 'main-dashboard' für die URL';
+COMMENT ON COLUMN app_page.slug IS 'z.B. "main-dashboard" für die URL';
 
 CREATE TABLE audit_log
 (
@@ -102,7 +102,7 @@ COMMENT ON COLUMN datapoint.datapoint_type_id IS 'ist Wert';
 
 COMMENT ON COLUMN datapoint.unit_type_id IS 'ist Wert';
 
-COMMENT ON COLUMN datapoint.obis_code IS 'z.B. '1-0:1.8.0'';
+COMMENT ON COLUMN datapoint.obis_code IS 'z.B. "1-0:1.8.0"';
 
 COMMENT ON COLUMN datapoint.scaler IS 'z.B. Wh in kWh umzurechnen';
 
@@ -216,11 +216,11 @@ CREATE TABLE obis_definition
   PRIMARY KEY (obis_code)
 );
 
-COMMENT ON COLUMN obis_definition.obis_code IS 'z.B. '1-0:1.8.0'';
+COMMENT ON COLUMN obis_definition.obis_code IS 'z.B. "1-0:1.8.0"';
 
-COMMENT ON COLUMN obis_definition.name IS ''Wirkenergie Bezug'';
+COMMENT ON COLUMN obis_definition.name IS 'Wirkenergie Bezug';
 
-COMMENT ON COLUMN obis_definition.medium IS ''Strom', 'Gas', 'Wasser'';
+COMMENT ON COLUMN obis_definition.medium IS '"Strom", "Gas", "Wasser"';
 
 COMMENT ON COLUMN obis_definition.default_type_id IS 'soll Wert';
 
@@ -264,7 +264,7 @@ COMMENT ON COLUMN rule_condition.datapoint_id IS 'Sensor';
 
 COMMENT ON COLUMN rule_condition.comparison_value IS 'Grenzwert';
 
-COMMENT ON COLUMN rule_condition.logic_operator IS 'mehrere Bedingungen 'AND' oder 'OR'';
+COMMENT ON COLUMN rule_condition.logic_operator IS 'mehrere Bedingungen "AND" oder "OR"';
 
 CREATE TABLE tile
 (
@@ -290,7 +290,7 @@ CREATE TABLE tile_datapoint
   PRIMARY KEY (datapoint_id, tile_id)
 );
 
-COMMENT ON COLUMN tile_datapoint.role IS 'z.B. 'up', 'down', 'position'';
+COMMENT ON COLUMN tile_datapoint.role IS 'z.B. "up", "down", "position"';
 
 CREATE TABLE tile_type
 (
