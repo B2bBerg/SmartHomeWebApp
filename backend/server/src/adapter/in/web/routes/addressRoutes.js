@@ -9,7 +9,7 @@ export const createAddressRoutes = (addressController) => {
     router.get('/addresses/:id', asyncHandler((req, res) => addressController.getAddressById(req, res)));
     router.post('/addresses', asyncHandler((req, res) => addressController.addAddress(req, res)));
     router.put('/addresses/:id', asyncHandler((req, res) => addressController.updateAddress(req, res)));
-    router.delete('/addresses/:id', asyncHandler((req, res) => addressController.deleteAddress(req, res)));
+    router.delete('/addresses/:id', asyncHandler((req, res) => addressController.deactivateAddress(req, res)));
 
     return router;
 };

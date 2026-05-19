@@ -39,8 +39,8 @@ export class LocationController {
         res.json(result);
     }
 
-    async deleteLocation(req, res) {
-        const result = await this.locationService.deleteLocation(req.params.id);
+    async deactivateLocation(req, res) {
+        const result = await this.locationService.deactivateLocation(req.params.id);
         res.json(result);
     }
 }

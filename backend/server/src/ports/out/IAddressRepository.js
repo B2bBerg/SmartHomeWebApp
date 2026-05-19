@@ -4,5 +4,5 @@ export class IAddressRepository {
     async searchAddresses(query) { throw new Error("Method not implemented"); }
     async addAddress(addressData) { throw new Error("Method not implemented"); }
     async updateAddress(id, addressData) { throw new Error("Method not implemented"); }
-    async deleteAddress(id) { throw new Error("Method not implemented"); }
+    async deactivateAddress(id) { throw new Error("Method not implemented"); }
 }

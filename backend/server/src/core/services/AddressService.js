@@ -22,5 +22,5 @@ export class AddressService extends IAddressService {
         address.validate();
         return await this.addressRepository.updateAddress(id, address); 
     }
-    async deleteAddress(id) { return await this.addressRepository.deleteAddress(id); }
+    async deactivateAddress(id) { return await this.addressRepository.deactivateAddress(id); }
 }

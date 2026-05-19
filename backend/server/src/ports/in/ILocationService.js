@@ -11,5 +11,5 @@ export class ILocationService {
     async addLocationType(typeData) { throw new Error("Method not implemented"); }
     async addLocation(locationData) { throw new Error("Method not implemented"); }
     async updateLocation(id, locationData) { throw new Error("Method not implemented"); }
-    async deleteLocation(id) { throw new Error("Method not implemented"); }
+    async deactivateLocation(id) { throw new Error("Method not implemented"); }
 }

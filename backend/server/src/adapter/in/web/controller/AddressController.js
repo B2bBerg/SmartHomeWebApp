@@ -26,7 +26,7 @@ export class AddressController {
         res.json(await this.addressService.updateAddress(req.params.id, req.body));
     }
 
-    async deleteAddress(req, res) {
-        res.json(await this.addressService.deleteAddress(req.params.id));
+    async deactivateAddress(req, res) {
+        res.json(await this.addressService.deactivateAddress(req.params.id));
     }
 }
