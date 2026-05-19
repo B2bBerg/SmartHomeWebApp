@@ -1,13 +1,13 @@
 # SmartHomeWebApp
 This is a web application for visualizing and controlling sensors and actuators. It is built using a hexagonal architecture with ports and adapters. You can replace or modify any components that communicate with the application, such as the database, frontend, or specific sensors and actuators.
 
-The application uses PostgreSQL for storing both static data (like device types and room types) and time-series data (like metering values). The database schemas are defined in the `dbStaticData.sql` and `dbTimescale.sql` files, respectively.
+The application uses PostgreSQL for storing both static data (like device types and room types) and time-series data (like metering values). The database schemas are defined in the `dbStaticData.sql` and `dbTimeData.sql` files, respectively.
 
 ## Database Documentation
-The database structure is managed via PostgreSQL and is divided into two primary SQL files located in the `db` folder:
+The database structure is managed via PostgreSQL and is divided into two primary SQL files located in the `backend/db` folder:
 
 - **`dbStaticData.sql`**: Contains the schema and initial seed data for static information. This includes system configurations such as device types, room types, locations, and user roles.
-- **`dbTimescale.sql`**: Defines the schema for time-series data. This is optimized for storing continuous streams of data, such as real-time metering values from sensors, actuator states, and historical logs.
+- **`dbTimeData.sql`**: Defines the schema for time-series data. This is optimized for storing continuous streams of data, such as real-time metering values from sensors, actuator states, and historical logs.
 *(Note: If you are setting up the database from scratch, execute `dbStaticData.sql` first to ensure all relational foreign keys are present before inserting time-series data.)*
 - **`dbStaticUsers.sh`**: A shell script that creates the dedicated application database user (`APP_DB_USER`). For security reasons, it restricts the user's permissions strictly to data manipulation (SELECT, INSERT, UPDATE, DELETE) and sequence usage, preventing unauthorized schema modifications.
 - **`dbTimeUsers.sh`**: A shell script for the time-series database. It creates the application user and sets up the user mapping for the Foreign Data Wrapper (FDW). This allows the application user in the time-series database to seamlessly query metadata from the static database.
@@ -35,29 +35,37 @@ To work with this project in Visual Studio Code, you can install the following e
 - **PlantUML** by jebbs "https://www.plantuml.com/plantuml"
 - **ERD Editor** by dineug "[erd-editor.io](https://erd-editor.io/)"
 
-## Running the Application (Choice of Environment)
-You can run the application either **natively** on your machine or using **Docker**. Two execution scripts have been provided in the project root to make this process as simple as possible.
+## Running the Application
 
-### Option 1: Running with Docker (Recommended)
-The application and its databases are fully containerized using Docker Compose (`docker/docker-compose.yml`). The stack includes the `web-app`, `dbStatic`, and `dbTimeseries` containers.
+The application and its databases are fully containerized using Docker Compose to ensure a smooth and consistent setup process. The orchestration is defined in `doc/docker/docker-compose.yml` and spins up the complete stack, including the `web-app` (frontend & backend), `dbStatic` (PostgreSQL), and `dbTimeseries` (TimescaleDB) containers.
 
-**Prerequisites:** Ensure you have configured the `.env` file inside the `docker` directory with your desired credentials.
+### Configuration & Workflow
 
-To start the application, simply run:
-```bash
-chmod +x start_docker.sh
-./start_docker.sh
-```
+1. **Environment Variables:**
+   Before starting the application, you must configure your database credentials. Navigate to the `doc/docker/` directory and create an `.env` file. For example:
+   ```env
+   DB_USER=postgres_admin
+   DB_PASSWORD=super_secret
+   APP_DB_USER=smarthome_app
+   APP_DB_PASSWORD=app_secret
+   ```
 
-Once the containers are running and the databases finish their initial setup, the backend application will be accessible at `http://localhost:8080`.
+2. **Starting the Containers:**
+   To launch the application, you can use the provided helper script, which automatically verifies your Docker installation and the presence of the `.env` file:
+   ```bash
+   chmod +x doc/install/start_docker.sh
+   ./doc/install/start_docker.sh
+   ```
+   *Alternatively*, you can start it manually via Docker Compose:
+   ```bash
+   cd doc/docker/
+   docker-compose up --build -d
+   ```
 
-### Option 2: Running Natively (Ubuntu)
-If you prefer to run the application directly on your host machine without Docker, you can use the native start script designed for Ubuntu.
+3. **Automatic Initialization:**
+   On the very first startup, the database containers will automatically execute the initialization scripts (`dbStaticData.sql`, `dbTimeData.sql`, `dbStaticUsers.sh`, and `dbTimeUsers.sh`) mapped from the project folder. This sets up all schemas, users, and foreign data wrappers automatically without manual intervention.
 
-To automatically install all system dependencies (including PostgreSQL 18, TimescaleDB, Node.js 24, and Yarn) and start the application natively, run:
-```bash
-chmod +x docs/install/start_native.sh
-./docs/install/start_native.sh
-```
-This script will configure the required system repositories, install any missing tools, fetch the Node packages via `yarn install`, and finally start the backend server. 
-*(Note: If the PostgreSQL database was freshly installed by the script, you will still need to manually configure the initial databases, users, and schemas using the files in the `db` folder before the backend can successfully connect).*
+4. **Access the Application:**
+   Once the containers are up and running, the services will be available at:
+   - **Frontend (UI):** `http://localhost:3000`
+   - **Backend API:** `http://localhost:3001`
