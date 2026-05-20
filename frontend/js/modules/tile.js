@@ -21,7 +21,7 @@ const TileManager = {
         const instance = Object.create(this);
         instance.isInstance = true;
         instance.container = typeof config.container === 'string' ? document.querySelector(config.container) : config.container;
-        instance.storageKey = config.storageKey || 'smartHomeDashboard';
+        instance.storageKey = config.storageKey || 'main';
         instance.editBtn = config.editBtn ? document.querySelector(config.editBtn) : null;
         instance.addBtn = config.addBtn ? document.querySelector(config.addBtn) : null;
         
@@ -61,7 +61,7 @@ const TileManager = {
         // da die HTML-Elemente beim Wechseln der Ansicht im SPA-Routing neu gerendert werden.
         if (!this.isInstance) {
             this.container = document.querySelector('.overview-container');
-            this.storageKey = 'smartHomeDashboard';
+            this.storageKey = 'main';
             this.editBtn = document.getElementById('edit-mode-btn');
             this.addBtn = document.getElementById('add-tile-btn');
             
@@ -88,14 +88,9 @@ const TileManager = {
 
         // Dropdowns dynamisch aus derselben Datenquelle laden wie die Tabellen
         this.populateDatapoints().then(() => {
-            if (this.storageKey === 'smartHomeDashboard') {
-                window.API.getDashboard().then(data => {
-                    if (data && data.length > 0) this.loadDashboard(data);
-                }).catch(err => console.error("Dashboard Ladefehler:", err));
-            } else {
-                const saved = localStorage.getItem(this.storageKey);
-                if (saved) this.loadDashboard(JSON.parse(saved));
-            }
+            window.API.getDashboard(this.storageKey).then(data => {
+                if (data && data.length > 0) this.loadDashboard(data);
+            }).catch(err => console.error("Dashboard Ladefehler:", err));
         });
 
         this.refreshGhosts();
@@ -315,11 +310,7 @@ const TileManager = {
 
     saveDashboard() {
         const state = this.getDashboardState();
-        if (this.storageKey === 'smartHomeDashboard') {
-            window.API.saveDashboard(state);
-        } else {
-            localStorage.setItem(this.storageKey, JSON.stringify(state));
-        }
+        window.API.saveDashboard(this.storageKey, state);
         console.log('Dashboard state saved:', this.storageKey);
         return state;
     },

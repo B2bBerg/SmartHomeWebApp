@@ -1,8 +1,5 @@
 import { fetchApi } from './core.js';
 
-// Helper für Mock-UUIDs passend zur DB-Syntax (uuidv7)
-const generateUUID = () => typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'mock-uuid-' + Date.now();
-
 export const LocationsAPI = {
     getLocations: async () => {
         // Wirft bei Fehlern eine Exception, die vom UI-Code gefangen werden muss

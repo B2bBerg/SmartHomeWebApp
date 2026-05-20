@@ -1,8 +1,5 @@
 import { fetchApi } from './core.js';
 
-// Helper für Mock-UUIDs
-const generateUUID = () => typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'mock-uuid-' + Date.now();
-
 export const SystemAPI = {
     // --- BENUTZER (USERS) ---
     getUsers: async () => {
