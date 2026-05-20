@@ -17,6 +17,19 @@ export const DevicesAPI = {
         }
     },
 
+    getModelTypes: async () => {
+        try {
+            return await fetchApi('/devices/models');
+        } catch (apiError) {
+            console.warn("Fallback: Lade Model-Typen aus dem Mock.");
+            // Fallback, falls das Backend nicht erreichbar ist
+            return [
+                { id: 'mock-uuid-1', name: 'WIFI Sensor Basic' },
+                { id: 'mock-uuid-2', name: 'Smart Thermostat' }
+            ];
+        }
+    },
+
     getDevices: async (busType = null) => {
         try {
             // 1. Versuche die echten Daten vom Backend zu laden

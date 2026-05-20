@@ -14,6 +14,12 @@ import { AddressService } from './core/services/AddressService.js';
 import { AddressController } from './adapter/in/web/controller/AddressController.js';
 import { createAddressRoutes } from './adapter/in/web/routes/addressRoutes.js';
 
+import { PostgresDeviceAdapter } from './adapter/out/db/PostgresDeviceAdapter.js';
+import { DeviceService } from './core/services/DeviceService.js';
+import { DeviceController } from './adapter/in/web/controller/DeviceController.js';
+import { createDeviceRoutes } from './adapter/in/web/routes/deviceRoutes.js';
+import { MockNetworkDiscoveryAdapter } from './adapter/out/network/MockNetworkDiscoveryAdapter.js';
+
 // Importiere die zentrale Error-Handling Middleware
 import { errorHandler } from './adapter/in/web/middlewares/errorHandler.js';
 
@@ -42,22 +48,28 @@ const dbPool = new Pool(dbConfig);
 // 1. Erstelle den Outbound-Adapter (Kommunikation nach aussen) mit der DB-Verbindung
 const locationRepository = new PostgresLocationAdapter(dbPool);
 const addressRepository = new PostgresAddressAdapter(dbPool);
+const deviceRepository = new PostgresDeviceAdapter(dbPool);
+const networkDiscoveryAdapter = new MockNetworkDiscoveryAdapter();
 
 // 2. Erstelle den Core-Service und gib ihm den Adapter als Abhängigkeit
 const locationService = new LocationService(locationRepository);
 const addressService = new AddressService(addressRepository);
+const deviceService = new DeviceService(deviceRepository, networkDiscoveryAdapter);
 
 // 3. Erstelle den Inbound-Adapter (Controller) und gib ihm den Service
 const locationController = new LocationController(locationService);
 const addressController = new AddressController(addressService);
+const deviceController = new DeviceController(deviceService);
 
 // 4. Erstelle die Routen und gib ihnen den Controller
 const locationRoutes = createLocationRoutes(locationController);
 const addressRoutes = createAddressRoutes(addressController);
+const deviceRoutes = createDeviceRoutes(deviceController);
 
 // --- Routen registrieren ---
 app.use('/api', locationRoutes);
 app.use('/api', addressRoutes);
+app.use('/api', deviceRoutes);
 
 // --- Zentrale Fehlerbehandlung (muss nach den Routen registriert werden!) ---
 app.use(errorHandler);
