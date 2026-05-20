@@ -4,29 +4,14 @@ const generateUUID = () => typeof crypto !== 'undefined' && crypto.randomUUID ? 
 
 export const RulesAPI = {
     getRules: async () => {
-        try {
-            return await fetchApi('/rules');
-        } catch (error) {
-            console.warn("Backend-API '/rules' nicht erreichbar. Nutze Fallback.");
-            return []; // Hier später deine Mock-Regeln einfügen
-        }
+        return await fetchApi('/rules');
     },
     
     addRule: async (ruleData) => {
-        try {
-            return await fetchApi('/rules', { method: 'POST', body: JSON.stringify(ruleData) });
-        } catch (error) {
-            console.warn("Backend-API POST '/rules' nicht erreichbar. Nutze Fallback.");
-            return { success: true, id: generateUUID() };
-        }
+        return await fetchApi('/rules', { method: 'POST', body: JSON.stringify(ruleData) });
     },
     
     deleteRule: async (id) => {
-        try {
-            return await fetchApi(`/rules/${id}`, { method: 'DELETE' });
-        } catch (error) {
-            console.warn(`Backend-API DELETE '/rules/${id}' nicht erreichbar. Nutze Fallback.`);
-            return { success: true };
-        }
+        return await fetchApi(`/rules/${id}`, { method: 'DELETE' });
     }
 };

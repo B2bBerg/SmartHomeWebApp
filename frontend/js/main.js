@@ -186,11 +186,36 @@ function renderUsers() {
             <h1>Benutzer</h1>
         </div>
         <div class="users-content">
-            <!-- OPEN: user list / management injected here -->
-            <!-- window.API.getUsers().then(data => ...) -->
-            <p class="page-placeholder">Benutzer-Ansicht – bald verfügbar</p>
+            <div id="user-table-container"></div>
         </div>
     `;
+
+    const userContainer = document.getElementById('user-table-container');
+    if (!userContainer) return;
+
+    const columns = [
+        { key: 'username', label: 'Benutzername', render: (val, row) => `<strong>${val || 'N/A'}</strong><br><small title="${row.id}" style="font-family: monospace; color: var(--text-muted);">${row.id}</small>` },
+        { key: 'lastLogin', label: 'Zuletzt aktiv', render: (val) => val ? new Date(val).toLocaleString('de-CH') : 'Nie' },
+        { key: 'permissions', label: 'Berechtigungen', render: (val) => val ? `${val.length} Regeln` : 'Keine' }
+    ];
+
+    const userTable = new DataTable(userContainer, columns, {
+        searchable: true
+        // Management (Add/Edit/Delete) kann in einem nächsten Schritt implementiert werden.
+    });
+
+    window.API.getUsers()
+        .then(users => {
+            if (users && users.length > 0) {
+                userTable.setData(users);
+            } else {
+                userContainer.innerHTML = '<p class="page-placeholder">Keine Benutzer gefunden.</p>';
+            }
+        })
+        .catch(err => {
+            console.error("Fehler beim Laden der Benutzer:", err);
+            userContainer.innerHTML = '<p class="page-placeholder error">Fehler beim Laden der Benutzer.</p>';
+        });
 }
 
 // --- Init Router ---

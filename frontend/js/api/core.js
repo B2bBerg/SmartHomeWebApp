@@ -14,13 +14,20 @@ export async function fetchApi(endpoint, options = {}) {
         });
 
         if (!response.ok) {
-            // Zentrales Error-Handling
-            throw new Error(`API Error: ${response.status} ${response.statusText}`);
+            // Versuche, eine detaillierte Fehlermeldung aus dem JSON-Body zu extrahieren
+            let errorMessage = `API Error: ${response.status} ${response.statusText}`;
+            try {
+                const errorBody = await response.json();
+                errorMessage = errorBody.error || errorBody.message || errorMessage;
+            } catch (e) {
+                // Ignorieren, falls der Body kein JSON ist
+            }
+            throw new Error(errorMessage);
         }
 
         return await response.json();
     } catch (error) {
-        console.error(`[API Call Failed] ${endpoint}:`, error);
-        throw error; // Fehler weitergeben, falls das UI (z.B. Graph) ihn noch braucht
+        console.error(`[API Call Failed] ${endpoint}:`, error.message);
+        throw error; // Fehler an die UI-Logik weitergeben
     }
 }

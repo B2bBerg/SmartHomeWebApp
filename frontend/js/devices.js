@@ -11,8 +11,9 @@ const DeviceManager = {
         const columns = [
             { key: 'id',         label: 'Device-ID', render: (val) => `<span title="${val}" style="font-family: monospace; font-size: 0.85em; color: var(--text-secondary);">${val}</span>` },
             { key: 'name',       label: 'Gerätename' },
-            { key: 'location',   label: 'Standort' },
-            { key: 'busType',    label: 'Netzwerk' },
+            { key: 'modelName',  label: 'Modell', render: (val, row) => `${val || '—'}<br><small style="color: var(--text-muted);">${row.manufacturerName || ''}</small>` },
+            { key: 'locationName',   label: 'Standort' },
+            { key: 'busTypeName',    label: 'Netzwerk' },
             { key: 'macAddress', label: 'MAC Adresse', render: (val) => val ? `<span style="font-family: monospace;">${val}</span>` : '—' },
             { key: 'busAddress', label: 'Bus Adresse', render: (val) => val ? `<span style="font-family: monospace;">${val}</span>` : '—' },
             { key: 'status',     label: 'Status', render: (val) => {
@@ -49,8 +50,11 @@ const DeviceManager = {
 
                 if (channelsArray.length === 0) return '<span style="color: var(--text-secondary);">—</span>';
 
+                // Die DB liefert usedChannels als Zahlen-Array [1, 2]. Wir wandeln es für den Vergleich in Strings um.
+                const usedStr = usedChannels.map(String);
+
                 return channelsArray.map(ch => {
-                    const isUsed = usedChannels.includes(String(ch));
+                    const isUsed = usedStr.includes(String(ch));
                     const cssClass = isUsed ? 'io-port io-port--used' : 'io-port io-port--free';
                     return `<span title="${isUsed ? 'Genutzt' : 'Frei'}" class="${cssClass}">${ch}</span>`;
                 }).join('');
@@ -77,19 +81,8 @@ const DeviceManager = {
 
     async loadData() {
         try {
-            const [devices, datapoints, models] = await Promise.all([
-                window.API.getDevices(),
-                window.API.getDatapoints(),
-                this.getModelTypeOptions()
-            ]);
-            const mergedDevices = devices.map(device => {
-                const deviceDatapoints = datapoints.filter(dp => dp.deviceId === device.id);
-                const usedChannels = deviceDatapoints.filter(dp => dp.channel != null).map(dp => String(dp.channel));
-                const currentModel = models.find(m => m.id === device.modelTypeId);
-                const modelName = currentModel ? currentModel.name : '—';
-                return { ...device, usedChannels, modelName };
-            });
-            this.table.setData(mergedDevices);
+            const devices = await window.API.getDevices();
+            this.table.setData(devices);
         } catch (err) {
             console.error("Fehler beim Laden der Geräte:", err);
         }
@@ -101,11 +94,11 @@ const DeviceManager = {
 
         let locOptions = [{ value: '', label: '-- Nicht zugewiesen --' }];
         locations.forEach(bldg => {
-            locOptions.push({ value: bldg.name, label: `🏢 ${bldg.name}` });
+            locOptions.push({ value: bldg.id, label: `🏢 ${bldg.name}` });
             (bldg.floors || []).forEach(floor => {
-                locOptions.push({ value: floor.name, label: `&nbsp;&nbsp;🟰 ${floor.name}` });
+                locOptions.push({ value: floor.id, label: `&nbsp;&nbsp;🟰 ${floor.name}` });
                 (floor.rooms || []).forEach(room => {
-                    locOptions.push({ value: room.name, label: `&nbsp;&nbsp;&nbsp;&nbsp;🚪 ${room.name}` });
+                    locOptions.push({ value: room.id, label: `&nbsp;&nbsp;&nbsp;&nbsp;🚪 ${room.name}` });
                 });
             });
         });
@@ -117,11 +110,8 @@ const DeviceManager = {
         try {
             types = await window.API.getModelTypes();
         } catch (e) {
-            console.warn("Fallback: Lade Mock-Modelle", e);
-            types = [
-                { id: 'mock-uuid-1', name: 'WIFI Sensor Basic' },
-                { id: 'mock-uuid-2', name: 'Smart Thermostat' }
-            ];
+            console.warn("Fehler beim Laden der Modell-Typen.", e);
+            types = []; // Leeres Array als Fallback
         }
         return types;
     },
@@ -131,10 +121,11 @@ const DeviceManager = {
         try {
             types = await window.API.getBusTypes();
         } catch (e) {
-            types = ['WIFI', 'Thread', 'RS485', 'Ethernet']; // Not-Fallback
+            console.error("Fehler beim Laden der Bus-Typen:", e);
+            types = []; // Leeres Array als Fallback
         }
         
-        const options = types.map(t => ({ value: t, label: t }));
+        const options = types.map(t => ({ value: t.id, label: t.name }));
         if (includeEmpty) {
             options.unshift({ value: '', label: '-- Bitte wählen --' });
         }
@@ -153,10 +144,10 @@ const DeviceManager = {
                 { id: 'name', label: 'Eigener Name *', placeholder: 'z.B. Deckenlampe', fullWidth: true },
                 { id: 'modelName', label: 'Modell *', placeholder: 'Bitte Modell aus der Tabelle wählen', fullWidth: false },
                 { id: 'modelTypeId', type: 'hidden' },
-                { id: 'serialNumber', label: 'Seriennummer', placeholder: 'S/N (optional)', fullWidth: false },
+                { id: 'serialNumber', label: 'Seriennummer *', placeholder: 'S/N', fullWidth: false },
                 { id: 'location', label: 'Standort', type: 'select', options: locOptions, fullWidth: true },
                 { id: 'busType', label: 'Netzwerk (Bus) *', type: 'select', options: busOptions, fullWidth: false },
-                { id: 'address', label: 'MAC- oder Bus-Adresse *', placeholder: 'z.B. AA:BB:CC... oder 0x05', fullWidth: false }
+                { id: 'address', label: 'MAC- oder Bus-Adresse * <small style="font-weight:normal; color:var(--text-muted);">(MAC mit ":", Bus z.B. "0xFF")</small>', placeholder: 'z.B. AA:BB:CC... oder 0xFF', fullWidth: false }
             ],
             tables: [
                 {
@@ -168,9 +159,16 @@ const DeviceManager = {
                     ],
                     data: [],
                     onRowSelect: (row, fields) => {
-                        if (row.address === '—' || row.address === '⏳') return; // Platzhalter-Klicks ignorieren
+                        if (row.address === '—' || row.address === '⏳') return;
                         fields.address.value = row.macAddress || row.busAddress || '';
-                        fields.busType.value = row.busType || '';
+
+                        // Finde die korrekte Option im Select basierend auf dem Namen (Label) und setze den Wert (ID)
+                        const busNameToFind = row.busType || '';
+                        const busTypeSelect = fields.busType;
+                        const matchingOption = busOptions.find(opt => opt.label === busNameToFind);
+                        
+                        busTypeSelect.value = matchingOption ? matchingOption.value : '';
+
                     }
                 },
                 {
@@ -254,30 +252,45 @@ const DeviceManager = {
                 });
             },
             validate: (res) => {
-                if (!res.name || !res.address || !res.busType || !res.modelTypeId) {
+                if (!res.name || !res.address || !res.busType || !res.modelTypeId || !res.serialNumber) {
                     window.Dialog.alert('Fehler', 'Bitte alle Pflichtfelder (*) ausfüllen.', true);
                     return false;
+                }
+                // Zusätzliche Validierung für die Bus-Adresse
+                if (!res.address.includes(':')) {
+                    const busAddressNum = parseInt(res.address);
+                    if (isNaN(busAddressNum)) {
+                        window.Dialog.alert('Ungültige Eingabe', 'Die Bus-Adresse ist ungültig. Bitte geben Sie eine Zahl (z.B. 5) oder einen Hex-Wert (z.B. 0xFF) ein.', true);
+                        return false;
+                    }
+                    if (busAddressNum < 0 || busAddressNum > 32767) {
+                        window.Dialog.alert('Ungültiger Wert', 'Die Bus-Adresse muss zwischen 0 und 32767 liegen.', true);
+                        return false;
+                    }
                 }
                 return true;
             }
         });
 
         if (result) {
+            const isMac = result.address.includes(':');
             const newEntry = {
-                timestamp: new Date().toISOString(), name: result.name, location: result.location, status: 'searching', updated: 'jetzt',
-                modelTypeId: result.modelTypeId, serialNumber: result.serialNumber,
-                macAddress: result.address.includes(':') ? result.address : '',
-                busAddress: !result.address.includes(':') ? result.address : '',
-                busType: result.busType, health: '—', battery: null, signal: null, channels: []
+                device_name: result.name,
+                model_type_id: result.modelTypeId,
+                serial_number: result.serialNumber,
+                bus_type_id: result.busType,
+                location_id: result.location,
+                mac_address: isMac ? result.address : null,
+                bus_address: !isMac ? parseInt(result.address) : null,
+                status: 'searching'
             };
 
             try {
                 const res = await window.API.addDevice(newEntry);
-                newEntry.id = res.id;
-                this.table._addRow(newEntry);
-                this.triggerSearch(newEntry);
+                // Nach erfolgreichem Hinzufügen die Daten neu laden, um den neuen Eintrag korrekt darzustellen
+                this.loadData();
             } catch (err) {
-                window.Dialog.alert('Fehler', 'Fehler beim Speichern im System.', true);
+                window.Dialog.alert('Fehler beim Speichern', err.message, true);
             }
         }
     },
@@ -290,7 +303,7 @@ const DeviceManager = {
         // Finde den Namen des aktuell gesetzten Modells (falls vorhanden)
         const currentModel = modelOptions.find(m => m.id === row.modelTypeId);
         const modelNameValue = currentModel ? currentModel.name : '';
-
+        
         const addrValue = row.macAddress || row.busAddress || '';
         
         const result = await window.Dialog.formWithTable({
@@ -300,10 +313,10 @@ const DeviceManager = {
                 { id: 'name', label: 'Name *', value: row.name, fullWidth: true },
                 { id: 'modelName', label: 'Modell *', value: modelNameValue, fullWidth: false },
                 { id: 'modelTypeId', type: 'hidden', value: row.modelTypeId || '' },
-                { id: 'serialNumber', label: 'Seriennummer', value: row.serialNumber || '', fullWidth: false },
-                { id: 'location', label: 'Standort', type: 'select', value: row.location, options: locOptions, fullWidth: true },
-                { id: 'address', label: 'MAC- oder Bus-Adresse *', value: addrValue, fullWidth: true },
-                { id: 'busType', label: 'Netzwerk (Bus) *', type: 'select', value: row.busType, options: busOptions, fullWidth: true }
+                { id: 'serialNumber', label: 'Seriennummer', value: row.serial_number || '', fullWidth: false, readonly: true },
+                { id: 'location', label: 'Standort', type: 'select', value: row.location_id, options: locOptions, fullWidth: true },
+                { id: 'address', label: 'MAC- oder Bus-Adresse * <small style="font-weight:normal; color:var(--text-muted);">(MAC mit ":", Bus z.B. "0xFF")</small>', placeholder: 'z.B. AA:BB:CC... oder 0xFF', value: addrValue, fullWidth: true },
+                { id: 'busType', label: 'Netzwerk (Bus) *', type: 'select', value: row.bus_type_id, options: busOptions, fullWidth: true }
             ],
             tables: [
                 {
@@ -332,23 +345,37 @@ const DeviceManager = {
                     window.Dialog.alert('Fehler', 'Bitte alle Pflichtfelder (*) ausfüllen.', true);
                     return false;
                 }
+                // Zusätzliche Validierung für die Bus-Adresse
+                if (!res.address.includes(':')) {
+                    const busAddressNum = parseInt(res.address);
+                    if (isNaN(busAddressNum)) {
+                        window.Dialog.alert('Ungültige Eingabe', 'Die Bus-Adresse ist ungültig. Bitte geben Sie eine Zahl (z.B. 5) oder einen Hex-Wert (z.B. 0xFF) ein.', true);
+                        return false;
+                    }
+                    if (busAddressNum < 0 || busAddressNum > 32767) {
+                        window.Dialog.alert('Ungültiger Wert', 'Die Bus-Adresse muss zwischen 0 und 32767 liegen.', true);
+                        return false;
+                    }
+                }
                 return true;
             }
         });
 
         if (result) {
-            row.name = result.name; 
-            row.modelTypeId = result.modelTypeId;
-            row.serialNumber = result.serialNumber;
-            row.location = result.location;
-            row.macAddress = result.address.includes(':') ? result.address : ''; 
-            row.busAddress = !result.address.includes(':') ? result.address : '';
-            row.busType = result.busType;
+            const isMac = result.address.includes(':');
+            const updatePayload = {
+                device_name: result.name,
+                model_type_id: result.modelTypeId,
+                location_id: result.location,
+                bus_type_id: result.busType,
+                mac_address: isMac ? result.address : null,
+                bus_address: !isMac ? parseInt(result.address) : null
+            };
 
             try { 
-                await window.API.updateDevice(row.id, row); 
-                this.table._render(); 
-                this.triggerSearch(row); 
+                await window.API.updateDevice(row.id, { ...row, ...updatePayload }); 
+                await this.loadData(); // Lade die Daten neu, um die Änderungen zu sehen
+                this.triggerSearch(this.table.data.find(d => d.id === row.id)); 
             } catch (err) { 
                 window.Dialog.alert('Fehler', 'Fehler beim Speichern.', true); 
             }

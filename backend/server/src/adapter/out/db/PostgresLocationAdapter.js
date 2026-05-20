@@ -31,7 +31,7 @@ export class PostgresLocationAdapter extends ILocationRepository {
         // unter Auslassung aller soft-gelöschten (deleted_at IS NOT NULL) Einträge.
         const query = `
             SELECT 
-                l.location_id as id, l.location_name as name, 
+                l.location_id as id, l.location_name as name, l.created_at as timestamp, l.location_type_id as "locationTypeId", l.metadata as metadata,
                 CASE WHEN a.address_id IS NOT NULL THEN
                     json_build_object(
                         'id', a.address_id,
@@ -44,9 +44,12 @@ export class PostgresLocationAdapter extends ILocationRepository {
                         json_build_object(
                             'id', f.location_id,
                             'name', f.location_name,
+                            'locationTypeId', f.location_type_id,
+                            'timestamp', f.created_at,
+                            'metadata', f.metadata,
                             'rooms', COALESCE(
                                 (SELECT json_agg(
-                                    json_build_object('id', r.location_id, 'name', r.location_name, 'location_type_id', r.location_type_id)
+                                    json_build_object('id', r.location_id, 'name', r.location_name, 'locationTypeId', r.location_type_id, 'timestamp', r.created_at, 'metadata', r.metadata)
                                     ) FROM location r 
                                     JOIN location_type rt ON r.location_type_id = rt.location_type_id
                                     JOIN location_group rtg ON rt.location_group_id = rtg.location_group_id
@@ -57,7 +60,7 @@ export class PostgresLocationAdapter extends ILocationRepository {
                         ) FROM location f 
                         JOIN location_type ft ON f.location_type_id = ft.location_type_id
                         JOIN location_group ftg ON ft.location_group_id = ftg.location_group_id
-                        WHERE f.parent_location_id = l.location_id AND ftg.name = 'floor' AND f.is_active = true),
+                        WHERE f.parent_location_id = l.location_id AND ftg.name IN ('floor', 'appartment') AND f.is_active = true),
                     '[]'::json
                 ) as floors
             FROM location l
@@ -82,6 +85,7 @@ export class PostgresLocationAdapter extends ILocationRepository {
             const typeIds = {
                 building: typesRes.rows.find(t => t.group === 'building')?.id || null,
                 floor: typesRes.rows.find(t => t.group === 'floor')?.id || null,
+                appartment: typesRes.rows.find(t => t.group === 'appartment')?.id || null,
                 room: typesRes.rows.find(t => t.group === 'room')?.id || null
             };
             
@@ -93,7 +97,7 @@ export class PostgresLocationAdapter extends ILocationRepository {
                     loc.address.id = addressId; // Update der generierten ID im Payload
                 }
 
-                let locId = await this._upsertEntity(client, loc.id, null, typeIds.building, 
+            let locId = await this._upsertEntity(client, loc.id, null, loc.locationTypeId || typeIds.building, loc.metadata || null, 
                     [loc.name, addressId],
                     ['location_name', 'address_id']
                 );
@@ -102,7 +106,8 @@ export class PostgresLocationAdapter extends ILocationRepository {
 
                 if (loc.floors) {
                     for (const floor of loc.floors) {
-                        let floorId = await this._upsertEntity(client, floor.id, locId, typeIds.floor, 
+                    let typeFallback = floor.type === 'appartment' ? typeIds.appartment : typeIds.floor;
+                    let floorId = await this._upsertEntity(client, floor.id, locId, floor.locationTypeId || typeFallback, floor.metadata || null, 
                             [floor.name],
                             ['location_name']
                         );
@@ -111,7 +116,7 @@ export class PostgresLocationAdapter extends ILocationRepository {
 
                         if (floor.rooms) {
                             for (const room of floor.rooms) {
-                                let roomId = await this._upsertEntity(client, room.id, floorId, typeIds.room,
+                            let roomId = await this._upsertEntity(client, room.id, floorId, room.locationTypeId || typeIds.room, room.metadata || null,
                                     [room.name],
                                     ['location_name']
                                 );
@@ -142,7 +147,7 @@ export class PostgresLocationAdapter extends ILocationRepository {
 
     // Hilfsmethode: Verifiziert, ob eine ID wirklich existiert. Falls nicht (z.B. Frontend-Mock-ID), 
     // wird ein INSERT (mit DB-UUIDv7) ausgeführt, andernfalls ein UPDATE.
-    async _upsertEntity(client, id, parentId, locationTypeId, values, columns) {
+    async _upsertEntity(client, id, parentId, locationTypeId, metadata, values, columns) {
         let exists = false;
         if (id) {
             try {
@@ -151,8 +156,8 @@ export class PostgresLocationAdapter extends ILocationRepository {
             } catch (e) { exists = false; } // Z.B. falls die ID ein invalidier UUID String wie 'mock-uuid-1' ist
         }
 
-        const allCols = ['parent_location_id', 'location_type_id', ...columns];
-        const allVals = [parentId, locationTypeId, ...values];
+        const allCols = ['parent_location_id', 'location_type_id', 'metadata', ...columns];
+        const allVals = [parentId, locationTypeId, metadata, ...values];
 
         if (!exists) {
                 const placeholders = allVals.map((_, i) => `$${i + 1}`).join(', ');
@@ -220,14 +225,15 @@ export class PostgresLocationAdapter extends ILocationRepository {
     }
 
     async addLocation(locationData) {
-        let typeId = locationData.location_type_id;
+        let typeId = locationData.locationTypeId;
         if (!typeId) {
-            // Falls kein Typ mitgegeben wird, suchen wir die Fallback-ID für ein Gebäude
+            // Falls kein expliziter Typ mitgegeben wird, suchen wir die Fallback-ID basierend auf der Hierarchie (building, floor, room)
+            const groupName = locationData.type || 'building';
             const resType = await this.pool.query(`
                 SELECT lt.location_type_id FROM location_type lt
                 JOIN location_group lg ON lt.location_group_id = lg.location_group_id
-                WHERE lg.name = 'building' LIMIT 1
-            `);
+                WHERE lg.name = $1 LIMIT 1
+            `, [groupName]);
             typeId = resType.rows[0]?.location_type_id || null;
         }
         
@@ -239,8 +245,8 @@ export class PostgresLocationAdapter extends ILocationRepository {
                 addressId = await this._upsertAddress(client, locationData.address.id, locationData.address);
             }
             const res = await client.query(
-                'INSERT INTO location (parent_location_id, location_type_id, location_name, address_id) VALUES ($1, $2, $3, $4) RETURNING location_id',
-                [locationData.parentId || null, typeId, locationData.name, addressId]
+                'INSERT INTO location (parent_location_id, location_type_id, location_name, address_id, metadata) VALUES ($1, $2, $3, $4, $5) RETURNING location_id',
+                [locationData.parentId || null, typeId, locationData.name, addressId, locationData.metadata || null]
             );
             await client.query('COMMIT');
             return { success: true, id: res.rows[0].location_id };
@@ -261,8 +267,8 @@ export class PostgresLocationAdapter extends ILocationRepository {
                 addressId = await this._upsertAddress(client, locationData.address.id, locationData.address);
             }
             const result = await client.query(
-                'UPDATE location SET location_name = $1, address_id = $2, location_type_id = $3, updated_at = NOW() WHERE location_id = $4 AND is_active = true',
-                [locationData.name, addressId, locationData.locationTypeId, id]
+                'UPDATE location SET parent_location_id = $1, location_name = $2, address_id = $3, location_type_id = $4, metadata = $5, updated_at = NOW() WHERE location_id = $6 AND is_active = true',
+                [locationData.parentId || null, locationData.name, addressId, locationData.locationTypeId, locationData.metadata || null, id]
             );
             if (result.rowCount === 0) {
                 throw { status: 404, message: "Location not found" };

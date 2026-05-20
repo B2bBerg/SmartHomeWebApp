@@ -235,9 +235,9 @@ const TileManager = {
         try {
             // Gleiche API-Aufrufe wie bei den Listenansichten (Tabellen)
             const [sensors, actuators, devices] = await Promise.all([
-                window.API.getSensors(),
-                window.API.getActuators(),
-                window.API.getDevices()
+                window.API.getSensors().catch(err => []),
+                window.API.getActuators().catch(err => []),
+                window.API.getDevices().catch(err => [])
             ]);
             let allDatapoints = [...sensors, ...actuators]; // Beide Listen zusammenführen
 

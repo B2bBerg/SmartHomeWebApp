@@ -16,12 +16,14 @@ export class PostgresDeviceAdapter extends IDeviceRepository {
                 m.manufacturer_name as "manufacturerName",
                 d.serial_number,
                 bt.bus_name as "busTypeName",
-                l.location_name as "locationName",
-                d.mac_address,
-                d.bus_address,
-                d.battery_level,
-                d.signal_level,
+                COALESCE(l.location_name, 'Nicht zugewiesen') as "locationName",
+                d.mac_address as "macAddress",
+                d.bus_address as "busAddress",
+                d.battery_level as battery,
+                d.signal_level as signal,
                 d.status,
+                d.last_seen as updated,
+                d.metadata,
                 (
                     SELECT COALESCE(json_agg(DISTINCT dc.channel_number ORDER BY dc.channel_number), '[]'::json)
                     FROM device_channel dc
@@ -33,14 +35,14 @@ export class PostgresDeviceAdapter extends IDeviceRepository {
                     JOIN device_channel dc ON dp.device_channel_id = dc.device_channel_id
                     WHERE dc.device_id = d.device_id AND dp.is_active = true
                 ) as "usedChannels",
-                d.model_type_id,
+                d.model_type_id as "modelTypeId",
                 d.bus_type_id,
                 d.location_id
             FROM devices d
             JOIN model_type mt ON d.model_type_id = mt.model_type_id
             JOIN manufacturer m ON mt.manufacturer_id = m.manufacturer_id
             JOIN bus_type bt ON d.bus_type_id = bt.bus_type_id
-            JOIN location l ON d.location_id = l.location_id
+            LEFT JOIN location l ON d.location_id = l.location_id AND l.is_active = true
             WHERE d.is_active = true
         `;
         
@@ -55,9 +57,8 @@ export class PostgresDeviceAdapter extends IDeviceRepository {
     }
 
     async getBusTypes() {
-        const result = await this.pool.query('SELECT bus_name FROM bus_type ORDER BY bus_name');
-        // The frontend API expects an array of strings.
-        return result.rows.map(row => row.bus_name);
+        const result = await this.pool.query('SELECT bus_type_id as id, bus_name as name FROM bus_type ORDER BY bus_name');
+        return result.rows;
     }
 
     async getModelTypes() {
@@ -99,16 +100,18 @@ export class PostgresDeviceAdapter extends IDeviceRepository {
                 device_name = $1, 
                 model_type_id = $2, 
                 location_id = $3, 
-                mac_address = $4, 
-                bus_address = $5, 
-                status = $6, 
-                metadata = $7,
+                bus_type_id = $4,
+                mac_address = $5, 
+                bus_address = $6, 
+                status = $7, 
+                metadata = $8,
                 updated_at = NOW() 
-             WHERE device_id = $8 AND is_active = true`,
+             WHERE device_id = $9 AND is_active = true`,
             [
                 deviceData.device_name, 
                 deviceData.model_type_id, 
                 deviceData.location_id, 
+                deviceData.bus_type_id,
                 deviceData.mac_address, 
                 deviceData.bus_address, 
                 deviceData.status, 

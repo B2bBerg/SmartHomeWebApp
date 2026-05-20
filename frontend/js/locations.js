@@ -80,7 +80,9 @@ const LocationsManager = {
                 title: title,
                 searchable: false, // Deaktiviert das redundante Tabellen-Suchfeld (Omni-Search aktiv)
                 fields: [
-                    { id: 'id', type: 'hidden', value: defaultData.id || '' },
+                    { id: 'addressId', type: 'hidden', value: addr.id || '' },
+                    { id: 'templateId', type: 'hidden', value: defaultData.id || '' },
+                    { id: 'templateSearch', label: 'Gebäude-Typ suchen *', placeholder: 'Tippen und aus Tabelle wählen...', fullWidth: true },
                     { id: 'name', label: 'Gebäude Name *', value: defaultData.name || '', fullWidth: true },
                     { id: 'street', label: 'Strasse *', value: addr.street || '' },
                     { id: 'street_number', label: 'Hausnummer', value: addr.street_number || '' },
@@ -91,12 +93,12 @@ const LocationsManager = {
                 tables: [
                     {
                         id: 'templates',
-                        title: '📋 Gebäude-Vorlagen',
+                        title: '📋 Gebäude-Typen',
                         columns: [{ key: 'name', label: 'Verfügbare Haus-Typen' }],
                         data: templates,
                         onRowSelect: (row, fields) => {
-                            fields.name.value = row.name || '';
-                            fields.id.value = row.id || ''; // Speichert DB ID ab, falls Vorlage ausgewählt
+                            fields.templateSearch.value = row.name || '';
+                            fields.templateId.value = row.id || '';
                         }
                     },
                     {
@@ -125,6 +127,7 @@ const LocationsManager = {
                             }
                             fields.city.value = row.city || '';
                             fields.country.value = row.country || 'Schweiz';
+                            fields.addressId.value = row.id || '';
                         }
                     }
                 ],
@@ -151,17 +154,17 @@ const LocationsManager = {
                             }
                         }
                     });
-
-                    // Gebäude-Name: Wechselt zu Vorlagen und filtert
-                    const handleNameInput = (e) => {
-                        switchToTab('templates');
-                        filterTable(e.target.value);
-                    };
-                    fields.name.addEventListener('focus', handleNameInput);
-                    fields.name.addEventListener('input', handleNameInput);
                     
                     const addressFields = [fields.street, fields.street_number, fields.zip_code, fields.city, fields.country];
                     let searchTimeout;
+
+                    const handleTemplateSearch = (e) => {
+                        fields.templateId.value = ''; // ID zurücksetzen bei manueller Eingabe
+                        switchToTab('templates');
+                        filterTable(e.target.value);
+                    };
+                    fields.templateSearch.addEventListener('focus', handleTemplateSearch);
+                    fields.templateSearch.addEventListener('input', handleTemplateSearch);
 
                     // Baut einen kombinierten Suchstring aus allen Adress-Feldern
                     const getCombinedAddressQuery = () => {
@@ -175,6 +178,7 @@ const LocationsManager = {
                         });
 
                         f.addEventListener('input', (e) => {
+                            fields.addressId.value = ''; // Reset ID so manual typing creates a new DB record
                             switchToTab('addresses');
                             filterTable(getCombinedAddressQuery()); // Tabelle sofort lokal filtern
 
@@ -208,45 +212,190 @@ const LocationsManager = {
                         window.Dialog.alert('Fehler', 'Bitte alle Pflichtfelder (*) ausfüllen.', true);
                         return false;
                     }
-                    return true;
-                }
-            });
-
-            if (result) {
-                callback({ name: result.name, templateId: result.id, address: { street: result.street, street_number: result.street_number, zip_code: result.zip_code, city: result.city, country: result.country }});
-            }
-        } else {
-            // Für Stockwerke & Räume
-            const tableData = await window.API.getLocationTypes(type) || [];
-            
-            const result = await window.Dialog.formWithTable({
-                title: title,
-                searchable: false, // Deaktiviert das redundante Tabellen-Suchfeld (Omni-Search aktiv)
-                fields: [
-                    { id: 'id', type: 'hidden', value: defaultData.id || '' },
-                    { id: 'name', label: 'Name / Bezeichnung *', value: defaultData.name || '', fullWidth: true }
-                ],
-                tableColumns: [{ key: 'name', label: 'Verfügbare Vorlagen' }],
-                tableData: tableData,
-                onRowSelect: (row, fields) => { fields.name.value = row.name || ''; fields.id.value = row.id || ''; },
-                onReady: (modal, fields, updateTableData, switchToTab, filterTable) => {
-                    // Omni-Search: Filtere die Tabelle basierend auf der Eingabe im Feld "Name"
-                    const handleNameInput = (e) => {
-                        filterTable(e.target.value);
-                    };
-                    fields.name.addEventListener('focus', handleNameInput);
-                    fields.name.addEventListener('input', handleNameInput);
-                },
-                validate: (res) => {
-                    if (!res.name) {
-                        window.Dialog.alert('Fehler', 'Bitte alle Pflichtfelder (*) ausfüllen.', true);
+                    if (!res.templateId) {
+                        window.Dialog.alert('Typ fehlt', 'Bitte wählen Sie unten aus dem Register (Tab) "Gebäude-Typen" einen Typ aus.', true);
                         return false;
                     }
                     return true;
                 }
             });
 
-            if (result) callback({ name: result.name, templateId: result.id });
+            if (result) {
+                callback({ name: result.name, templateId: result.templateId, address: { id: result.addressId || undefined, street: result.street, street_number: result.street_number, zip_code: result.zip_code, city: result.city, country: result.country }});
+            }
+        } else if (type === 'appartment') {
+            // Für Wohnungen (Appartments) mit Metadaten
+            const [appartmentTypes, floorTypes, roomCountTypes] = await Promise.all([
+                window.API.getLocationTypes('appartment'),
+                window.API.getLocationTypes('floor'),
+                window.API.getLocationTypes('room_count')
+            ]);
+            
+            const roomCountOptions = (roomCountTypes || []).map(t => ({ value: t.name, label: t.name + ' Zimmer' }));
+            roomCountOptions.unshift({ value: '', label: '-- Keine Angabe --' });
+
+            const result = await window.Dialog.formWithTable({
+                title: title,
+                searchable: false,
+                fields: [
+                    { id: 'templateId', type: 'hidden', value: defaultData.id || '' },
+                    { id: 'templateSearch', label: 'Wohnungs-Typ suchen *', placeholder: 'Tippen und aus Tabelle wählen...', fullWidth: true },
+                    { id: 'floor_level', label: 'Etage suchen (Optional)', placeholder: 'Tippen und unten wählen...', value: defaultData.metadata?.floor_level || '' },
+                    { id: 'rooms_count', label: 'Zimmerzahl', type: 'select', options: roomCountOptions, value: defaultData.metadata?.rooms_count || '' }
+                ],
+                tables: [
+                    {
+                        id: 'templates',
+                        title: '📋 Wohnungs-Typen',
+                        columns: [{ key: 'name', label: 'Verfügbare Typen' }],
+                        data: appartmentTypes || [],
+                        onRowSelect: (row, fields) => {
+                            fields.templateSearch.value = row.name || '';
+                            fields.templateId.value = row.id || '';
+                        }
+                    },
+                    {
+                        id: 'floors',
+                        title: '🏢 Etagen',
+                        columns: [{ key: 'name', label: 'Verfügbare Etagen' }],
+                        data: floorTypes || [],
+                        onRowSelect: (row, fields) => {
+                            fields.floor_level.value = row.name || '';
+                        }
+                    }
+                ],
+                onReady: (modal, fields, updateTableData, switchToTab, filterTable) => {
+                    const handleTemplateSearch = (e) => {
+                        fields.templateId.value = '';
+                        switchToTab('templates');
+                        filterTable(e.target.value);
+                    };
+                    fields.templateSearch.addEventListener('focus', handleTemplateSearch);
+                    fields.templateSearch.addEventListener('input', handleTemplateSearch);
+
+                    const handleFloorSearch = (e) => {
+                        switchToTab('floors');
+                        filterTable(e.target.value);
+                    };
+                    fields.floor_level.addEventListener('focus', handleFloorSearch);
+                    fields.floor_level.addEventListener('input', handleFloorSearch);
+                },
+                validate: (res) => {
+                    if (!res.templateId) {
+                        window.Dialog.alert('Typ fehlt', 'Bitte wählen Sie den Wohnungs-Typ unten aus der Tabelle aus.', true);
+                        return false;
+                    }
+                    return true;
+                }
+            });
+
+            if (result) {
+                const selectedTemplate = (appartmentTypes || []).find(t => t.id === result.templateId);
+                let autoName = selectedTemplate ? selectedTemplate.name : 'Wohnung';
+                const finalName = autoName;
+
+                callback({ name: finalName, templateId: result.templateId, metadata: {
+                    floor_level: result.floor_level || null,
+                    rooms_count: result.rooms_count || null
+                }});
+            }
+        } else if (type === 'room') {
+            // Für Räume mit Raumnummer (Metadaten)
+            const tableData = await window.API.getLocationTypes('room') || [];
+            
+            const result = await window.Dialog.formWithTable({
+                title: title,
+                searchable: false,
+                fields: [
+                    { id: 'templateId', type: 'hidden', value: defaultData.id || '' },
+                    { id: 'templateSearch', label: 'Raum-Typ suchen *', placeholder: 'Tippen und aus Tabelle wählen...', fullWidth: true },
+                    { id: 'room_number', label: 'Raumnummer (Optional)', type: 'text', placeholder: 'z.B. 101', value: defaultData.metadata?.room_number || '' }
+                ],
+                tables: [
+                    {
+                        id: 'templates',
+                        title: '📋 Raum-Typen',
+                        columns: [{ key: 'name', label: 'Verfügbare Vorlagen' }],
+                        data: tableData || [],
+                        onRowSelect: (row, fields) => {
+                            fields.templateSearch.value = row.name || '';
+                            fields.templateId.value = row.id || '';
+                        }
+                    }
+                ],
+                onReady: (modal, fields, updateTableData, switchToTab, filterTable) => {
+                    const handleTemplateSearch = (e) => {
+                        fields.templateId.value = '';
+                        switchToTab('templates');
+                        filterTable(e.target.value);
+                    };
+                    fields.templateSearch.addEventListener('focus', handleTemplateSearch);
+                    fields.templateSearch.addEventListener('input', handleTemplateSearch);
+                },
+                validate: (res) => {
+                    if (!res.templateId) {
+                        window.Dialog.alert('Vorlage fehlt', 'Bitte wählen Sie unten in der Tabelle eine Raum-Vorlage aus.', true);
+                        return false;
+                    }
+                    return true;
+                }
+            });
+
+            if (result) {
+                const selectedTemplate = tableData.find(t => t.id === result.templateId);
+                let autoName = selectedTemplate ? selectedTemplate.name : 'Raum';
+                if (result.room_number && result.room_number.trim() !== '') {
+                    autoName += ` ${result.room_number.trim()}`;
+                }
+                const finalName = autoName;
+                callback({ name: finalName, templateId: result.templateId, metadata: { room_number: result.room_number || null } });
+            }
+        } else {
+            // Für Stockwerke
+            const tableData = await window.API.getLocationTypes(type) || [];
+            
+            const result = await window.Dialog.formWithTable({
+                title: title,
+                searchable: false, // Deaktiviert das redundante Tabellen-Suchfeld (Omni-Search aktiv)
+                fields: [
+                    { id: 'templateId', type: 'hidden', value: defaultData.id || '' },
+                    { id: 'templateSearch', label: 'Stockwerks-Typ suchen *', placeholder: 'Tippen und unten wählen...', fullWidth: true }
+                ],
+                tables: [
+                    {
+                        id: 'templates',
+                        title: '📋 Stockwerks-Typen',
+                        columns: [{ key: 'name', label: 'Verfügbare Vorlagen' }],
+                        data: tableData || [],
+                        onRowSelect: (row, fields) => {
+                            fields.templateSearch.value = row.name || '';
+                            fields.templateId.value = row.id || '';
+                        }
+                    }
+                ],
+                onReady: (modal, fields, updateTableData, switchToTab, filterTable) => {
+                    const handleTemplateSearch = (e) => {
+                        fields.templateId.value = '';
+                        switchToTab('templates');
+                        filterTable(e.target.value);
+                    };
+                    fields.templateSearch.addEventListener('focus', handleTemplateSearch);
+                    fields.templateSearch.addEventListener('input', handleTemplateSearch);
+                },
+                validate: (res) => {
+                    if (!res.templateId) {
+                        window.Dialog.alert('Vorlage fehlt', 'Bitte wählen Sie unten aus der Tabelle einen Stockwerks-Typ aus.', true);
+                        return false;
+                    }
+                    return true;
+                }
+            });
+
+            if (result) {
+                const selectedTemplate = tableData.find(t => t.id === result.templateId);
+                const finalName = selectedTemplate ? selectedTemplate.name : 'Standort';
+                callback({ name: finalName, templateId: result.templateId });
+            }
         }
     },
 
@@ -254,9 +403,9 @@ const LocationsManager = {
         try {
             const [locationsData, devices, sensors, actuators] = await Promise.all([
                 window.API.getLocations(),
-                window.API.getDevices(),
-                window.API.getSensors(),
-                window.API.getActuators()
+                window.API.getDevices().catch(err => { console.warn("Geräte-API noch nicht bereit:", err); return []; }),
+                window.API.getSensors().catch(err => { console.warn("Sensoren-API noch nicht bereit:", err); return []; }),
+                window.API.getActuators().catch(err => { console.warn("Aktoren-API noch nicht bereit:", err); return []; })
             ]);
             
             this.locations = locationsData;
@@ -281,7 +430,12 @@ const LocationsManager = {
     },
 
     async saveData() {
-        await window.API.saveLocations(this.locations);
+        try {
+            await window.API.saveLocations(this.locations);
+        } catch (err) {
+            console.error("Fehler beim Speichern der Locations:", err);
+            if (window.Dialog) window.Dialog.alert('Speicherfehler', 'Die Standorte konnten nicht gespeichert werden: ' + err.message, true);
+        }
     },
 
     renderBuildings() {
@@ -361,7 +515,7 @@ const LocationsManager = {
 
         document.getElementById('btn-add-building').addEventListener('click', () => {
             this.openModal('building', 'Gebäude hinzufügen', { name: '' }, async (data) => {
-                const res = await window.API.addLocation({ type: 'building', name: data.name, address: data.address });
+                const res = await window.API.addLocation({ type: 'building', locationTypeId: data.templateId, name: data.name, address: data.address });
                 this.locations.push({ id: res.id, timestamp: new Date().toISOString(), name: data.name, address: data.address, floors: [] });
                 await this.saveData();
                 this.renderBuildings();
@@ -372,9 +526,10 @@ const LocationsManager = {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const b = this.locations.find(x => x.id === btn.dataset.id);
-                this.openModal('building', 'Gebäude bearbeiten', { name: b.name, address: b.address }, async (data) => {
+                this.openModal('building', 'Gebäude bearbeiten', { id: b.locationTypeId, name: b.name, address: b.address }, async (data) => {
                     b.name = data.name;
                     b.address = data.address;
+                    if (data.templateId) b.locationTypeId = data.templateId;
                     await this.saveData();
                     this.renderBuildings();
                 });
@@ -573,9 +728,14 @@ const LocationsManager = {
         } else {
             html += `<div class="tabs-container ${this.isEditModeFloors ? 'edit-mode' : ''}" style="margin:0; padding:0; border-bottom:none; flex-wrap:wrap;">`;
             building.floors.forEach((floor, index) => {
+                let extraInfo = '';
+                if (floor.metadata && floor.metadata.rooms_count) extraInfo += `${floor.metadata.rooms_count} Zimmer`;
+                if (floor.metadata && floor.metadata.floor_level) extraInfo += extraInfo ? `, ${floor.metadata.floor_level}` : `${floor.metadata.floor_level}`;
+                const displayLabel = extraInfo ? `${floor.name}<span style="display:block; font-size:0.85em; opacity:0.7; font-weight:normal; margin-top:3px;">${extraInfo}</span>` : floor.name;
+
                 html += `
                     <div class="tab-wrapper" data-floor="${floor.id}" data-index="${index}" ${this.isEditModeFloors ? 'draggable="true"' : ''}>
-                        <button class="tab-button">${floor.name}</button>
+                        <button class="tab-button">${displayLabel}</button>
                         <button class="btn-icon btn-edit edit-floor" data-id="${floor.id}"><img src="assets/icons/gear-svgrepo-com.svg" alt="Bearbeiten"></button>
                         <button class="btn-icon btn-delete delete-floor" data-id="${floor.id}"><img src="assets/icons/trash-svgrepo-com.svg" alt="Löschen"></button>
                     </div>`;
@@ -587,7 +747,8 @@ const LocationsManager = {
                 <div style="flex-grow:1"></div>
                 <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom: 0.4rem;">
                     <button id="btn-toggle-edit" class="btn-outline ${this.isEditModeFloors ? 'active' : ''}" title="Layout bearbeiten"><img src="assets/icons/gear-svgrepo-com.svg" alt="edit">Stockwerke bearbeiten</button>
-                    <button id="btn-add-floor" class="btn-add" title="Stockwerk/Wohnung hinzufügen"><span><img src="assets/icons/grid-plus-svgrepo-com.svg" alt="add"></span> Stockwerk/Wohnung hinzufügen</button>
+                    <button id="btn-add-floor" class="btn-add" title="Stockwerk hinzufügen"><span><img src="assets/icons/grid-plus-svgrepo-com.svg" alt="add"></span> Stockwerk hinzufügen</button>
+                    <button id="btn-add-appartment" class="btn-add" title="Wohnung hinzufügen"><span><img src="assets/icons/grid-plus-svgrepo-com.svg" alt="add"></span> Wohnung hinzufügen</button>
                 </div>
             </div>
             <div id="rooms-container"></div>
@@ -608,9 +769,18 @@ const LocationsManager = {
         });
 
         document.getElementById('btn-add-floor').addEventListener('click', () => {
-            this.openModal('floor', 'Stockwerk/Wohnung hinzufügen', { name: '' }, async (data) => {
-                const res = await window.API.addLocation({ type: 'floor', name: data.name, parentId: building.id });
+            this.openModal('floor', 'Stockwerk hinzufügen', { name: '' }, async (data) => {
+                const res = await window.API.addLocation({ type: 'floor', locationTypeId: data.templateId, name: data.name, parentId: building.id });
                 building.floors.push({ id: res.id, timestamp: new Date().toISOString(), name: data.name, rooms: [] });
+                await this.saveData();
+                this.renderBuildingDetails(building);
+            });
+        });
+
+        document.getElementById('btn-add-appartment').addEventListener('click', () => {
+            this.openModal('appartment', 'Wohnung hinzufügen', { name: '' }, async (data) => {
+                const res = await window.API.addLocation({ type: 'appartment', locationTypeId: data.templateId, name: data.name, parentId: building.id, metadata: data.metadata });
+                building.floors.push({ id: res.id, timestamp: new Date().toISOString(), type: 'appartment', name: data.name, metadata: data.metadata, rooms: [] });
                 await this.saveData();
                 this.renderBuildingDetails(building);
             });
@@ -621,8 +791,11 @@ const LocationsManager = {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const f = building.floors.find(x => x.id === btn.dataset.id);
-                    this.openModal('floor', 'Stockwerk/Wohnung bearbeiten', { name: f.name }, async (data) => {
+                    const modalType = (f.metadata || f.type === 'appartment') ? 'appartment' : 'floor';
+                    this.openModal(modalType, modalType === 'appartment' ? 'Wohnung bearbeiten' : 'Stockwerk bearbeiten', { id: f.locationTypeId, name: f.name, metadata: f.metadata }, async (data) => {
                         f.name = data.name;
+                        if (data.metadata) f.metadata = data.metadata;
+                        if (data.templateId) f.locationTypeId = data.templateId;
                         await this.saveData();
                         this.renderBuildingDetails(building);
                     });
@@ -763,8 +936,8 @@ const LocationsManager = {
 
         document.getElementById('btn-add-room').addEventListener('click', () => {
             this.openModal('room', 'Raum hinzufügen', { name: '' }, async (data) => {
-                const res = await window.API.addLocation({ type: 'room', name: data.name, parentId: floor.id });
-                floor.rooms.push({ id: res.id, timestamp: new Date().toISOString(), name: data.name });
+                const res = await window.API.addLocation({ type: 'room', locationTypeId: data.templateId, name: data.name, parentId: floor.id, metadata: data.metadata });
+                floor.rooms.push({ id: res.id, timestamp: new Date().toISOString(), name: data.name, metadata: data.metadata });
                 await this.saveData();
                 this.renderRooms(floor, building);
             });
@@ -774,8 +947,10 @@ const LocationsManager = {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const r = floor.rooms.find(x => x.id === btn.dataset.id);
-                this.openModal('room', 'Raum bearbeiten', { name: r.name }, async (data) => {
+                this.openModal('room', 'Raum bearbeiten', { id: r.locationTypeId, name: r.name, metadata: r.metadata }, async (data) => {
                     r.name = data.name;
+                    if (data.templateId) r.locationTypeId = data.templateId;
+                    if (data.metadata) r.metadata = data.metadata;
                     await this.saveData();
                     this.renderRooms(floor, building);
                 });

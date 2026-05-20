@@ -1,0 +1,6 @@
+Starten: 
+docker-compose up --build -d
+
+Stopen und löschen
+docker-compose down -v
+

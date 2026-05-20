@@ -32,17 +32,25 @@ FROM (VALUES
 CROSS JOIN (SELECT location_group_id FROM location_group WHERE name = 'floor') AS g;
 
 -- =========================================================================================
--- INITIAL DATA: Location Types (Apartments)
+-- INITIAL DATA: Location Types (Appartments)
 -- =========================================================================================
 INSERT INTO location_type (name, location_group_id)
 SELECT v.name, g.location_group_id
 FROM (VALUES 
-    ('1 Whg.'), ('1.5 Whg.'), ('2 Whg.'), ('2.5 Whg.'), 
-    ('3 Whg.'), ('3.5 Whg.'), ('4 Whg.'), ('4.5 Whg.'), 
-    ('5 Whg.'), ('5.5 Whg.'), ('6 Whg.'), ('6.5 Whg.'), 
-    ('7 Whg.'), ('8 Whg.'), ('9 Whg.'), ('10 Whg.')
+    ('Wohnung'), ('Attikawohnung'), ('Maisonette'), ('Loft'), ('Studio'), 
+    ('Penthouse'), ('Einliegerwohnung'), ('Chalet-Wohnung')
 ) AS v(name)
-CROSS JOIN (SELECT location_group_id FROM location_group WHERE name = 'floor') AS g;
+CROSS JOIN (SELECT location_group_id FROM location_group WHERE name = 'appartment') AS g;
+
+-- =========================================================================================
+-- INITIAL DATA: Location Types (Room Counts)
+-- =========================================================================================
+INSERT INTO location_type (name, location_group_id)
+SELECT v.name, g.location_group_id
+FROM (VALUES 
+    ('1'), ('1.5'), ('2'), ('2.5'), ('3'), ('3.5'), ('4'), ('4.5'), ('5'), ('5.5'), ('6'), ('6.5'), ('7+')
+) AS v(name)
+CROSS JOIN (SELECT location_group_id FROM location_group WHERE name = 'room_count') AS g;
 
 -- =========================================================================================
 -- INITIAL DATA: Location Types (Rooms)

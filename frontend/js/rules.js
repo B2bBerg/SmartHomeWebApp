@@ -32,22 +32,36 @@ const RuleManager = {
         }).catch(err => console.error("Fehler beim Laden der Regeln:", err));
     },
 
-    showRuleBuilder() {
+    async showRuleBuilder() {
         const modal = document.createElement('div');
         modal.className = 'table-modal';
+
+        // Datenpunkte laden
+        let datapoints = [];
+        try {
+            const sensors = await window.API.getSensors();
+            const actuators = await window.API.getActuators();
+            datapoints = [...(sensors || []), ...(actuators || [])];
+        } catch (e) {
+            console.error("Fehler beim Laden der Datenpunkte für den Rule-Builder:", e);
+        }
+
+        const datapointOptions = datapoints.map(dp => 
+            `<option value="${dp.id}">${dp.name} (${dp.location || 'N/A'})</option>`
+        ).join('');
+
         modal.innerHTML = `
             <div class="table-modal-box rule-builder">
                 <h3>Neue Regel erstellen</h3>
                 <div class="settings-group">
                     <label>Name der Regel</label>
-                    <input type="text" id="rule-name" placeholder="z.B. Nachtlicht">
+                    <input type="text" id="rule-name" placeholder="z.B. Nachtlicht im Flur">
                 </div>
                 
                 <div id="condition-list">
                     <div class="condition-row">
                         <select class="rule-dp">
-                            <option value="sensor.temp.living">Wohnzimmer Temp</option>
-                            <option value="actuator.light.hall">Flur Licht</option>
+                            ${datapointOptions.length > 0 ? datapointOptions : '<option>Keine Datenpunkte gefunden</option>'}
                         </select>
                         <select class="rule-op">
                             ${Object.keys(RuleEngine.operators).map(op => `<option>${op}</option>`).join('')}
@@ -85,11 +99,7 @@ const RuleManager = {
                 name: ruleName,
                 active: true,
                 logic: document.getElementById('rule-logic').value,
-                conditions: [{
-                    datapoint: modal.querySelector('.rule-dp').value,
-                    operator: modal.querySelector('.rule-op').value,
-                    value: ruleVal
-                }]
+                conditions: [{ datapoint: modal.querySelector('.rule-dp').value, operator: modal.querySelector('.rule-op').value, value: ruleVal }]
             };
             window.API.addRule(newRule).then((res) => {
                 newRule.id = res.id;

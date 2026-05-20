@@ -8,6 +8,7 @@ import { LocationsAPI } from './api/locations.js';
 import { RulesAPI } from './api/rules.js';
 import { SystemAPI } from './api/system.js';
 import { AddressAPI } from './api/address.js';
+import { DashboardAPI } from './api/dashboard.js';
 
 const API = {
     ...DevicesAPI,
@@ -16,6 +17,7 @@ const API = {
     ...LocationsAPI,
     ...RulesAPI,
     ...SystemAPI,
+    ...DashboardAPI,
 
     // Spezifische Logik, die Module kombiniert:
     getLiveData: async () => {

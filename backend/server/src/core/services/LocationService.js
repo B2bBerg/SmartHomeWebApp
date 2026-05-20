@@ -36,7 +36,6 @@ export class LocationService extends ILocationService {
         // Geschäftslogik: Erstelle und validiere das Domänenobjekt
         const location = new Location(locationData);
         location.validate();
-        // TODO: Hier könnte man auch die Hierarchie validieren (z.B. Raum darf nicht in Gebäude)
         return await this.locationRepository.addLocation(location);
     }
 

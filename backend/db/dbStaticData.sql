@@ -162,6 +162,7 @@ CREATE TABLE location
   address_id         uuid       ,
   created_at         timestamptz NOT NULL DEFAULT now(),
   updated_at         timestamptz DEFAULT now(),
+  metadata           jsonb      ,
   is_active          boolean     DEFAULT true,
   deactivated_at     timestamptz,
   PRIMARY KEY (location_id)
@@ -174,9 +175,9 @@ CREATE TABLE location_group
   PRIMARY KEY (location_group_id)
 );
 
-COMMENT ON TABLE location_group IS 'Building, Floor, Room';
+COMMENT ON TABLE location_group IS 'Building, Floor, Appartment, Room, Room_Count';
 
-COMMENT ON COLUMN location_group.name IS 'Building, Floor, Room';
+COMMENT ON COLUMN location_group.name IS 'Building, Floor, Appartment, Room, Room_Count';
 
 CREATE TABLE location_type
 (

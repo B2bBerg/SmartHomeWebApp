@@ -5,54 +5,15 @@ const generateUUID = () => typeof crypto !== 'undefined' && crypto.randomUUID ? 
 
 export const AddressAPI = {
     getAddresses: async () => {
-        try {
-            return await fetchApi('/addresses');
-        } catch (error) {
-            console.warn("Backend-API '/addresses' nicht erreichbar. Nutze Fallback.", error);
-            return [];
-        }
+        return await fetchApi('/addresses');
     },
 
     getAddressById: async (id) => {
-        try {
-            return await fetchApi(`/addresses/${id}`);
-        } catch (error) {
-            console.warn(`Backend-API '/addresses/${id}' nicht erreichbar. Nutze Fallback.`, error);
-            return null;
-        }
+        return await fetchApi(`/addresses/${id}`);
     },
 
     searchAddresses: async (query) => {
-        try {
-            return await fetchApi(`/addresses/search?q=${encodeURIComponent(query)}`);
-        } catch (error) {
-            console.warn("Backend-API '/addresses/search' nicht erreichbar. Nutze lokalen Fallback.");
-            try {
-                // Fallback: Liest die Adressen aus der statischen JSON Mock-Datei
-                const response = await fetch('./testing/locations/locations.json?t=' + Date.now());
-                if (!response.ok) return [];
-                const data = await response.json();
-                
-                const results = [];
-                const queryTerms = query.toLowerCase().trim().split(/\s+/).filter(t => t.length > 0);
-                
-                (data || []).forEach(loc => {
-                    if (loc.address && loc.address.street) {
-                        // Concatenated String für Omni-Search
-                        const addrStr = `${loc.address.street} ${loc.address.street_number || ''} ${loc.address.zip_code || ''} ${loc.address.city || ''}`.trim();
-                        const isMatch = queryTerms.every(term => addrStr.toLowerCase().includes(term));
-                        
-                        if (isMatch && !results.find(a => a.str === addrStr)) {
-                            results.push({ str: addrStr, obj: loc.address });
-                        }
-                    }
-                });
-                return results;
-            } catch (fallbackError) {
-                console.error("Fehler beim Mock der Adress-Suche:", fallbackError);
-                return [];
-            }
-        }
+        return await fetchApi(`/addresses/search?q=${encodeURIComponent(query)}`);
     },
 
     lookupCityByZip: async (zip, country = 'Schweiz') => {
@@ -65,7 +26,7 @@ export const AddressAPI = {
         const cCode = countryMap[country.toLowerCase()] || 'ch';
         
         try {
-            // Externe API (braucht kein Spring Boot Backend)
+            // Externe API
             const response = await fetch(`https://api.zippopotam.us/${cCode}/${zip}`);
             if (response.ok) {
                 const data = await response.json();
@@ -78,29 +39,14 @@ export const AddressAPI = {
     },
 
     addAddress: async (addressData) => {
-        try {
-            return await fetchApi('/addresses', { method: 'POST', body: JSON.stringify(addressData) });
-        } catch (error) {
-            console.warn("Backend-API POST '/addresses' nicht erreichbar. Nutze Fallback.");
-            return { success: true, id: generateUUID() };
-        }
+        return await fetchApi('/addresses', { method: 'POST', body: JSON.stringify(addressData) });
     },
 
     updateAddress: async (id, addressData) => {
-        try {
-            return await fetchApi(`/addresses/${id}`, { method: 'PUT', body: JSON.stringify(addressData) });
-        } catch (error) {
-            console.warn(`Backend-API PUT '/addresses/${id}' nicht erreichbar. Nutze Fallback.`);
-            return { success: true };
-        }
+        return await fetchApi(`/addresses/${id}`, { method: 'PUT', body: JSON.stringify(addressData) });
     },
 
     deleteAddress: async (id) => {
-        try {
-            return await fetchApi(`/addresses/${id}`, { method: 'DELETE' });
-        } catch (error) {
-            console.warn(`Backend-API DELETE '/addresses/${id}' nicht erreichbar. Nutze Fallback.`);
-            return { success: true };
-        }
+        return await fetchApi(`/addresses/${id}`, { method: 'DELETE' });
     }
 };
