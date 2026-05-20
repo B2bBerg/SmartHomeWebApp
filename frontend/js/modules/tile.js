@@ -533,9 +533,9 @@ const TileManager = {
             .filter(([prefix]) => (datapoint || '').startsWith(prefix))
             .flatMap(([, types]) => types);
         [...select.options].forEach(opt => {
-            opt.hidden = opt.value !== '' && allowed.length > 0 && !allowed.includes(opt.value);
+            opt.hidden = opt.value !== '' && !allowed.includes(opt.value);
         });
-        if (allowed.length > 0 && !allowed.includes(select.value)) {
+        if (select.value !== '' && !allowed.includes(select.value)) {
             select.value = '';
             select.dispatchEvent(new Event('change'));
         }
