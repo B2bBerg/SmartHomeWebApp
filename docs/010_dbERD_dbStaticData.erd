@@ -4,9 +4,9 @@
   "settings": {
     "width": 3000,
     "height": 3000,
-    "scrollTop": -1162,
-    "scrollLeft": -1153,
-    "zoomLevel": 0.79,
+    "scrollTop": -1224.7978,
+    "scrollLeft": -459.114,
+    "zoomLevel": 0.76,
     "show": 511,
     "database": 16,
     "databaseName": "staticData",
@@ -3616,7 +3616,7 @@
         "comment": "\"Lux\", \"Temperature\", \"Switch\"",
         "dataType": "varchar(255)",
         "default": "",
-        "options": 8,
+        "options": 12,
         "ui": {
           "keys": 0,
           "widthName": 81,
@@ -3625,7 +3625,7 @@
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1778313002488,
+          "updateAt": 1779383185992,
           "createAt": 1777924303057
         }
       },
@@ -3756,7 +3756,7 @@
         "comment": "\"°C\", \"%\", \"lux\"",
         "dataType": "varchar(50)",
         "default": "",
-        "options": 8,
+        "options": 12,
         "ui": {
           "keys": 0,
           "widthName": 60,
@@ -3765,7 +3765,7 @@
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1778313020236,
+          "updateAt": 1779383231880,
           "createAt": 1777924560650
         }
       },

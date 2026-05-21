@@ -109,7 +109,7 @@ COMMENT ON COLUMN datapoint.scaler IS 'z.B. Wh in kWh umzurechnen';
 CREATE TABLE datapoint_type
 (
   datapoint_type_id uuid         NOT NULL DEFAULT uuidv7(),
-  datapoint_type    varchar(255) NOT NULL,
+  datapoint_type    varchar(255) NOT NULL UNIQUE,
   created_at        timestamptz  NOT NULL DEFAULT now(),
   PRIMARY KEY (datapoint_type_id)
 );
@@ -307,7 +307,7 @@ CREATE TABLE tile_type
 CREATE TABLE unit_type
 (
   unit_type_id uuid        NOT NULL DEFAULT uuidv7(),
-  unit_type    varchar(50) NOT NULL,
+  unit_type    varchar(50) NOT NULL UNIQUE,
   PRIMARY KEY (unit_type_id)
 );
 

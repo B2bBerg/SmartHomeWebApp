@@ -67,6 +67,9 @@ services:
       - ../backend/db/Inserts/locationType.sql:/docker-entrypoint-initdb.d/11_locationType.sql:ro
       - ../backend/db/Inserts/modelType.sql:/docker-entrypoint-initdb.d/12_modelType.sql:ro
       - ../backend/db/Inserts/obisDefinition.sql:/docker-entrypoint-initdb.d/13_obisDefinition.sql:ro
+      - ../backend/db/Inserts/testInserts/location.sql:/docker-entrypoint-initdb.d/14_location.sql:ro
+      - ../backend/db/Inserts/testInserts/device.sql:/docker-entrypoint-initdb.d/15_device.sql:ro
+      - ../backend/db/Inserts/testInserts/datapoints.sql:/docker-entrypoint-initdb.d/16_datapoints.sql:ro
     environment:
       POSTGRES_USER: ${POSTGRES_USER?Bitte POSTGRES_USER in .env setzen}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD?Bitte POSTGRES_PASSWORD in .env setzen}
