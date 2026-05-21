@@ -6,6 +6,22 @@ export class PostgresDashboardAdapter extends IDashboardRepository {
         this.pool = pool;
     }
 
+    async getAllDashboards() {
+        const query = `
+            SELECT 
+                app_page_id as id,
+                name,
+                slug,
+                location_id as "locationId",
+                user_id as "userId",
+                sort_order as "sortOrder"
+            FROM app_page
+            ORDER BY sort_order ASC, name ASC
+        `;
+        const result = await this.pool.query(query);
+        return result.rows;
+    }
+
     async getDashboardBySlug(slug) {
         return this._getDashboard("slug", slug);
     }
@@ -81,8 +97,8 @@ export class PostgresDashboardAdapter extends IDashboardRepository {
                     pageId = pageRes.rows[0].app_page_id;
                 } else {
                     const newPageRes = await client.query(
-                        'INSERT INTO app_page (name, slug) VALUES ($1, $2) RETURNING app_page_id',
-                        [dashboardData.name || 'Dashboard', dashboardData.slug]
+                        'INSERT INTO app_page (name, slug, location_id) VALUES ($1, $2, $3) RETURNING app_page_id',
+                        [dashboardData.name || 'Dashboard', dashboardData.slug, dashboardData.locationId || null]
                     );
                     pageId = newPageRes.rows[0].app_page_id;
                 }
@@ -91,8 +107,19 @@ export class PostgresDashboardAdapter extends IDashboardRepository {
             if (!pageId) throw new Error("Dashboard ID oder Slug zwingend erforderlich.");
 
             // Metadaten des Dashboards aktualisieren
+            const updates = [];
+            const params = [];
             if (dashboardData.name) {
-                await client.query('UPDATE app_page SET name = $1 WHERE app_page_id = $2', [dashboardData.name, pageId]);
+                params.push(dashboardData.name);
+                updates.push(`name = $${params.length}`);
+            }
+            if (dashboardData.locationId) {
+                params.push(dashboardData.locationId);
+                updates.push(`location_id = $${params.length}`);
+            }
+            if (updates.length > 0) {
+                params.push(pageId);
+                await client.query(`UPDATE app_page SET ${updates.join(', ')} WHERE app_page_id = $${params.length}`, params);
             }
 
             const activeTileIds = [];
@@ -157,6 +184,25 @@ export class PostgresDashboardAdapter extends IDashboardRepository {
 
             await client.query('COMMIT');
             return await this.getDashboardById(pageId);
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
+    }
+
+    async deleteDashboard(id) {
+        const client = await this.pool.connect();
+        try {
+            await client.query('BEGIN');
+            
+            await client.query('DELETE FROM tile_datapoint WHERE tile_id IN (SELECT tile_id FROM tile WHERE app_page_id = $1)', [id]);
+            await client.query('DELETE FROM tile WHERE app_page_id = $1', [id]);
+            await client.query('DELETE FROM app_page WHERE app_page_id = $1', [id]);
+            
+            await client.query('COMMIT');
+            return true;
         } catch (error) {
             await client.query('ROLLBACK');
             throw error;

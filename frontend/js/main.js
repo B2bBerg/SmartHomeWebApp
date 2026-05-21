@@ -116,9 +116,9 @@ const dashboardHTML = document.getElementById('content').innerHTML;
 function renderDashboard() {
     content.innerHTML = dashboardHTML;
     initDashboardTiles();
-    // re-init overview grid after DOM swap
-    if (typeof TileManager !== 'undefined') TileManager.init();
-    else if (typeof GridManager !== 'undefined') GridManager.init(); // Fallback
+    if (typeof TileManager !== 'undefined') {
+        TileManager.init();
+    }
 }
 
 // ── Devices view ──────────────────────────────────────────────────────────────
