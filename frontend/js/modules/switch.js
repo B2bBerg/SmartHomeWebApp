@@ -43,6 +43,7 @@ const SwitchRenderer = {
     setupEvents(container, type) {
         const tile = container.closest('.dynamic-tile');
         const datapoint = tile?.dataset.datapoint;
+        const primaryDp = (datapoint || '').split(',')[0];
 
         if (type === 'switch-light') {
             const input = container.querySelector('.switch-input');
@@ -51,13 +52,13 @@ const SwitchRenderer = {
             input.onchange = (e) => {
                 const newState = e.target.checked;
                 statusText.textContent = newState ? 'AN' : 'AUS';
-                window.API.setActuatorState(datapoint, newState);
+                window.API.setActuatorState(primaryDp, newState);
             };
         } else if (type === 'switch-shutter') {
             container.querySelectorAll('.shutter-btn').forEach(btn => {
                 btn.onclick = () => {
                     const action = btn.dataset.action;
-                    window.API.setActuatorState(datapoint, action);
+                    window.API.setActuatorState(primaryDp, action);
                 };
             });
         }

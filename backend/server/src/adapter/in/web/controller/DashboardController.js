@@ -22,4 +22,14 @@ export class DashboardController {
         await this.dashboardService.deleteDashboard(req.params.id);
         res.status(204).send();
     }
+
+    async getDashboardTiles(req, res) {
+        const tiles = await this.dashboardService.getDashboardTiles(req.params.id);
+        res.json(tiles);
+    }
+
+    async saveDashboardTiles(req, res) {
+        const tiles = await this.dashboardService.saveDashboardTiles(req.params.id, req.body);
+        res.json(tiles);
+    }
 }

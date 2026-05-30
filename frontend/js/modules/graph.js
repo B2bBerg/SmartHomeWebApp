@@ -4,7 +4,7 @@
 class Graph {
     constructor(container, datapoint, options = {}) {
         this.container = container;
-        this.datapoint = datapoint;
+        this.datapoints = (typeof datapoint === 'string') ? datapoint.split(',').filter(d => d) : (datapoint ? [datapoint] : []);
         
         // Wenn mehrere Datenquellen möglich sind (z.B. ['power', 'voltage', 'current'])
         this.metrics = options.metrics || ['value'];
@@ -64,7 +64,7 @@ class Graph {
                                 <div class="grid-line"></div>
                             </div>
                             <svg class="chart-svg" viewBox="0 0 200 100" preserveAspectRatio="none">
-                                <path class="chart-path" d="" fill="none" stroke="var(--accent-blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                                <g class="chart-paths"></g>
                             </svg>
                             <div class="chart-points-container"></div>
                             <div class="chart-error-message hidden">Fehler beim Laden</div>
@@ -112,7 +112,7 @@ class Graph {
     }
 
     async updateChart() {
-        if (!this.datapoint) return;
+        if (!this.datapoints || this.datapoints.length === 0) return;
         const dateFrom = this.container.querySelector('.chart-date-from');
         const dateTo = this.container.querySelector('.chart-date-to');
         const errorMsg = this.container.querySelector('.chart-error-message');
@@ -122,22 +122,28 @@ class Graph {
         if (this.unit === undefined) {
             try {
                 const sensors = await window.API.getSensors();
-                const sensor = sensors.find(s => s.id === this.datapoint);
+                const sensor = sensors.find(s => s.id === this.datapoints[0]);
                 this.unit = sensor && sensor.unit ? sensor.unit : '';
             } catch (e) { this.unit = ''; }
         }
 
         try {
             // Livedaten zentral über die API beziehen
-            const sensorValues = await window.API.getSensorData(this.datapoint);
+            const promises = this.datapoints.map(dp => window.API.getSensorData(dp).catch(() => []));
+            const sensorValuesArray = await Promise.all(promises);
 
             // Zeitfenster berechnen (Immer volle 24h mit Überhang)
             let now = new Date();
             
-            if (sensorValues && sensorValues.length > 0) {
-                const lastEntry = sensorValues[sensorValues.length - 1];
-                if (lastEntry.timestamp) now = new Date(lastEntry.timestamp);
-            }
+            sensorValuesArray.forEach(sensorValues => {
+                if (sensorValues && sensorValues.length > 0) {
+                    const lastEntry = sensorValues[sensorValues.length - 1];
+                    if (lastEntry.timestamp) {
+                        const tDate = new Date(lastEntry.timestamp);
+                        if (tDate > now) now = tDate;
+                    }
+                }
+            });
 
             // Wir runden "now" auf den Beginn des Folgetags (00:00 Uhr) um volle Tage zu haben
             const exactEnd = new Date(now);
@@ -158,16 +164,21 @@ class Graph {
             const startTime = new Date(exactStart.getTime() - paddingMs);
             const endTime = new Date(exactEnd.getTime() + paddingMs);
 
-            // Daten filtern und den angefragten Wert (aktive Metrik) extrahieren
-            const filteredData = sensorValues
-                .filter(entry => {
-                    const dTime = new Date(entry.timestamp);
-                    return dTime >= startTime && dTime <= endTime;
-                })
-                .map(entry => ({
-                    val: entry[this.activeMetric] !== undefined ? entry[this.activeMetric] : entry.value,
-                    timestamp: entry.timestamp
-                }));
+            let allFilteredData = [];
+            
+            sensorValuesArray.forEach((sensorValues) => {
+                if (!sensorValues) return;
+                const filteredData = sensorValues
+                    .filter(entry => {
+                        const dTime = new Date(entry.timestamp);
+                        return dTime >= startTime && dTime <= endTime;
+                    })
+                    .map(entry => ({
+                        val: entry[this.activeMetric] !== undefined ? entry[this.activeMetric] : entry.value,
+                        timestamp: entry.timestamp
+                    }));
+                if (filteredData.length > 0) allFilteredData.push(filteredData);
+            });
 
             // Header Beschriftung (exakte Tage ohne Überhang)
             const displayEnd = new Date(exactEnd.getTime() - 1);
@@ -243,20 +254,20 @@ class Graph {
                 });
             }
 
-            if (filteredData.length === 0) {
+            if (allFilteredData.length === 0) {
                 if (errorMsg) {
                     errorMsg.textContent = "Keine Daten vorhanden";
                     errorMsg.classList.remove('hidden');
                 }
                 if (svg) svg.style.opacity = '0.1';
-                this.drawPath([]);
+                this.drawPaths([]);
                 return;
             }
 
             if (errorMsg) errorMsg.classList.add('hidden');
             if (svg) svg.style.opacity = '1';
 
-            this.drawPath(filteredData);
+            this.drawPaths(allFilteredData);
         } catch (error) {
             console.error("Fehler beim Laden der Chart-Daten:", error);
             if (errorMsg) {
@@ -267,19 +278,19 @@ class Graph {
         }
     }
 
-    drawPath(data) {
-        const pathEl = this.container.querySelector('.chart-path');
+    drawPaths(dataArray) {
+        const pathsGroup = this.container.querySelector('.chart-paths');
         const pointsContainer = this.container.querySelector('.chart-points-container');
-        if (!pathEl) return;
+        if (!pathsGroup) return;
         if (pointsContainer) pointsContainer.innerHTML = '';
+        pathsGroup.innerHTML = '';
 
-        if (!data || !data.length) {
-            pathEl.setAttribute('d', '');
+        if (!dataArray || !dataArray.length) {
             return;
         }
         
         const width = 200, height = 100;
-        const vals = data.map(d => d.val);
+        const vals = dataArray.flatMap(series => series.map(d => d.val));
         const max = Math.max(...vals);
         const min = Math.min(...vals);
         
@@ -299,32 +310,48 @@ class Graph {
         if (yMidEl) yMidEl.textContent = ((renderMax + renderMin) / 2).toFixed(1) + u;
         if (yMinEl) yMinEl.textContent = renderMin.toFixed(1) + u;
 
-        const pathPoints = data.map((d, i) => {
-            const x = (i / Math.max(1, data.length - 1)) * width;
-            const y = height - ((d.val - renderMin) / valRange) * height;
+        const colors = ['var(--accent-blue)', 'var(--accent-green)', 'var(--accent-yellow)', 'var(--accent-red)', '#cba6f7', '#f38ba8'];
+
+        dataArray.forEach((data, index) => {
+            if (!data || !data.length) return;
+            const color = colors[index % colors.length];
+
+            const pathPoints = data.map((d, i) => {
+                const x = (i / Math.max(1, data.length - 1)) * width;
+                const y = height - ((d.val - renderMin) / valRange) * height;
+                
+                if (pointsContainer) {
+                    const px = (i / Math.max(1, data.length - 1)) * 100;
+                    const py = ((d.val - renderMin) / valRange) * 100;
+                    
+                    const pt = document.createElement('div');
+                    pt.className = 'chart-data-point';
+                    pt.style.left = `${px}%`;
+                    pt.style.bottom = `${py}%`;
+                    pt.style.borderColor = color;
+
+                    const dTime = new Date(d.timestamp);
+                    const dateStr = dTime.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    const timeStr = dTime.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+                    
+                    pt.title = `Serie ${index + 1}\n${dateStr} ${timeStr}\nWert: ${d.val}${u}`;
+                    pointsContainer.appendChild(pt);
+                }
+
+                return `${x},${y}`;
+            });
+
+            const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            pathEl.setAttribute('class', 'chart-path');
+            pathEl.setAttribute('d', `M ${pathPoints.join(' L ')}`);
+            pathEl.setAttribute('fill', 'none');
+            pathEl.setAttribute('stroke', color);
+            pathEl.setAttribute('stroke-width', '1.5');
+            pathEl.setAttribute('stroke-linecap', 'round');
+            pathEl.setAttribute('stroke-linejoin', 'round');
             
-            // HTML Hover-Punkte generieren
-            if (pointsContainer) {
-                const px = (i / Math.max(1, data.length - 1)) * 100;
-                const py = ((d.val - renderMin) / valRange) * 100;
-                
-                const pt = document.createElement('div');
-                pt.className = 'chart-data-point';
-                pt.style.left = `${px}%`;
-                pt.style.bottom = `${py}%`;
-
-                const dTime = new Date(d.timestamp);
-                const dateStr = dTime.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric' });
-                const timeStr = dTime.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-                
-                pt.title = `${dateStr} ${timeStr}\nWert: ${d.val}${u}`;
-                pointsContainer.appendChild(pt);
-            }
-
-            return `${x},${y}`;
+            pathsGroup.appendChild(pathEl);
         });
-
-        pathEl.setAttribute('d', `M ${pathPoints.join(' L ')}`);
     }
 }
 

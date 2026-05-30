@@ -1,19 +1,29 @@
 import { fetchApi } from './core.js';
 
 export const DashboardAPI = {
+    // --- Dashboard Metadaten (app_page) ---
     getAllDashboards: async () => {
         return await fetchApi(`/dashboard`);
     },
 
-    getDashboard: async (id = 'main') => {
-        return await fetchApi(`/dashboard/${encodeURIComponent(id)}`);
+    getDashboard: async (slug) => {
+        return await fetchApi(`/dashboard/${encodeURIComponent(slug)}`);
     },
 
-    saveDashboard: async (id = 'main', dashboardState) => {
-        return await fetchApi(`/dashboard/${encodeURIComponent(id)}`, { method: 'POST', body: JSON.stringify(dashboardState) });
+    saveDashboard: async (slug, dashboardData) => {
+        return await fetchApi(`/dashboard/${encodeURIComponent(slug)}`, { method: 'POST', body: JSON.stringify(dashboardData) });
     },
 
-    deleteDashboard: async (id) => {
-        return await fetchApi(`/dashboard/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    deleteDashboard: async (slug) => {
+        return await fetchApi(`/dashboard/${encodeURIComponent(slug)}`, { method: 'DELETE' });
+    },
+
+    // --- Subdashboards / Tiles für das Grid-System ---
+    getDashboardTiles: async (slug = 'main') => {
+        return await fetchApi(`/dashboard/${encodeURIComponent(slug)}/tiles`);
+    },
+
+    saveDashboardTiles: async (slug = 'main', tilesState) => {
+        return await fetchApi(`/dashboard/${encodeURIComponent(slug)}/tiles`, { method: 'POST', body: JSON.stringify(tilesState) });
     }
 };

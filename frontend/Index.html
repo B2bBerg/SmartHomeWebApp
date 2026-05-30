@@ -42,12 +42,14 @@
 <body>
     <header class="header">
         <div class="header-left">
-            <img src="assets/alarm-clock-svgrepo-com.svg" alt="SmartHome Logo" class="logo">
+            <button id="sidebar-toggle" class="header-icon" title="Menü">
+                <img src="assets/icons/menu-svgrepo-com.svg" alt="Menü">
+            </button>
+            <span class="header-icon not-implemented" title="Bald verfügbar"><img src="assets/icons/user-svgrepo-com.svg" alt="Benutzerprofil"></span>
+            <span class="header-icon not-implemented" title="Bald verfügbar"><img src="assets/icons/message-square-notification-svgrepo-com.svg" alt="Benachrichtigungen"></span>
         </div>
         <div class="header-right">
-            <span class="header-icon not-implemented" title="Bald verfügbar"><img src="assets/icons/message-square-notification-svgrepo-com.svg" alt="Benachrichtigungen"></span>
-            <span class="header-icon not-implemented" title="Bald verfügbar"><img src="assets/icons/user-svgrepo-com.svg" alt="Benutzerprofil"></span>
-            <span class="header-icon not-implemented" title="Bald verfügbar"><img src="assets/icons/menu-svgrepo-com.svg" alt="Menü"></span>
+            <img src="assets/alarm-clock-svgrepo-com.svg" alt="SmartHome Logo" class="logo">
         </div>
     </header>
     <nav id="sidebar">
@@ -64,9 +66,6 @@
             <!-- OPEN - HomeServerStatus -->
             <li title="Einstellungen" class="not-implemented"><span class="icon"><img src="assets/icons/gear-svgrepo-com.svg" alt=""></span><a href="#">Einstellungen</a></li>
         </ul>
-        <button id="sidebar-toggle" title="Seitenleiste umschalten">
-            <span class="icon"><img src="assets/icons/arrow-narrow-left-alignment-svgrepo-com.svg" alt="umschalten"></span>
-        </button>
     </nav>
 
     <main id="content">
@@ -81,12 +80,10 @@
             <!-- OPEN - HomeServerStatus -->
             <button id="Settings" class="tile dashboard-tile not-implemented"><img src="assets/icons/gear-svgrepo-com.svg" alt="">Einstellungen</button>
         </div>
-        <div class="overview-header">
-            <h2>Übersicht</h2>
-            <button id="edit-mode-btn" class="btn-outline" title="Layout bearbeiten"><img src="assets/icons/gear-svgrepo-com.svg" alt="edit">Bearbeiten</button>
-            <button id="add-tile-btn" class="btn-add" title="Kachel hinzufügen"><span><img src="assets/icons/grid-plus-svgrepo-com.svg" alt="add"></span> Kachel hinzufügen</button>
+        <div style="margin-top: 2rem;">
+            <p class="page-placeholder" style="text-align: left; margin: 0;">Hier werden künftig globale Systemdaten, Metriken oder Warnungen angezeigt.</p>
         </div>
-        <div class="overview-container"></div>
+    </main>
 
         <div id="tile-modal" class="tile-modal hidden">
             <div class="tile-modal-box">
@@ -106,12 +103,6 @@
                     <span id="add-size-display" class="size-display">1 &times; 1</span>
                 </div>
                 <div class="settings-group">
-                    <label>Datenpunkt</label>
-                    <select id="add-tile-datapoint">
-                        <!-- API: Options dynamically injected via overview.js -->
-                    </select>
-                </div>
-                <div class="settings-group">
                     <label>Inhalt</label>
                     <select id="add-tile-content">
                         <option value="">&mdash; Keine &mdash;</option>
@@ -119,8 +110,16 @@
                         <option value="temp-graph">Temperatur &ndash; Graph</option>
                         <option value="energy-current">Energie &ndash; Aktueller Wert</option>
                         <option value="energy-graph">Energie &ndash; Graph</option>
+                        <option value="device-graph">Graph &ndash; Alle Metriken eines Geräts</option>
+                        <option value="type-graph">Graph &ndash; Alle Metriken eines Typs</option>
                         <option value="switch-light">Schalter &ndash; Licht</option>
                         <option value="switch-shutter">Schalter &ndash; Rollladen</option>
+                    </select>
+                </div>
+                <div class="settings-group">
+                    <label>Datenpunkt</label>
+                    <select id="add-tile-datapoint" size="1" style="height: auto;">
+                        <!-- API: Options dynamically injected via tile.js -->
                     </select>
                 </div>
                 <div class="tile-modal-actions">
@@ -138,13 +137,6 @@
                     <input id="settings-tile-label" type="text">
                 </div>
                 <div class="settings-group">
-                    <label>Datenpunkt</label>
-                    <select id="settings-tile-datapoint">
-                        <!-- API: Options dynamically injected via overview.js -->
-                    </select>
-                </div>
-                <div class="settings-group">
-                    <!-- API: Filter content options based on selected datapoint type -->
                     <label>Inhalt</label>
                     <select id="settings-tile-content">
                         <option value="">&mdash; Keine &mdash;</option>
@@ -152,8 +144,16 @@
                         <option value="temp-graph">Temperatur &ndash; Graph</option>
                         <option value="energy-current">Energie &ndash; Aktueller Wert</option>
                         <option value="energy-graph">Energie &ndash; Graph</option>
+                        <option value="device-graph">Graph &ndash; Alle Metriken eines Geräts</option>
+                        <option value="type-graph">Graph &ndash; Alle Metriken eines Typs</option>
                         <option value="switch-light">Schalter &ndash; Licht</option>
                         <option value="switch-shutter">Schalter &ndash; Rollladen</option>
+                    </select>
+                </div>
+                <div class="settings-group">
+                    <label>Datenpunkt</label>
+                    <select id="settings-tile-datapoint" size="1" style="height: auto;">
+                        <!-- API: Options dynamically injected via tile.js -->
                     </select>
                 </div>
                 <div class="tile-modal-actions">
@@ -163,7 +163,6 @@
                 </div>
             </div>
         </div>
-        </main>
 
     <!-- API -->
     <script type="module" src="js/api.js"></script>
