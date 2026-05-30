@@ -2,39 +2,16 @@
 const sidebar = document.getElementById('sidebar');
 const toggle = document.getElementById('sidebar-toggle');
 
-const collapsedWidth = parseInt(
-    getComputedStyle(document.documentElement).getPropertyValue('--sidebar-collapsed-width')
-);
-
-let expandedWidth = null;
-
-function setSidebarWidth(width) {
-    sidebar.style.width = width + 'px';
-    document.documentElement.style.setProperty('--sidebar-width', width + 'px');
-}
-
-function measureExpandedWidth() {
-    sidebar.style.width = 'max-content';
-    expandedWidth = sidebar.getBoundingClientRect().width;
-    setSidebarWidth(expandedWidth);
-}
-
-const toggleImg = toggle.querySelector('img');
-const ICON_EXPANDED = 'assets/icons/arrow-narrow-left-alignment-svgrepo-com.svg';
-const ICON_COLLAPSED = 'assets/icons/arrow-narrow-right-move-svgrepo-com.svg';
-
 toggle.addEventListener('click', () => {
-    const isCollapsed = sidebar.classList.toggle('collapsed');
-    setSidebarWidth(isCollapsed ? collapsedWidth : expandedWidth);
-    toggleImg.src = isCollapsed ? ICON_COLLAPSED : ICON_EXPANDED;
+    sidebar.classList.toggle('open');
 });
 
-measureExpandedWidth();
-
-// Sidebar collapsed by default
-sidebar.classList.add('collapsed');
-setSidebarWidth(collapsedWidth);
-toggleImg.src = ICON_COLLAPSED;
+// Sidebar schliessen, wenn ausserhalb geklickt wird
+document.addEventListener('click', (e) => {
+    if (sidebar.classList.contains('open') && !sidebar.contains(e.target) && !toggle.contains(e.target)) {
+        sidebar.classList.remove('open');
+    }
+});
 
 // Dashboard tiles navigation ────────────────────────────────────────────────────────────
 const DASHBOARD_TILE_MAP = {
@@ -102,11 +79,13 @@ window.renderView = function(view) {
 };
 
 sidebar.querySelectorAll('li[title]').forEach(li => {
-    li.addEventListener('click', () => {
+    li.addEventListener('click', (e) => {
+        e.preventDefault(); // Verhindert, dass der <a href="#"> Link die URL wieder zurücksetzt
         const viewKey = Object.keys(VIEW_TITLE_MAP).find(k => VIEW_TITLE_MAP[k] === li.title) || 'dashboard';
         if (window.Router) {
             window.Router.navigate(`#${viewKey}`);
         }
+        sidebar.classList.remove('open'); // Schliesst die Navigation automatisch nach einem Klick
     });
 });
 
@@ -116,9 +95,6 @@ const dashboardHTML = document.getElementById('content').innerHTML;
 function renderDashboard() {
     content.innerHTML = dashboardHTML;
     initDashboardTiles();
-    if (typeof TileManager !== 'undefined') {
-        TileManager.init();
-    }
 }
 
 // ── Devices view ──────────────────────────────────────────────────────────────

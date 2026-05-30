@@ -27,17 +27,7 @@ body {
     background: var(--bg-crust);
 }
 
-#sidebar {
-    position: fixed;
-    top: 52px;
-    left: 0;
-    height: calc(100vh - 52px);
-    min-height: unset;
-}
-
 #content {
     flex: 1;
-    padding: 2rem 2rem 2rem 32px;
-    margin-left: var(--sidebar-width, 200px);
-    transition: margin-left 0.25s ease;
+    padding: 2rem;
 }

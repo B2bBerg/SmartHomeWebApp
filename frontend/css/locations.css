@@ -204,3 +204,66 @@
     color: var(--white);
     box-shadow: 0 4px 12px rgba(var(--shadow-color-rgb), 0.2);
 }
+
+/* --- Tree View Styling (Baumstruktur) --- */
+.tree-root {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.tree-item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.tree-children {
+    margin-left: 1rem;
+    padding-left: 0.8rem;
+    border-left: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Horizontale Verbindungslinien zu den Knoten */
+.tree-children > .tree-item::before,
+.tree-children > .tree-add-btn::before {
+    content: "";
+    position: absolute;
+    left: -0.8rem;
+    top: 17px;
+    width: 0.8rem;
+    height: 1px;
+    background: var(--border-color);
+}
+
+/* Versteckt das überschüssige Ende der vertikalen Linie nach dem letzten Element */
+.tree-children > .tree-item:last-child::after,
+.tree-children > .tree-add-btn:last-child::after {
+    content: "";
+    position: absolute;
+    left: -0.85rem;
+    top: 18px;
+    bottom: 0;
+    width: 2px;
+    background: var(--bg-mantle);
+}
+
+.tree-add-btn {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.4rem 0.5rem;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    transition: background 0.2s, color 0.2s;
+    margin: 2px 0;
+    position: relative;
+}
+
+.tree-add-btn:hover {
+    background: var(--palette-surface0);
+    color: var(--text-primary);
+}

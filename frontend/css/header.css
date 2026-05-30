@@ -13,13 +13,19 @@
     border-bottom: 1px solid var(--bg-surface);
 }
 
-.header-left .logo {
-    width: 20px;
-    height: 20px;
+.logo {
+    width: 24px;
+    height: 24px;
     filter: invert(1);
 }
 
 .header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.header-left {
     display: flex;
     align-items: center;
     gap: 0.25rem;
@@ -34,6 +40,8 @@
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s ease;
+    background: transparent;
+    border: none;
 }
 
 .header-icon:hover {
