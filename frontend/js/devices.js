@@ -256,8 +256,14 @@ const DeviceManager = {
                     window.Dialog.alert('Fehler', 'Bitte alle Pflichtfelder (*) ausfüllen.', true);
                     return false;
                 }
-                // Zusätzliche Validierung für die Bus-Adresse
-                if (!res.address.includes(':')) {
+                // MAC- oder Bus-Adresse Validierung
+                if (res.address.includes(':')) {
+                    const macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/i;
+                    if (!macRegex.test(res.address)) {
+                        window.Dialog.alert('Ungültige Eingabe', 'Die MAC-Adresse hat ein ungültiges Format (Erwartet: z.B. AA:BB:CC:DD:EE:FF).', true);
+                        return false;
+                    }
+                } else {
                     const busAddressNum = parseInt(res.address);
                     if (isNaN(busAddressNum)) {
                         window.Dialog.alert('Ungültige Eingabe', 'Die Bus-Adresse ist ungültig. Bitte geben Sie eine Zahl (z.B. 5) oder einen Hex-Wert (z.B. 0xFF) ein.', true);
@@ -345,8 +351,14 @@ const DeviceManager = {
                     window.Dialog.alert('Fehler', 'Bitte alle Pflichtfelder (*) ausfüllen.', true);
                     return false;
                 }
-                // Zusätzliche Validierung für die Bus-Adresse
-                if (!res.address.includes(':')) {
+                // MAC- oder Bus-Adresse Validierung
+                if (res.address.includes(':')) {
+                    const macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/i;
+                    if (!macRegex.test(res.address)) {
+                        window.Dialog.alert('Ungültige Eingabe', 'Die MAC-Adresse hat ein ungültiges Format (Erwartet: z.B. AA:BB:CC:DD:EE:FF).', true);
+                        return false;
+                    }
+                } else {
                     const busAddressNum = parseInt(res.address);
                     if (isNaN(busAddressNum)) {
                         window.Dialog.alert('Ungültige Eingabe', 'Die Bus-Adresse ist ungültig. Bitte geben Sie eine Zahl (z.B. 5) oder einen Hex-Wert (z.B. 0xFF) ein.', true);
@@ -366,14 +378,19 @@ const DeviceManager = {
             const updatePayload = {
                 device_name: result.name,
                 model_type_id: result.modelTypeId,
+                serial_number: row.serial_number, // WICHTIG: Darf nicht überschrieben werden!
                 location_id: result.location,
                 bus_type_id: result.busType,
                 mac_address: isMac ? result.address : null,
-                bus_address: !isMac ? parseInt(result.address) : null
+                bus_address: !isMac ? parseInt(result.address) : null,
+                battery_level: row.battery,
+                signal_level: row.signal,
+                status: row.status,
+                metadata: row.metadata
             };
 
             try { 
-                await window.API.updateDevice(row.id, { ...row, ...updatePayload }); 
+                await window.API.updateDevice(row.id, updatePayload); 
                 await this.loadData(); // Lade die Daten neu, um die Änderungen zu sehen
                 this.triggerSearch(this.table.data.find(d => d.id === row.id)); 
             } catch (err) { 
@@ -413,7 +430,7 @@ const DeviceManager = {
         // Bereite die Daten für den Bulk-Scan vor
         const devicesToScan = this.table.data.map(row => ({
             address: row.macAddress || row.busAddress || '',
-            busType: row.busType || ''
+            busType: row.busTypeName || row.bus_type_id || ''
         }));
 
         // Führe den Bulk-Scan aus
@@ -434,7 +451,20 @@ const DeviceManager = {
                             if (foundDevice.signal !== undefined) originalDeviceRow.signal = foundDevice.signal;
                             if (foundDevice.channels) originalDeviceRow.channels = foundDevice.channels;
                         }
-                        window.API.updateDevice(originalDeviceRow.id, originalDeviceRow);
+                            const updatePayload = {
+                                device_name: originalDeviceRow.name,
+                                model_type_id: originalDeviceRow.modelTypeId,
+                                serial_number: originalDeviceRow.serial_number,
+                                location_id: originalDeviceRow.location_id,
+                                bus_type_id: originalDeviceRow.bus_type_id,
+                                mac_address: originalDeviceRow.macAddress,
+                                bus_address: originalDeviceRow.busAddress,
+                                battery_level: originalDeviceRow.battery,
+                                signal_level: originalDeviceRow.signal,
+                                status: originalDeviceRow.status,
+                                metadata: originalDeviceRow.metadata
+                            };
+                            window.API.updateDevice(originalDeviceRow.id, updatePayload);
                     }
                 });
             } catch (e) {
@@ -448,7 +478,7 @@ const DeviceManager = {
     async executeDeviceScan(deviceRow) {
         try {
             const addr = deviceRow.macAddress || deviceRow.busAddress || '';
-            const bType = deviceRow.busType || '';
+            const bType = deviceRow.busTypeName || deviceRow.bus_type_id || '';
             const found = await window.API.scanDevice(addr, bType);
             
             if (found) {
@@ -464,7 +494,20 @@ const DeviceManager = {
             deviceRow.status = 'not_reachable';
         }
         
-        await window.API.updateDevice(deviceRow.id, deviceRow);
+        const updatePayload = {
+            device_name: deviceRow.name,
+            model_type_id: deviceRow.modelTypeId,
+            serial_number: deviceRow.serial_number,
+            location_id: deviceRow.location_id,
+            bus_type_id: deviceRow.bus_type_id,
+            mac_address: deviceRow.macAddress,
+            bus_address: deviceRow.busAddress,
+            battery_level: deviceRow.battery,
+            signal_level: deviceRow.signal,
+            status: deviceRow.status,
+            metadata: deviceRow.metadata
+        };
+        await window.API.updateDevice(deviceRow.id, updatePayload);
         this.table._render(); // Aktualisiert die Tabelle ressourcenschonend ohne Pagination-Verlust
     }
 };

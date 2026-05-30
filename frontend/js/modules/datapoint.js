@@ -41,12 +41,9 @@ class DatapointManager {
 
     async loadData() {
         try {
-            const [datapoints, devices] = await Promise.all([window.API.getDatapoints(), window.API.getDevices()]);
-            const filteredDPs = datapoints.filter(dp => {
-                if (this.mode === 'actuator') return dp.isActuator || dp.canWrite;
-                return dp.isSensor || (dp.canRead && !dp.canWrite);
-            });
-            const mergedData = filteredDPs.map(dp => {
+            const fetchFn = this.mode === 'actuator' ? window.API.getActuators : window.API.getSensors;
+            const [typeSpecificDPs, devices] = await Promise.all([fetchFn(), window.API.getDevices()]);
+            const mergedData = typeSpecificDPs.map(dp => {
                 const dev = devices.find(d => d.id === dp.deviceId) || {};
                 return { ...dev, ...dp, id: dp.id, deviceName: dev.name };
             });
@@ -71,15 +68,17 @@ class DatapointManager {
     }
 
     async getFormDependencies(excludeRowId = null) {
-        let devices = [], locations = [], usedPortsMap = {};
+        let devices = [], dpTypes = [], unTypes = [], usedPortsMap = {};
         try {
-            const [devs, datapoints, locs] = await Promise.all([
+            const [devs, datapoints, types, units] = await Promise.all([
                 window.API.getDevices(),
                 window.API.getDatapoints(),
-                window.API.getLocations()
+                window.API.getDatapointTypes ? window.API.getDatapointTypes() : [],
+                window.API.getUnitTypes ? window.API.getUnitTypes() : []
             ]);
             devices = devs;
-            locations = locs;
+            dpTypes = types;
+            unTypes = units;
             datapoints.forEach(dp => {
                 if (dp.deviceId && dp.channel && dp.id !== excludeRowId) {
                     if (!usedPortsMap[dp.deviceId]) usedPortsMap[dp.deviceId] = new Set();
@@ -87,21 +86,7 @@ class DatapointManager {
                 }
             });
         } catch (err) { console.error("Konnte Daten nicht laden", err); }
-        return { devices, locations, usedPortsMap };
-    }
-
-    buildLocationOptions(locations) {
-        let locOptions = [{ value: '', label: '-- Nicht zugewiesen --' }];
-        locations.forEach(bldg => {
-            locOptions.push({ value: bldg.name, label: `🏢 ${bldg.name}` });
-            (bldg.floors || []).forEach(floor => {
-                locOptions.push({ value: floor.name, label: `&nbsp;&nbsp;🟰 ${floor.name}` });
-                (floor.rooms || []).forEach(room => {
-                    locOptions.push({ value: room.name, label: `&nbsp;&nbsp;&nbsp;&nbsp;🚪 ${room.name}` });
-                });
-            });
-        });
-        return locOptions;
+        return { devices, dpTypes, unTypes, usedPortsMap };
     }
 
     getValidDevices(devices, usedPortsMap) {
@@ -121,22 +106,28 @@ class DatapointManager {
     }
 
     async showAddModal() {
-        const { devices, locations, usedPortsMap } = await this.getFormDependencies();
-        const locOptions = this.buildLocationOptions(locations);
+        const { devices, dpTypes, unTypes, usedPortsMap } = await this.getFormDependencies();
         const validDevices = this.getValidDevices(devices, usedPortsMap);
 
         const devOptions = [{ value: '', label: '-- Bitte wählen --' }];
         validDevices.forEach(d => devOptions.push({ value: d.id, label: `${d.name} (${d.id.split('-')[0]}...)` }));
         
+        const typeOptions = [{ value: '', label: '-- Typ wählen --' }];
+        dpTypes.forEach(t => typeOptions.push({ value: t.id, label: t.name }));
+
+        const unitOptions = [{ value: '', label: '-- Einheit wählen --' }];
+        unTypes.forEach(u => unitOptions.push({ value: u.id, label: u.name }));
+
         const result = await window.Dialog.formWithTable({
             title: `Neuen ${this.title} erfassen`,
             saveText: 'Hinzufügen',
             fields: [
                 { id: 'name', label: 'Name *', placeholder: `Eigener Name (z.B. ${this.mode === 'actuator' ? 'Deckenlampe' : 'Temperatur Wohnzimmer'})`, fullWidth: true },
-                { id: 'location', label: 'Standort', type: 'select', options: locOptions, fullWidth: true },
+                { id: 'datapointTypeId', label: 'Daten-Typ *', type: 'select', options: typeOptions, fullWidth: false },
+                { id: 'unitTypeId', label: 'Einheit *', type: 'select', options: unitOptions, fullWidth: false },
                 { id: 'deviceSearch', label: 'Hardware filtern 🔍', placeholder: 'Name oder MAC/Bus-Adresse...', fullWidth: true },
-                { id: 'address', label: 'Master-Gerät (Hardware) *', type: 'select', options: devOptions, fullWidth: false },
-                { id: 'ioport', label: 'IO-Port (Channel) *', type: 'select', options: [{value: '', label: '-- Zuerst Gerät wählen --'}], fullWidth: false }
+                { id: 'deviceId', label: 'Master-Gerät (Hardware) *', type: 'select', options: devOptions, fullWidth: false },
+                { id: 'channel', label: 'IO-Port (Kanal) *', type: 'select', options: [{value: '', label: '-- Zuerst Gerät wählen --'}], fullWidth: false }
             ],
             tables: [
                 {
@@ -163,15 +154,15 @@ class DatapointManager {
                     ],
                     data: [],
                     onRowSelect: (selectedRow, fields) => {
-                        fields.address.value = selectedRow.id;
-                        fields.address.dispatchEvent(new Event('change'));
+                        fields.deviceId.value = selectedRow.id;
+                        fields.deviceId.dispatchEvent(new Event('change'));
                     }
                 }
             ],
             onReady: (modal, formElements, updateTableData, switchToTab, filterTable) => {
                 const searchInput = formElements['deviceSearch'];
-                const devSelect = formElements['address'];
-                const portSelect = formElements['ioport'];
+                const devSelect = formElements['deviceId'];
+                const portSelect = formElements['channel'];
 
                 const applyFilter = () => {
                     const query = searchInput.value.trim().toLowerCase();
@@ -215,7 +206,7 @@ class DatapointManager {
                 });
             },
             validate: (res) => {
-                if (!res.name || !res.address || !res.ioport) {
+                if (!res.name || !res.deviceId || !res.channel || !res.datapointTypeId || !res.unitTypeId) {
                     window.Dialog.alert('Fehler', 'Bitte alle Pflichtfelder (*) ausfüllen.', true);
                     return false;
                 }
@@ -225,16 +216,21 @@ class DatapointManager {
 
         if (result) {
             const newEntry = {
-                deviceId: result.address, name: result.name, location: result.location, channel: result.ioport,
-                canRead: true, canWrite: this.mode === 'actuator', 
+                deviceId: result.deviceId, name: result.name, channel: result.channel,
+                datapointTypeId: result.datapointTypeId, unitTypeId: result.unitTypeId,
                 isSensor: this.mode === 'sensor', isActuator: this.mode === 'actuator', 
-                type: this.title, unit: '', status: 'active', updated: 'jetzt', timestamp: new Date().toISOString()
+                status: 'active', updated: 'jetzt', timestamp: new Date().toISOString()
             };
-            if (this.mode === 'actuator') newEntry.state = '-';
-            else newEntry.value = '-';
             
-            const devObj = devices.find(d => d.id === result.address);
-            if (devObj) newEntry.deviceName = devObj.name;
+            const devObj = devices.find(d => d.id === result.deviceId);
+            if (devObj) {
+                newEntry.deviceName = devObj.name;
+                newEntry.location = devObj.locationName;
+            }
+            const typeObj = dpTypes.find(t => t.id === result.datapointTypeId);
+            if (typeObj) newEntry.type = typeObj.name;
+            const unitObj = unTypes.find(u => u.id === result.unitTypeId);
+            if (unitObj) newEntry.unit = unitObj.name;
                 
             try {
                 const res = await window.API.addDatapoint(newEntry);
@@ -247,22 +243,28 @@ class DatapointManager {
     }
 
     async showEditModal(row) {
-        const { devices, locations, usedPortsMap } = await this.getFormDependencies(row.id);
-        const locOptions = this.buildLocationOptions(locations);
+        const { devices, dpTypes, unTypes, usedPortsMap } = await this.getFormDependencies(row.id);
         const validDevices = this.getValidDevices(devices, usedPortsMap);
 
         const devOptions = [{ value: '', label: '-- Bitte wählen --' }];
         validDevices.forEach(d => devOptions.push({ value: d.id, label: `${d.name} (${d.id.split('-')[0]}...)` }));
+
+        const typeOptions = [{ value: '', label: '-- Typ wählen --' }];
+        dpTypes.forEach(t => typeOptions.push({ value: t.id, label: t.name }));
+
+        const unitOptions = [{ value: '', label: '-- Einheit wählen --' }];
+        unTypes.forEach(u => unitOptions.push({ value: u.id, label: u.name }));
 
         const result = await window.Dialog.formWithTable({
             title: `${this.title} bearbeiten`,
             saveText: 'Speichern',
             fields: [
                 { id: 'name', label: 'Name *', value: row.name || '', fullWidth: true },
-                { id: 'location', label: 'Standort', type: 'select', value: row.location, options: locOptions, fullWidth: true },
+                { id: 'datapointTypeId', label: 'Daten-Typ *', type: 'select', value: row.datapointTypeId, options: typeOptions, fullWidth: false },
+                { id: 'unitTypeId', label: 'Einheit *', type: 'select', value: row.unitTypeId, options: unitOptions, fullWidth: false },
                 { id: 'deviceSearch', label: 'Hardware filtern 🔍', placeholder: 'Name oder MAC/Bus-Adresse...', fullWidth: true },
-                { id: 'address', label: 'Master-Gerät (Hardware) *', type: 'select', value: row.deviceId, options: devOptions, fullWidth: false },
-                { id: 'ioport', label: 'IO-Port (Channel) *', type: 'select', value: row.channel, options: [{value: row.channel || '', label: row.channel || '-- Zuerst Gerät wählen --'}], fullWidth: false }
+                { id: 'deviceId', label: 'Master-Gerät (Hardware) *', type: 'select', value: row.deviceId, options: devOptions, fullWidth: false },
+                { id: 'channel', label: 'IO-Port (Kanal) *', type: 'select', value: row.channel, options: [{value: row.channel || '', label: row.channel || '-- Zuerst Gerät wählen --'}], fullWidth: false }
             ],
             tables: [
                 {
@@ -289,15 +291,15 @@ class DatapointManager {
                     ],
                     data: [],
                     onRowSelect: (selectedRow, fields) => {
-                        fields.address.value = selectedRow.id;
-                        fields.address.dispatchEvent(new Event('change'));
+                        fields.deviceId.value = selectedRow.id;
+                        fields.deviceId.dispatchEvent(new Event('change'));
                     }
                 }
             ],
             onReady: (modal, formElements, updateTableData, switchToTab, filterTable) => {
                 const searchInput = formElements['deviceSearch'];
-                const devSelect = formElements['address'];
-                const portSelect = formElements['ioport'];
+                const devSelect = formElements['deviceId'];
+                const portSelect = formElements['channel'];
                 
                 const applyFilter = () => {
                     const query = searchInput.value.trim().toLowerCase();
@@ -354,7 +356,7 @@ class DatapointManager {
                 }
             },
             validate: (res) => {
-                if (!res.name || !res.address || !res.ioport) {
+                if (!res.name || !res.deviceId || !res.channel || !res.datapointTypeId || !res.unitTypeId) {
                     window.Dialog.alert('Fehler', 'Bitte alle Pflichtfelder (*) ausfüllen.', true);
                     return false;
                 }
@@ -364,12 +366,20 @@ class DatapointManager {
 
         if (result) {
             row.name = result.name; 
-            row.location = result.location; 
-            row.deviceId = result.address; 
-            row.channel = result.ioport;
+            row.deviceId = result.deviceId; 
+            row.channel = result.channel;
+            row.datapointTypeId = result.datapointTypeId;
+            row.unitTypeId = result.unitTypeId;
             
             const devObj = devices.find(d => d.id === row.deviceId); 
-            if (devObj) row.deviceName = devObj.name;
+            if (devObj) {
+                row.deviceName = devObj.name;
+                row.location = devObj.locationName;
+            }
+            const typeObj = dpTypes.find(t => t.id === result.datapointTypeId);
+            if (typeObj) row.type = typeObj.name;
+            const unitObj = unTypes.find(u => u.id === result.unitTypeId);
+            if (unitObj) row.unit = unitObj.name;
             
             try { 
                 await window.API.updateDatapoint(row.id, row); 
