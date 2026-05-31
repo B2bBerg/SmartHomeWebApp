@@ -19,19 +19,29 @@ const API = {
     ...SystemAPI,
     ...DashboardAPI,
 
+    _liveDataPromise: null,
+
     // Spezifische Logik, die Module kombiniert:
     getLiveData: async () => {
-        try {
-            const datapoints = await API.getDatapoints();
-            
-            const liveData = {};
-            if (datapoints) datapoints.forEach(dp => liveData[dp.id] = dp.value !== undefined ? dp.value : dp.state);
-            
-            return liveData;
-        } catch (error) {
-            console.error('Fehler beim Generieren der Live-Daten:', error);
-            return {};
-        }
+        // Verhindert massenhafte redundante Requests, wenn mehrere Kacheln gleichzeitig laden
+        if (API._liveDataPromise) return API._liveDataPromise;
+        
+        API._liveDataPromise = (async () => {
+            try {
+                const datapoints = await API.getDatapoints();
+                const liveData = {};
+                if (datapoints) datapoints.forEach(dp => liveData[dp.id] = dp.value !== undefined ? dp.value : dp.state);
+                
+                API._liveDataPromise = null; // Nach Abschluss zurücksetzen
+                return liveData;
+            } catch (error) {
+                console.error('Fehler beim Generieren der Live-Daten:', error);
+                API._liveDataPromise = null;
+                return {};
+            }
+        })();
+        
+        return API._liveDataPromise;
     }
 };
 

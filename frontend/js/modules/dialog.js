@@ -19,14 +19,6 @@ const Dialog = {
             `;
             document.body.appendChild(modal);
             
-            // Klick ausserhalb des Fensters schliesst das Modal
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    modal.remove();
-                    resolve(false);
-                }
-            });
-
             modal.querySelector('.dialog-btn-no').onclick = () => { modal.remove(); resolve(false); };
             modal.querySelector('.dialog-btn-yes').onclick = () => { modal.remove(); resolve(true); };
         });
@@ -50,14 +42,6 @@ const Dialog = {
             `;
             document.body.appendChild(modal);
             
-            // Klick ausserhalb des Fensters schliesst das Modal
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    modal.remove();
-                    resolve();
-                }
-            });
-
             modal.querySelector('.dialog-btn-ok').onclick = () => { modal.remove(); resolve(); };
         });
     },
@@ -110,13 +94,6 @@ const Dialog = {
                 });
             });
             
-            // Klick ausserhalb oder auf Abbrechen schliesst das Modal
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    modal.remove();
-                    resolve(null);
-                }
-            });
             modal.querySelector('.dialog-btn-cancel').onclick = () => { modal.remove(); resolve(null); };
         });
     }
@@ -270,15 +247,6 @@ const Dialog = {
             if (typeof onReady === 'function') onReady(modal, formElements, updateTableData, switchToTab, filterTable);
 
             // 5. Speicher-Logik
-            
-            // Klick ausserhalb des Fensters schliesst das Modal (Abbruch)
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    modal.remove();
-                    resolve(null);
-                }
-            });
-
             modal.querySelector('.dialog-btn-cancel').onclick = () => { modal.remove(); resolve(null); };
             modal.querySelector('.dialog-btn-save').onclick = async () => {
                 const result = {};

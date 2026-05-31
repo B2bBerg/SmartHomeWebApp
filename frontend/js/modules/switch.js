@@ -2,16 +2,6 @@
  * Switch & Control Module for SmartHome Tiles
  */
 const SwitchRenderer = {
-    // Rendert das passende Control in den Container
-    render(container, type) {
-        if (type === 'switch-light') {
-            this.renderToggle(container);
-        } else if (type === 'switch-shutter') {
-            this.renderShutter(container);
-        }
-        this.setupEvents(container, type);
-    },
-
     renderToggle(container) {
         container.innerHTML = `
             <div class="switch-container">
@@ -24,43 +14,81 @@ const SwitchRenderer = {
         `;
     },
 
-    renderShutter(container) {
+    setupToggle(container, dpId) {
+        if (!dpId) return;
+        const input = container.querySelector('.switch-input');
+        const statusText = container.querySelector('.switch-status');
+
+        // Initialen Status aus Live-Daten laden
+        window.API.getLiveData().then(liveData => {
+            if (liveData && liveData[dpId] !== undefined) {
+                const state = liveData[dpId];
+                const isChecked = state === true || String(state).toLowerCase() === 'true' || state === 1 || state === 'ON';
+                input.checked = isChecked;
+                statusText.textContent = isChecked ? 'AN' : 'AUS';
+            }
+        }).catch(e => console.warn("Fehler beim Laden des Initial-Status:", e));
+
+        input.onchange = (e) => {
+            const newState = e.target.checked;
+            statusText.textContent = newState ? 'AN' : 'AUS';
+            
+            if (typeof window.API.setActorState === 'function') {
+                window.API.setActorState(dpId, newState);
+            } else {
+                window.API.setActuatorState(dpId, newState);
+            }
+        };
+    },
+
+    renderShutter2Way(container) {
         container.innerHTML = `
             <div class="shutter-container">
-                <button class="shutter-btn btn-up" data-action="up">
-                    &#9650;
-                </button>
-                <button class="shutter-btn btn-stop" data-action="stop">
-                    <div class="stop-icon"></div>
-                </button>
-                <button class="shutter-btn btn-down" data-action="down">
-                    &#9660;
-                </button>
+                <button class="shutter-btn btn-up" data-role="up">&#9650;</button>
+                <button class="shutter-btn btn-down" data-role="down">&#9660;</button>
             </div>
         `;
     },
 
-    setupEvents(container, type) {
-        const tile = container.closest('.dynamic-tile');
-        const datapoint = tile?.dataset.datapoint;
-        const primaryDp = (datapoint || '').split(',')[0];
-
-        if (type === 'switch-light') {
-            const input = container.querySelector('.switch-input');
-            const statusText = container.querySelector('.switch-status');
-            
-            input.onchange = (e) => {
-                const newState = e.target.checked;
-                statusText.textContent = newState ? 'AN' : 'AUS';
-                window.API.setActuatorState(primaryDp, newState);
+    setupShutter2Way(container, dps) {
+        if (!dps) return;
+        container.querySelectorAll('.shutter-btn').forEach(btn => {
+            btn.onclick = () => {
+                const dpId = dps[btn.dataset.role];
+                if (dpId) {
+                    if (typeof window.API.setActorState === 'function') {
+                        window.API.setActorState(dpId, true);
+                    } else {
+                        window.API.setActuatorState(dpId, true);
+                    }
+                }
             };
-        } else if (type === 'switch-shutter') {
-            container.querySelectorAll('.shutter-btn').forEach(btn => {
-                btn.onclick = () => {
-                    const action = btn.dataset.action;
-                    window.API.setActuatorState(primaryDp, action);
-                };
-            });
-        }
+        });
+    },
+
+    renderShutter3Way(container) {
+        container.innerHTML = `
+            <div class="shutter-container">
+                <button class="shutter-btn btn-up" data-role="up">&#9650;</button>
+                <button class="shutter-btn btn-stop" data-role="stop"><div class="stop-icon"></div></button>
+                <button class="shutter-btn btn-down" data-role="down">&#9660;</button>
+            </div>
+        `;
+    },
+
+    setupShutter3Way(container, dps) {
+        if (!dps) return;
+        container.querySelectorAll('.shutter-btn').forEach(btn => {
+            btn.onclick = () => {
+                const dpId = dps[btn.dataset.role];
+                if (dpId) {
+                    if (typeof window.API.setActorState === 'function') {
+                        window.API.setActorState(dpId, true);
+                    } else {
+                        window.API.setActuatorState(dpId, true);
+                    }
+                }
+            };
+        });
     }
 };

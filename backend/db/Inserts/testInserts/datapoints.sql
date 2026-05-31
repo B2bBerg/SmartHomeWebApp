@@ -18,6 +18,9 @@ SELECT 'Wassermenge' WHERE NOT EXISTS (SELECT 1 FROM datapoint_type WHERE datapo
 INSERT INTO datapoint_type (datapoint_type)
 SELECT 'Wasserdurchfluss' WHERE NOT EXISTS (SELECT 1 FROM datapoint_type WHERE datapoint_type = 'Wasserdurchfluss');
 
+INSERT INTO datapoint_type (datapoint_type)
+SELECT 'Temperatur' WHERE NOT EXISTS (SELECT 1 FROM datapoint_type WHERE datapoint_type = 'Temperatur');
+
 -- 2. Benötigte Unit Types sicherstellen (falls nicht vorhanden)
 INSERT INTO unit_type (unit_type)
 SELECT 'None' WHERE NOT EXISTS (SELECT 1 FROM unit_type WHERE unit_type = 'None');
@@ -34,15 +37,20 @@ SELECT 'm³' WHERE NOT EXISTS (SELECT 1 FROM unit_type WHERE unit_type = 'm³');
 INSERT INTO unit_type (unit_type)
 SELECT 'l/h' WHERE NOT EXISTS (SELECT 1 FROM unit_type WHERE unit_type = 'l/h');
 
+INSERT INTO unit_type (unit_type)
+SELECT '°C' WHERE NOT EXISTS (SELECT 1 FROM unit_type WHERE unit_type = '°C');
+
 DO $$
 DECLARE
     v_type_switch uuid;
     v_type_energy uuid; v_type_power uuid;
     v_type_volume uuid; v_type_flow uuid;
+    v_type_temp uuid;
 
     v_unit_none uuid;
     v_unit_kwh uuid; v_unit_w uuid;
     v_unit_m3 uuid; v_unit_lh uuid;
+    v_unit_c uuid;
     
     v_dev_shelly1 uuid; v_dev_shelly25 uuid; v_dev_hue uuid;
     v_dev_emeter uuid; v_dev_wmeter uuid;
@@ -59,12 +67,14 @@ BEGIN
     SELECT datapoint_type_id INTO v_type_power FROM datapoint_type WHERE datapoint_type = 'Leistung' LIMIT 1;
     SELECT datapoint_type_id INTO v_type_volume FROM datapoint_type WHERE datapoint_type = 'Wassermenge' LIMIT 1;
     SELECT datapoint_type_id INTO v_type_flow FROM datapoint_type WHERE datapoint_type = 'Wasserdurchfluss' LIMIT 1;
+    SELECT datapoint_type_id INTO v_type_temp FROM datapoint_type WHERE datapoint_type = 'Temperatur' LIMIT 1;
 
     SELECT unit_type_id INTO v_unit_none FROM unit_type WHERE unit_type = 'None' LIMIT 1;
     SELECT unit_type_id INTO v_unit_kwh FROM unit_type WHERE unit_type = 'kWh' LIMIT 1;
     SELECT unit_type_id INTO v_unit_w FROM unit_type WHERE unit_type = 'W' LIMIT 1;
     SELECT unit_type_id INTO v_unit_m3 FROM unit_type WHERE unit_type = 'm³' LIMIT 1;
     SELECT unit_type_id INTO v_unit_lh FROM unit_type WHERE unit_type = 'l/h' LIMIT 1;
+    SELECT unit_type_id INTO v_unit_c FROM unit_type WHERE unit_type = '°C' LIMIT 1;
 
     -- Referenz-IDs der erstellten Devices (anhand der MAC-Adresse) laden
     SELECT device_id INTO v_dev_shelly1 FROM devices WHERE mac_address = 'E8:DB:84:12:34:56' LIMIT 1;
@@ -166,6 +176,38 @@ BEGIN
         INSERT INTO datapoint (datapoint_name, device_channel_id, datapoint_type_id, unit_type_id, is_actuator, is_sensor, obis_code)
         VALUES ('Haus Aktueller Wasserdurchfluss', v_ch_wm_2, v_type_flow, v_unit_lh, false, true, '8-0:2.0.0');
     END IF;
+
+    -- ==========================================
+    -- DYNAMISCHE DATAPOINTS (Für alle Räume)
+    -- ==========================================
+    -- Lichter (Relais)
+    INSERT INTO datapoint (datapoint_name, device_channel_id, datapoint_type_id, unit_type_id, is_actuator, is_sensor)
+    SELECT 'Licht ' || loc.location_name, dc.device_channel_id, v_type_switch, v_unit_none, true, false
+    FROM device_channel dc JOIN devices d ON d.device_id = dc.device_id JOIN location loc ON d.location_id = loc.location_id
+    WHERE d.device_name ILIKE 'Deckenlicht %' AND dc.channel_number = 1
+    AND NOT EXISTS (SELECT 1 FROM datapoint WHERE device_channel_id = dc.device_channel_id);
+
+    -- Storen 3-Way (Auf, Ab, Stop)
+    INSERT INTO datapoint (datapoint_name, device_channel_id, datapoint_type_id, unit_type_id, is_actuator, is_sensor)
+    SELECT 'Storen Auf ' || loc.location_name, dc.device_channel_id, v_type_switch, v_unit_none, true, false
+    FROM device_channel dc JOIN devices d ON d.device_id = dc.device_id JOIN location loc ON d.location_id = loc.location_id
+    WHERE d.device_name ILIKE 'Storen %' AND dc.channel_number = 1 AND NOT EXISTS (SELECT 1 FROM datapoint WHERE device_channel_id = dc.device_channel_id);
+
+    INSERT INTO datapoint (datapoint_name, device_channel_id, datapoint_type_id, unit_type_id, is_actuator, is_sensor)
+    SELECT 'Storen Ab ' || loc.location_name, dc.device_channel_id, v_type_switch, v_unit_none, true, false
+    FROM device_channel dc JOIN devices d ON d.device_id = dc.device_id JOIN location loc ON d.location_id = loc.location_id
+    WHERE d.device_name ILIKE 'Storen %' AND dc.channel_number = 2 AND NOT EXISTS (SELECT 1 FROM datapoint WHERE device_channel_id = dc.device_channel_id);
+
+    INSERT INTO datapoint (datapoint_name, device_channel_id, datapoint_type_id, unit_type_id, is_actuator, is_sensor)
+    SELECT 'Storen Stop ' || loc.location_name, dc.device_channel_id, v_type_switch, v_unit_none, true, false
+    FROM device_channel dc JOIN devices d ON d.device_id = dc.device_id JOIN location loc ON d.location_id = loc.location_id
+    WHERE d.device_name ILIKE 'Storen %' AND dc.channel_number = 3 AND NOT EXISTS (SELECT 1 FROM datapoint WHERE device_channel_id = dc.device_channel_id);
+
+    -- Temperatur Sensoren
+    INSERT INTO datapoint (datapoint_name, device_channel_id, datapoint_type_id, unit_type_id, is_actuator, is_sensor)
+    SELECT 'Temperatur ' || loc.location_name, dc.device_channel_id, v_type_temp, v_unit_c, false, true
+    FROM device_channel dc JOIN devices d ON d.device_id = dc.device_id JOIN location loc ON d.location_id = loc.location_id
+    WHERE d.device_name ILIKE 'Raumklima %' AND dc.channel_number = 1 AND NOT EXISTS (SELECT 1 FROM datapoint WHERE device_channel_id = dc.device_channel_id);
 
     RAISE NOTICE 'Datapoints erfolgreich eingefügt.';
 END $$;

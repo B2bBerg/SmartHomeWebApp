@@ -5,9 +5,6 @@ const LocationsManager = {
     init() {
         this.container = document.getElementById('locations-container');
         if (!this.container) return;
-        this.isEditModeBuildings = false;
-        this.isEditModeFloors = false;
-        this.isEditModeRooms = false;
         this.isEditModeTree = false;
         this.pendingRoute = null;
         this.loadData();
@@ -560,17 +557,17 @@ const LocationsManager = {
         const container = document.getElementById('building-devices-container');
         if (!container) return;
 
-        // Sammle alle Namen, die zu diesem Haus gehören (Da Datenpunkte oft über Namen verknüpft sind)
-        const locationNames = new Set([building.name]);
+        // Sammle alle IDs, die zu diesem Haus gehören
+        const locationIds = new Set([building.id]);
         (building.floors || []).forEach(f => {
-            locationNames.add(f.name);
+            locationIds.add(f.id);
             (f.rooms || []).forEach(r => {
-                locationNames.add(r.name);
+                locationIds.add(r.id);
             });
         });
 
-        // Filtere alle Sensoren/Aktoren, die sich im Haus befinden
-        const buildingDatapoints = (this.allDatapoints || []).filter(dp => locationNames.has(dp.location) && ['Sensor', 'Aktor'].includes(dp.dpType));
+        // Filtere alle Sensoren/Aktoren, die sich im Haus befinden anhand der Location UUID
+        const buildingDatapoints = (this.allDatapoints || []).filter(dp => locationIds.has(dp.locationId) && ['Sensor', 'Aktor'].includes(dp.dpType));
 
         container.innerHTML = `
             <div class="building-devices-section" style="background:var(--bg-base); border:1px solid var(--border-color); border-radius:8px; padding:1.25rem;">
@@ -1084,15 +1081,15 @@ const LocationsManager = {
     },
 
     initDashboardGrid(locationObj, containerId, storageKey, editBtnSelector, addBtnSelector) {
-        const locationNames = new Set([locationObj.name, locationObj.id]);
+        const locationIds = new Set([locationObj.id]);
         
-        const collectNames = (loc) => {
-            if (loc.floors) loc.floors.forEach(f => { locationNames.add(f.name); locationNames.add(f.id); collectNames(f); });
-            if (loc.rooms) loc.rooms.forEach(r => { locationNames.add(r.name); locationNames.add(r.id); });
+        const collectIds = (loc) => {
+            if (loc.floors) loc.floors.forEach(f => { locationIds.add(f.id); collectIds(f); });
+            if (loc.rooms) loc.rooms.forEach(r => { locationIds.add(r.id); });
         };
-        collectNames(locationObj);
+        collectIds(locationObj);
 
-        const assignedDatapoints = this.allDatapoints.filter(dp => locationNames.has(dp.location) && ['Sensor', 'Aktor'].includes(dp.dpType));
+        const assignedDatapoints = this.allDatapoints.filter(dp => locationIds.has(dp.locationId) && ['Sensor', 'Aktor'].includes(dp.dpType));
 
         if (typeof window.TileManager !== 'undefined') {
             this.currentDashboard = window.TileManager.createInstance({

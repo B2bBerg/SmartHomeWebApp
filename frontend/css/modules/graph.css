@@ -11,6 +11,7 @@
     border: 1px solid var(--border-color);
     border-radius: 8px;
     color: var(--text-primary);
+    position: relative;
 }
 
 .chart-header {
@@ -174,7 +175,6 @@
 
 .chart-path {
     fill: none;
-    stroke: var(--accent-green);
     stroke-width: 1.5;
     stroke-linecap: round;
     stroke-linejoin: round;
@@ -210,7 +210,6 @@
     position: absolute;
     width: 12px;
     height: 12px;
-    background: var(--accent-green);
     border-radius: 50%;
     transform: translate(-50%, 50%); /* Exakte Zentrierung auf den Punktkoordinaten */
     pointer-events: all;
@@ -224,4 +223,81 @@
     transform: translate(-50%, 50%) scale(1.3);
     box-shadow: 0 0 6px rgba(var(--palette-green-rgb), 0.8);
     z-index: 20;
+}
+
+/* --- Legend Overlay & Button --- */
+.chart-legend-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    opacity: 0.7;
+    transition: opacity 0.2s, color 0.2s;
+}
+
+.chart-legend-btn:hover {
+    opacity: 1;
+    color: var(--text-primary);
+}
+
+.chart-legend-btn.hidden {
+    display: none;
+}
+
+.chart-legend-overlay {
+    position: absolute;
+    top: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-surface, var(--bg-base));
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 10px;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 180px;
+}
+
+.chart-legend-overlay.hidden {
+    display: none;
+}
+
+.legend-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 4px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+}
+
+.legend-close-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1.2rem;
+    line-height: 1;
+    padding: 0 4px;
+}
+
+.legend-close-btn:hover {
+    color: var(--text-primary);
+}
+
+.chart-legend-items {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }

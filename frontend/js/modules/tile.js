@@ -17,6 +17,62 @@ const TileManager = {
     addColSpan: 1,
     addRowSpan: 1,
 
+    // --- ZENTRALE REGISTRY FÜR KACHEL-MODULE ---
+    TILE_REGISTRY: {
+        'Value': {
+            name: 'Aktueller Wert (Text)', fixedSize: false, defaultColSpan: 1, defaultRowSpan: 1,
+            roles: [{ id: 'main', label: 'Sensor-Datenpunkt', type: 'sensor' }],
+            render: () => `<div class="tile-value">--</div>`,
+            init: async (container, dps) => {
+                const dpId = dps?.main || dps?.default;
+                if (!dpId) return;
+                try {
+                let val = 'N/A';
+                
+                // Versuche zuerst Livedaten abzurufen
+                const liveData = await window.API.getLiveData().catch(() => ({}));
+                if (liveData && liveData[dpId] !== undefined) {
+                    val = liveData[dpId];
+                } else {
+                    // Fallback auf Historie
+                    const data = await window.API.getSensorData(dpId);
+                    if (data && data.length > 0) {
+                        const latest = data[data.length - 1];
+                        val = latest.temperature ?? latest.power ?? latest.value ?? 'N/A';
+                    }
+                }
+                container.querySelector('.tile-value').textContent = val;
+                } catch (e) { console.error("Fehler beim Laden von", dpId, e); }
+            }
+        },
+        'Graph': {
+            name: 'Diagramm (Zeitreihe)', fixedSize: true, defaultColSpan: 3, defaultRowSpan: 3,
+            hasUnitFilter: true,
+            roles: [{ id: 'main', label: 'Datenpunkte', multiple: true, type: 'sensor' }],
+            init: (container, dps) => { 
+                new Graph(container, dps?.main || dps?.default || ''); // Nutzt standardmässig nur 'value' -> blendet Dropdown aus
+            }
+        },
+        'Switch': {
+            name: 'Schalter (Ein/Aus)', fixedSize: true, defaultColSpan: 1, defaultRowSpan: 1,
+            roles: [{ id: 'main', label: 'Aktor-Datenpunkt', type: 'actuator' }],
+            render: (container) => { SwitchRenderer.renderToggle(container); },
+            init: (container, dps) => { SwitchRenderer.setupToggle(container, dps?.main || dps?.default); }
+        },
+        'Shutter 2-Way': {
+            name: 'Rollladen (Auf/Ab)', fixedSize: true, defaultColSpan: 1, defaultRowSpan: 1,
+            roles: [{ id: 'up', label: 'Datenpunkt: Auf', type: 'actuator' }, { id: 'down', label: 'Datenpunkt: Ab', type: 'actuator' }],
+            render: (container) => { SwitchRenderer.renderShutter2Way(container); },
+            init: (container, dps) => { SwitchRenderer.setupShutter2Way(container, dps); }
+        },
+        'Shutter 3-Way': {
+            name: 'Rollladen (Auf/Stop/Ab)', fixedSize: true, defaultColSpan: 1, defaultRowSpan: 1,
+            roles: [{ id: 'up', label: 'Datenpunkt: Auf', type: 'actuator' }, { id: 'stop', label: 'Datenpunkt: Stop', type: 'actuator' }, { id: 'down', label: 'Datenpunkt: Ab', type: 'actuator' }],
+            render: (container) => { SwitchRenderer.renderShutter3Way(container); },
+            init: (container, dps) => { SwitchRenderer.setupShutter3Way(container, dps); }
+        }
+    },
+
     createInstance(config) {
         const instance = Object.create(this);
         instance.isInstance = true;
@@ -86,11 +142,20 @@ const TileManager = {
 
         this.setupEventListeners();
 
-        // Dropdowns dynamisch aus derselben Datenquelle laden wie die Tabellen
-        this.populateDatapoints().then(() => {
-            window.API.getDashboard(this.storageKey).then(data => {
-                if (data && data.length > 0) this.loadDashboard(data);
-            }).catch(err => console.error("Dashboard Ladefehler:", err));
+        // Basis-Daten und Typen aus der Datenbank laden
+        this.loadSystemData().then(() => {
+            this.updateSelectOptions('add');
+            this.updateSelectOptions('settings');
+            window.API.getDashboardTiles(this.storageKey)
+                .then(data => { 
+                    console.log("📡 API Response Dashboard Tiles:", data);
+                    if (data && data.length > 0) {
+                        this.loadDashboard(data); 
+                    } else {
+                        console.warn("⚠️ Backend hat ein leeres Array [ ] geliefert. Prüfe Node.js DB-Abfrage.");
+                    }
+                })
+                .catch(err => console.error(`❌ Dashboard Ladefehler:`, err));
         });
 
         this.refreshGhosts();
@@ -119,13 +184,10 @@ const TileManager = {
                 this.addRowSpan = 1;
                 if (this.modalInput) this.modalInput.value = '';
                 
-                const addDp = document.getElementById('add-tile-datapoint');
                 const addCt = document.getElementById('add-tile-content');
-                if (addDp) addDp.value = '';
                 if (addCt) addCt.value = '';
-                this.filterContentByDatapoint('', 'add-tile-content');
                 
-                this.updateAddSizeDisplay();
+                this.updateSelectOptions('add', '', {});
                 if (this.modal) {
                     this.modal.classList.remove('hidden');
                     this.modalInput.focus();
@@ -141,15 +203,31 @@ const TileManager = {
         }
         if (document.getElementById('tile-modal-cancel')) document.getElementById('tile-modal-cancel').onclick  = () => this.modal.classList.add('hidden');
 
-        // Add-modal size buttons
-        if (document.getElementById('add-btn-col-plus')) document.getElementById('add-btn-col-plus').onclick  = () => { if (this.addColSpan < this.MAX_COL) { this.addColSpan++; this.updateAddSizeDisplay(); } };
-        if (document.getElementById('add-btn-col-minus')) document.getElementById('add-btn-col-minus').onclick = () => { if (this.addColSpan > 1)           { this.addColSpan--; this.updateAddSizeDisplay(); } };
-        if (document.getElementById('add-btn-row-plus')) document.getElementById('add-btn-row-plus').onclick  = () => { if (this.addRowSpan < this.MAX_ROW) { this.addRowSpan++; this.updateAddSizeDisplay(); } };
-        if (document.getElementById('add-btn-row-minus')) document.getElementById('add-btn-row-minus').onclick = () => { if (this.addRowSpan > 1)           { this.addRowSpan--; this.updateAddSizeDisplay(); } };
-
         // ── Settings modal ───────────────────────────────────────────────────
         if (document.getElementById('tile-settings-close')) {
             document.getElementById('tile-settings-close').onclick = () => {
+                if (this.activeSettingsTile) {
+                    const dpObj = {};
+                    const selects = document.querySelectorAll('#settings-tile-dp-container .dynamic-dp-select');
+                    selects.forEach(sel => {
+                        if (sel.dataset.multiple === 'true') {
+                            const checked = Array.from(sel.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+                            dpObj[sel.dataset.role] = checked.join(',');
+                        } else if (sel.multiple) {
+                            dpObj[sel.dataset.role] = Array.from(sel.selectedOptions).filter(o=>o.value).map(o=>o.value).join(',');
+                        } else {
+                            dpObj[sel.dataset.role] = sel.value;
+                        }
+                    });
+                    
+                    const unitFilterSelect = document.querySelector('#settings-tile-dp-container .tile-unit-filter');
+                    if (unitFilterSelect) dpObj.unitFilter = unitFilterSelect.value;
+                    
+                    this.activeSettingsTile.dataset.datapoint = JSON.stringify(dpObj);
+                    
+                    // Zwingt die Kachel (z.B. den Graphen), sich mit den neuen Einstellungen sofort neu zu zeichnen
+                    this.renderTileContent(this.activeSettingsTile);
+                }
                 this.settingsModal.classList.add('hidden');
                 this.activeSettingsTile = null;
                 this.saveDashboard();
@@ -176,43 +254,33 @@ const TileManager = {
             };
         }
 
-        if (document.getElementById('settings-tile-datapoint')) {
-            document.getElementById('settings-tile-datapoint').onchange = (e) => {
-                if (!this.activeSettingsTile) return;
-                this.activeSettingsTile.dataset.datapoint = e.target.value;
-                const selectedOpt = e.target.options[e.target.selectedIndex];
-                this.filterContentByDatapoint(selectedOpt?.dataset.type || '', 'settings-tile-content');
-                this.saveDashboard();
-            };
-        }
-
-        if (document.getElementById('add-tile-datapoint')) {
-            document.getElementById('add-tile-datapoint').onchange = (e) => {
-                const selectedOpt = e.target.options[e.target.selectedIndex];
-                this.filterContentByDatapoint(selectedOpt?.dataset.type || '', 'add-tile-content');
-            };
-        }
-
         if (document.getElementById('add-tile-content')) {
             document.getElementById('add-tile-content').onchange = (e) => {
-                if (e.target.value.includes('graph')) {
-                    this.addColSpan = 3;
-                    this.addRowSpan = 3;
-                } else if (e.target.value.includes('switch')) {
-                    this.addColSpan = 1;
-                    this.addRowSpan = 1;
-                } else if (this.addColSpan === 3 && this.addRowSpan === 3) {
-                    this.addColSpan = 1;
-                    this.addRowSpan = 1;
+                const selectedType = e.target.value;
+                const reg = this.TILE_REGISTRY[selectedType];
+                if (reg && reg.fixedSize) {
+                    this.addColSpan = reg.defaultColSpan || 1;
+                    this.addRowSpan = reg.defaultRowSpan || 1;
                 }
-                this.updateAddSizeDisplay();
+                this.updateSelectOptions('add', selectedType, {});
             };
         }
 
         if (document.getElementById('settings-tile-content')) {
             document.getElementById('settings-tile-content').onchange = (e) => {
                 if (!this.activeSettingsTile) return;
-                this.activeSettingsTile.dataset.contentType = e.target.value;
+                const newType = e.target.value;
+                this.activeSettingsTile.dataset.contentType = newType;
+                this.updateSelectOptions('settings', newType, {});
+                
+                // Setzt die Kachel-Grösse auf den Standard des neuen Typs zurück
+                const reg = this.TILE_REGISTRY[newType];
+                if (reg) {
+                    this.activeSettingsTile.dataset.colSpan = reg.defaultColSpan || 1;
+                    this.activeSettingsTile.dataset.rowSpan = reg.defaultRowSpan || 1;
+                }
+                
+                this.activeSettingsTile.dataset.datapoint = '{}';
                 this.renderTileContent(this.activeSettingsTile);
                 this.saveDashboard();
             };
@@ -226,80 +294,199 @@ const TileManager = {
         }
     },
 
-    async populateDatapoints() {
+    async loadSystemData() {
         try {
-            // Gleiche API-Aufrufe wie bei den Listenansichten (Tabellen)
-            const [sensors, actuators, devices] = await Promise.all([
+            const [sensors, actuators, devices, tileTypes, unitTypes] = await Promise.all([
                 window.API.getSensors().catch(err => []),
                 window.API.getActuators().catch(err => []),
-                window.API.getDevices().catch(err => [])
+                window.API.getDevices().catch(err => []),
+                window.API.getTileTypes().catch(err => []),
+                (window.API.getUnitTypes ? window.API.getUnitTypes().catch(err => []) : [])
             ]);
-            let allDatapoints = [...sensors, ...actuators]; // Beide Listen zusammenführen
-
-            // Filter anwenden, falls das Dashboard nur auf bestimmte Datenpunkte zugreifen darf (z.B. Raum-Dashboard)
-            if (this.allowedDatapoints) {
-                allDatapoints = allDatapoints.filter(dp => this.allowedDatapoints.includes(dp.id));
-            }
-
-            // Generiere dynamisches HTML für die <option> Tags
-            const optionsHTML = `<option value="" data-type="">&mdash; Keine &mdash;</option>` + 
-                allDatapoints.map(dp => {
-                    let dpType = '';
-                    const t = (dp.type || '').toLowerCase();
-                    
-                    if (t === 'temperature') dpType = 'sensor.temp';
-                    else if (t === 'energy') dpType = 'sensor.energy';
-                    else if (t === 'switch') dpType = 'switch.light';
-                    else if (t === 'shutter') dpType = 'switch.shutter';
-                    
-                    const dev = devices.find(d => d.id === dp.deviceId) || {};
-                    const loc = dev.location ? ` (${dev.location})` : '';
-                    
-                    return `<option value="${dp.id}" data-type="${dpType}">${dp.name}${loc}</option>`;
-                }).join('');
-
-            const addSelect = document.getElementById('add-tile-datapoint');
-            const settingsSelect = document.getElementById('settings-tile-datapoint');
-            
-            if (addSelect) addSelect.innerHTML = optionsHTML;
-            if (settingsSelect) settingsSelect.innerHTML = optionsHTML;
+            this.systemData = { sensors, actuators, devices, tileTypes, unitTypes };
         } catch (err) {
-            console.error("Fehler beim Laden der Datenpunkte fürs Dashboard:", err);
+            console.error("Fehler beim Laden der Systemdaten fürs Dashboard:", err);
         }
     },
 
-    updateAddSizeDisplay() {
-        if (document.getElementById('add-size-display')) {
-            document.getElementById('add-size-display').innerHTML = `${this.addColSpan} &times; ${this.addRowSpan}`;
+    updateSelectOptions(ctx, selectedType = '', selectedDatapoints = {}, activeUnitId = '') {
+        const contentSelect = document.getElementById(`${ctx}-tile-content`);
+        const dpContainer = document.getElementById(`${ctx}-tile-dp-container`);
+        if (!contentSelect || !dpContainer || !this.systemData) return;
+
+        // Dropdown für Tile Types (Inhalt) aktualisieren
+        if (contentSelect.options.length <= 1) {
+            const optionsHtml = ['<option value="">&mdash; Keine &mdash;</option>'];
             
-            const isGraph = document.getElementById('add-tile-content')?.value.includes('graph');
-            const isSwitch = document.getElementById('add-tile-content')?.value.includes('switch');
+            const availableTypes = new Set(Object.keys(this.TILE_REGISTRY));
+            if (this.systemData.tileTypes) this.systemData.tileTypes.forEach(tt => availableTypes.add(tt.name));
             
-            if (isGraph || isSwitch) {
-                document.getElementById('add-btn-col-plus').disabled  = true;
-                document.getElementById('add-btn-col-minus').disabled = true;
-                document.getElementById('add-btn-row-plus').disabled  = true;
-                document.getElementById('add-btn-row-minus').disabled = true;
-            } else {
-                document.getElementById('add-btn-col-plus').disabled  = this.addColSpan >= this.MAX_COL;
-                document.getElementById('add-btn-col-minus').disabled = this.addColSpan <= 1;
-                document.getElementById('add-btn-row-plus').disabled  = this.addRowSpan >= this.MAX_ROW;
-                document.getElementById('add-btn-row-minus').disabled = this.addRowSpan <= 1;
+            Array.from(availableTypes).sort().forEach(ttName => {
+                const reg = this.TILE_REGISTRY[ttName];
+                optionsHtml.push(`<option value="${ttName}">${reg ? reg.name : ttName}</option>`);
+            });
+            contentSelect.innerHTML = optionsHtml.join('');
+        }
+        contentSelect.value = selectedType;
+
+        // Dynamische Selects für Datenpunkte basierend auf den Rollen der Kachel generieren
+        dpContainer.innerHTML = '';
+        const reg = this.TILE_REGISTRY[selectedType];
+        if (!reg || !reg.roles) return;
+
+        if (reg.hasUnitFilter) {
+            let unitOptionsHtml = '<option value="">-- Alle Einheiten --</option>';
+            if (this.systemData.unitTypes) {
+                this.systemData.unitTypes.forEach(u => {
+                    const isSel = (u.name === activeUnitId) ? 'selected' : '';
+                    unitOptionsHtml += `<option value="${u.name}" ${isSel}>${u.name}</option>`;
+                });
             }
+            dpContainer.innerHTML += `
+                <div class="settings-group">
+                    <label>Nach Einheit filtern</label>
+                    <select class="tile-unit-filter" data-ctx="${ctx}">
+                        ${unitOptionsHtml}
+                    </select>
+                </div>
+            `;
+        }
+
+        const allDps = [...this.systemData.sensors, ...this.systemData.actuators];
+
+        const buildOptions = (selectedVal, isMultiple, roleType) => {
+            let html = isMultiple ? '' : '<option value="">&mdash; Bitte wählen &mdash;</option>';
+            
+            let filteredDps = allDps;
+            if (roleType === 'sensor') filteredDps = this.systemData.sensors || [];
+            if (roleType === 'actuator') filteredDps = this.systemData.actuators || [];
+
+            if (reg.hasUnitFilter && activeUnitId) {
+                filteredDps = filteredDps.filter(dp => dp.unit === activeUnitId);
+            }
+
+            if (filteredDps.length === 0) return isMultiple ? '<div style="color:var(--text-secondary); font-size: 0.8rem;">Keine Datenpunkte verfügbar</div>' : '<option disabled>Keine Datenpunkte verfügbar</option>';
+
+            const localGroups = {};
+            const otherGroups = {};
+
+            filteredDps.forEach(dp => {
+                const dev = this.systemData.devices.find(d => d.id === dp.deviceId);
+                const devName = dev ? (dev.name || dev.modelName) : 'Ohne Gerät';
+                
+                if (this.allowedDatapoints && this.allowedDatapoints.includes(dp.id)) {
+                    if (!localGroups[devName]) localGroups[devName] = [];
+                    localGroups[devName].push(dp);
+                } else {
+                    if (!otherGroups[devName]) otherGroups[devName] = [];
+                    otherGroups[devName].push(dp);
+                }
+            });
+
+            const renderGroup = (label, dpsGroup) => {
+                let groupHtml = '';
+                if (isMultiple) {
+                    groupHtml += `<div style="font-weight: 600; font-size: 0.8rem; margin: 0.6rem 0 0.3rem 0; color: var(--text-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 2px;">${label}</div>`;
+                    groupHtml += dpsGroup.map(dp => {
+                        const isSel = selectedVal ? selectedVal.split(',').includes(dp.id) : false;
+                        return `<label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; cursor: pointer; padding: 4px 0; color: var(--text-secondary); transition: color 0.2s;">
+                            <input type="checkbox" value="${dp.id}" ${isSel ? 'checked' : ''} style="appearance: auto; width: auto; background: none; border: none; padding: 0; margin: 0;">
+                            ${dp.name}
+                        </label>`;
+                    }).join('');
+                } else {
+                    groupHtml += `<optgroup label="${label}">`;
+                    groupHtml += dpsGroup.map(dp => {
+                        const isSel = selectedVal === dp.id;
+                        return `<option value="${dp.id}" ${isSel ? 'selected' : ''}>${dp.name}</option>`;
+                    }).join('');
+                    groupHtml += `</optgroup>`;
+                }
+                return groupHtml;
+            };
+
+            for (const [devName, dpsGroup] of Object.entries(localGroups)) {
+                html += renderGroup(`📍 ${devName}`, dpsGroup);
+            }
+
+            for (const [devName, dpsGroup] of Object.entries(otherGroups)) {
+                html += renderGroup(`🌐 ${devName}`, dpsGroup);
+            }
+
+            if (isMultiple && selectedVal) {
+                const selectedIds = selectedVal.split(',');
+                const filteredIds = filteredDps.map(d => d.id);
+                const missingIds = selectedIds.filter(id => id && !filteredIds.includes(id));
+                if (missingIds.length > 0) {
+                    html += `<div style="display:none;">`;
+                    missingIds.forEach(id => {
+                        html += `<input type="checkbox" value="${id}" checked>`;
+                    });
+                    html += `</div>`;
+                }
+            }
+
+            return html;
+        };
+
+        reg.roles.forEach(role => {
+            const currVal = selectedDatapoints[role.id] || '';
+            if (role.multiple) {
+                dpContainer.innerHTML += `
+                    <div class="settings-group">
+                        <label>${role.label}</label>
+                        <div class="dynamic-dp-select" data-role="${role.id}" data-multiple="true" style="max-height: 180px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; padding: 0.2rem 0.6rem 0.6rem; background: var(--input-bg);">
+                            ${buildOptions(currVal, true, role.type)}
+                        </div>
+                    </div>
+                `;
+            } else {
+                dpContainer.innerHTML += `
+                    <div class="settings-group">
+                        <label>${role.label}</label>
+                        <select class="dynamic-dp-select" data-role="${role.id}">
+                            ${buildOptions(currVal, false, role.type)}
+                        </select>
+                    </div>
+                `;
+            }
+        });
+
+        const unitFilterSelect = dpContainer.querySelector('.tile-unit-filter');
+        if (unitFilterSelect) {
+            unitFilterSelect.addEventListener('change', (e) => {
+                const newUnit = e.target.value;
+                const currentDps = {};
+                dpContainer.querySelectorAll('.dynamic-dp-select').forEach(sel => {
+                    if (sel.dataset.multiple === 'true') {
+                        const checked = Array.from(sel.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+                        currentDps[sel.dataset.role] = checked.join(',');
+                    } else if (sel.multiple) {
+                        currentDps[sel.dataset.role] = Array.from(sel.selectedOptions).filter(o=>o.value).map(o=>o.value).join(',');
+                    } else {
+                        currentDps[sel.dataset.role] = sel.value;
+                    }
+                });
+                this.updateSelectOptions(ctx, selectedType, currentDps, newUnit);
+            });
         }
     },
 
     getDashboardState() {
-        return Array.from(this.container.querySelectorAll('.dynamic-tile')).map(tile => ({
-            id:          tile.dataset.id,
-            label:       tile.querySelector('.tile-label').textContent,
-            col:         parseInt(tile.dataset.gridCol),
-            row:         parseInt(tile.dataset.gridRow),
-            colSpan:     parseInt(tile.dataset.colSpan),
-            rowSpan:     parseInt(tile.dataset.rowSpan),
-            contentType: tile.dataset.contentType || '',
-            datapoint:   tile.dataset.datapoint   || ''
-        }));
+        return Array.from(this.container.querySelectorAll('.dynamic-tile')).map(tile => {
+            let dpObj = {};
+            try { dpObj = JSON.parse(tile.dataset.datapoint); } catch(e) {}
+            return {
+                id:          tile.dataset.id,
+                label:       tile.querySelector('.tile-label').textContent,
+                col:         parseInt(tile.dataset.gridCol),
+                row:         parseInt(tile.dataset.gridRow),
+                colSpan:     parseInt(tile.dataset.colSpan),
+                rowSpan:     parseInt(tile.dataset.rowSpan),
+                contentType: tile.dataset.contentType || '',
+                datapoint:   dpObj
+            };
+        });
     },
 
     loadDashboard(jsonData) {
@@ -308,10 +495,34 @@ const TileManager = {
         this.refreshGhosts();
     },
 
-    saveDashboard() {
+    async saveDashboard() {
         const state = this.getDashboardState();
-        window.API.saveDashboard(this.storageKey, state);
-        console.log('Dashboard state saved:', this.storageKey);
+        try {
+            // Nutze saveDashboardTiles, um die Kacheln auf dem Server zu aktualisieren
+            const updatedTiles = await window.API.saveDashboardTiles(this.storageKey, state);
+            console.log('Dashboard state saved:', this.storageKey);
+            // Aktualisiere das Grid mit echten Server-IDs (ersetzt temporäre tile-tmp-X IDs)
+            if (updatedTiles && updatedTiles.length > 0) {
+                if (this.editMode === false) {
+                    this.loadDashboard(updatedTiles);
+                } else {
+                    // Im Edit-Modus nur die IDs der temporären Kacheln aktualisieren,
+                    // ohne das DOM neu zu zeichnen (verhindert Abbruch von Drag & Drop)
+                    updatedTiles.forEach(serverTile => {
+                        const domTile = Array.from(this.container.querySelectorAll('.dynamic-tile')).find(t => 
+                            t.dataset.gridCol == serverTile.col && 
+                            t.dataset.gridRow == serverTile.row && 
+                            t.querySelector('.tile-label').textContent == serverTile.label
+                        );
+                        if (domTile && domTile.dataset.id.startsWith('tile-tmp-')) {
+                            domTile.dataset.id = serverTile.id;
+                        }
+                    });
+                }
+            }
+        } catch (error) {
+            console.error("Fehler beim Speichern des Dashboards:", error);
+        }
         return state;
     },
 
@@ -326,12 +537,26 @@ const TileManager = {
         tile.innerHTML    = this.createTileHTML(label);
 
         if (config) {
-            tile.dataset.gridCol = config.col;
-            tile.dataset.gridRow = config.row;
-            tile.dataset.colSpan = config.colSpan;
-            tile.dataset.rowSpan = config.rowSpan;
-            if (config.contentType) tile.dataset.contentType = config.contentType;
-            if (config.datapoint)   tile.dataset.datapoint   = config.datapoint;
+            // Robustes Mapping: Akzeptiert flache DTOs (col) oder direkte Datenbank-Namen (col_pos/colPos)
+            tile.dataset.gridCol = config.col || config.colPos || config.col_pos || 1;
+            tile.dataset.gridRow = config.row || config.rowPos || config.row_pos || 1;
+            tile.dataset.colSpan = config.colSpan || config.colspan || config.col_span || 1;
+            tile.dataset.rowSpan = config.rowSpan || config.rowspan || config.row_span || 1;
+            
+            let ct = config.contentType || config.tileTypeName;
+            let dp = config.datapoint;
+            
+            // Fallback: Falls das Backend das config-JSON verschachtelt oder als String zurückgibt
+            if (config.config) {
+                try {
+                    const parsed = typeof config.config === 'string' ? JSON.parse(config.config) : config.config;
+                    if (!ct) ct = parsed.contentType;
+                    if (!dp) dp = parsed.datapoint;
+                } catch (e) {}
+            }
+
+            if (ct) tile.dataset.contentType = ct;
+            if (dp) tile.dataset.datapoint = typeof dp === 'object' ? JSON.stringify(dp) : dp;
         } else {
             const occupied = this.getOccupied(null);
             let placed = false;
@@ -347,9 +572,26 @@ const TileManager = {
             tile.dataset.colSpan = this.addColSpan;
             tile.dataset.rowSpan = this.addRowSpan;
 
-            const addDp = document.getElementById('add-tile-datapoint')?.value || null;
+            // Werte aus den dynamischen Dropdowns sammeln
+            const dpObj = {};
+            const selects = document.querySelectorAll('#add-tile-dp-container .dynamic-dp-select');
+            selects.forEach(sel => {
+                if (sel.dataset.multiple === 'true') {
+                    const checked = Array.from(sel.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+                    dpObj[sel.dataset.role] = checked.join(',');
+                } else if (sel.multiple) {
+                    dpObj[sel.dataset.role] = Array.from(sel.selectedOptions).filter(o=>o.value).map(o=>o.value).join(',');
+                } else {
+                    dpObj[sel.dataset.role] = sel.value;
+                }
+            });
+
             const addCt = document.getElementById('add-tile-content')?.value || null;
-            if (addDp) tile.dataset.datapoint = addDp;
+            
+            const unitFilterSelect = document.querySelector('#add-tile-dp-container .tile-unit-filter');
+            if (unitFilterSelect) dpObj.unitFilter = unitFilterSelect.value;
+
+            tile.dataset.datapoint = JSON.stringify(dpObj);
             if (addCt) tile.dataset.contentType = addCt;
         }
 
@@ -360,7 +602,11 @@ const TileManager = {
 
         if (this.modal) this.modal.classList.add('hidden');
         this.refreshGhosts();
-        this.saveDashboard();
+        
+        // Kacheln nur speichern, wenn sie manuell hinzugefügt wurden (nicht beim initialen Laden aus der DB)
+        if (!config) {
+            this.saveDashboard();
+        }
     },
 
     initTile(tile) {
@@ -430,114 +676,40 @@ const TileManager = {
     openSettings(tile) {
         this.activeSettingsTile = tile;
         document.getElementById('settings-tile-label').value    = tile.querySelector('.tile-label').textContent;
-        document.getElementById('settings-tile-datapoint').value = tile.dataset.datapoint || '';
-        const dpSelect = document.getElementById('settings-tile-datapoint');
-        const selectedOpt = dpSelect.options[dpSelect.selectedIndex];
-        this.filterContentByDatapoint(selectedOpt?.dataset.type || '', 'settings-tile-content');
-        document.getElementById('settings-tile-content').value  = tile.dataset.contentType || '';
+        const cType = tile.dataset.contentType || '';
+        let dpObj = {};
+        try { dpObj = JSON.parse(tile.dataset.datapoint); } catch(e){}
+        const activeUnit = dpObj.unitFilter || '';
+        this.updateSelectOptions('settings', cType, dpObj, activeUnit);
         this.settingsModal.classList.remove('hidden');
-    },
-
-    CONTENT_TYPES: {
-        'temp-current':   { 
-            render: () => `<div class="tile-value">-- °C</div>`,
-            init: async (container, datapoint) => {
-                if (!datapoint) return;
-                try {
-                    const data = await window.API.getSensorData(datapoint);
-                    if (data && data.length > 0) {
-                        const latest = data[data.length - 1];
-                        const val = latest.temperature !== undefined ? latest.temperature : latest.value;
-                        container.querySelector('.tile-value').textContent = `${val} °C`;
-                    }
-                } catch (e) { console.error("Fehler beim Laden von", datapoint, e); }
-            }
-        },
-        'temp-graph':     { 
-            init: (container, datapoint) => new Graph(container, datapoint, { metrics: ['temperature', 'humidity'] }) 
-        },
-        'energy-current': { 
-            render: () => `<div class="tile-value">-- kWh</div>`,
-            init: async (container, datapoint) => {
-                if (!datapoint) return;
-                try {
-                    const data = await window.API.getSensorData(datapoint);
-                    if (data && data.length > 0) {
-                        const latest = data[data.length - 1];
-                        const val = latest.power !== undefined ? latest.power : latest.value;
-                        container.querySelector('.tile-value').textContent = `${val} kWh`;
-                    }
-                } catch (e) { console.error("Fehler beim Laden von", datapoint, e); }
-            }
-        },
-        'energy-graph':   { 
-            init: (container, datapoint) => new Graph(container, datapoint, { metrics: ['power', 'voltage', 'current'] }) 
-        },
-        'switch-light':   { 
-            init: (container, datapoint) => SwitchRenderer.render(container, 'switch-light') 
-        },
-        'switch-shutter': {
-            init: (container, datapoint) => SwitchRenderer.render(container, 'switch-shutter')
-        }
     },
 
     renderTileContent(tile) {
         tile.querySelector('.tile-content')?.remove();
         const type = tile.dataset.contentType;
-        if (!type || !this.CONTENT_TYPES[type]) return;
-
-        let isFixedSize = false;
-
-        if (type.includes('graph')) {
-            tile.dataset.colSpan = 3;
-            tile.dataset.rowSpan = 3;
-            this.applyPosition(tile);
-            isFixedSize = true;
-        } else if (type.includes('switch')) {
-            tile.dataset.colSpan = 1;
-            tile.dataset.rowSpan = 1;
-            this.applyPosition(tile);
-            isFixedSize = true;
-        }
+        const reg = this.TILE_REGISTRY[type];
+        if (!type || !reg) return;
 
         const colHandle = tile.querySelector('.tile-resize-col');
         const rowHandle = tile.querySelector('.tile-resize-row');
-        if (colHandle) colHandle.style.display = isFixedSize ? 'none' : '';
-        if (rowHandle) rowHandle.style.display = isFixedSize ? 'none' : '';
+
+        if (colHandle) colHandle.style.display = reg.fixedSize ? 'none' : '';
+        if (rowHandle) rowHandle.style.display = reg.fixedSize ? 'none' : '';
 
         const div = document.createElement('div');
         div.className = 'tile-content';
         tile.appendChild(div);
 
-        if (typeof this.CONTENT_TYPES[type].render === 'function') {
-            const html = this.CONTENT_TYPES[type].render();
+        if (typeof reg.render === 'function') {
+            const html = reg.render(div);
             if (html) div.innerHTML = html;
         }
         
-        if (typeof this.CONTENT_TYPES[type].init === 'function') {
-            this.CONTENT_TYPES[type].init(div, tile.dataset.datapoint);
-        }
-    },
+        let dpObj = {};
+        try { dpObj = JSON.parse(tile.dataset.datapoint); } catch(e){}
 
-    DATAPOINT_CONTENT_MAP: {
-        'sensor.temp':   ['temp-current',   'temp-graph'],
-        'sensor.energy': ['energy-current', 'energy-graph'],
-        'switch.light':  ['switch-light'],
-        'switch.shutter':['switch-shutter'],
-    },
-
-    filterContentByDatapoint(datapoint, selectId = 'settings-tile-content') {
-        const select  = document.getElementById(selectId);
-        if (!select) return;
-        const allowed = Object.entries(this.DATAPOINT_CONTENT_MAP)
-            .filter(([prefix]) => (datapoint || '').startsWith(prefix))
-            .flatMap(([, types]) => types);
-        [...select.options].forEach(opt => {
-            opt.hidden = opt.value !== '' && !allowed.includes(opt.value);
-        });
-        if (select.value !== '' && !allowed.includes(select.value)) {
-            select.value = '';
-            select.dispatchEvent(new Event('change'));
+        if (typeof reg.init === 'function') {
+            reg.init(div, dpObj);
         }
     },
 

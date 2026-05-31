@@ -296,7 +296,7 @@ COMMENT ON COLUMN tile_datapoint.role IS 'z.B. "up", "down", "position"';
 CREATE TABLE tile_type
 (
   tile_type_id     uuid        NOT NULL DEFAULT uuidv7(),
-  name             varchar(50) NOT NULL,
+  name             varchar(50) NOT NULL UNIQUE,
   description      text       ,
   default_col_span smallint   ,
   default_row_span smallint   ,

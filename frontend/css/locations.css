@@ -40,16 +40,6 @@
     font-size: 1.3rem;
 }
 
-.card-actions {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    display: none;
-    align-items: center;
-    gap: 4px;
-    z-index: 10;
-}
-
 .location-card p {
     margin: 0;
     color: var(--text-secondary);
@@ -77,90 +67,6 @@
     transform: none !important;
     border-color: var(--border-color) !important;
     box-shadow: none !important;
-}
-
-.tabs-container {
-    display: flex;
-    gap: 0.5rem;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 0;
-    margin-bottom: 1rem;
-    overflow-x: auto;
-    align-items: flex-end;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE und Edge */
-}
-
-/* Chrome, Safari und Opera */
-.tabs-container::-webkit-scrollbar {
-    display: none;
-}
-
-.tab-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: var(--bg-mantle);
-    border: 1px solid var(--border-color);
-    border-bottom: none;
-    border-radius: 8px 8px 0 0;
-    padding: 0.4rem 0.8rem;
-    margin-bottom: 0;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-
-}
-
-.tab-wrapper:hover {
-    background: var(--palette-surface0);
-    box-shadow: 0 4px 12px rgba(var(--shadow-color-rgb), 0.2);
-}
-
-.tab-wrapper.active {
-    background: var(--bg-base);
-    border-color: var(--accent-blue);
-    border-bottom: 2px solid var(--bg-base);
-    padding-bottom: 0.5rem;
-    margin-bottom: -2px;
-    z-index: 1;
-}
-
-.tab-button {
-    background: transparent;
-    border: none;
-    color: var(--text-secondary);
-    font-size: 1.1rem;
-    cursor: pointer;
-    padding: 0;
-    margin: 0;
-    transition: color 0.2s;
-}
-
-.tab-button:hover {
-    color: var(--text-primary);
-}
-
-.tab-wrapper.active .tab-button {
-    color: var(--accent-blue);
-    font-weight: 600;
-}
-
-/* Drag and Drop & Edit Mode */
-.card-actions, 
-.tab-wrapper .btn-edit, 
-.tab-wrapper .btn-delete {
-    display: none;
-}
-
-.edit-mode .card-actions {
-    display: flex;
-}
-
-.edit-mode .tab-wrapper .btn-edit,
-.edit-mode .tab-wrapper .btn-delete {
-    display: flex;
-    opacity: 1;
 }
 
 .drag-over {

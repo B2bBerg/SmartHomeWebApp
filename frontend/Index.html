@@ -49,7 +49,7 @@
             <span class="header-icon not-implemented" title="Bald verfügbar"><img src="assets/icons/message-square-notification-svgrepo-com.svg" alt="Benachrichtigungen"></span>
         </div>
         <div class="header-right">
-            <img src="assets/alarm-clock-svgrepo-com.svg" alt="SmartHome Logo" class="logo">
+            <img src="assets/icons/alarm-clock-svgrepo-com.svg" alt="SmartHome Logo" class="logo">
         </div>
     </header>
     <nav id="sidebar">
@@ -93,35 +93,15 @@
                     <input id="tile-modal-input" type="text" placeholder="z.B. Luftfeuchtigkeit">
                 </div>
                 <div class="settings-group">
-                    <label>Grösse</label>
-                    <div class="tile-resize-cross">
-                        <button id="add-btn-col-minus">&minus;&#9664;</button>
-                        <button id="add-btn-col-plus">+&#9654;</button>
-                        <button id="add-btn-row-minus">&minus;&#9650;</button>
-                        <button id="add-btn-row-plus">+&#9660;</button>
-                    </div>
-                    <span id="add-size-display" class="size-display">1 &times; 1</span>
-                </div>
-                <div class="settings-group">
-                    <label>Inhalt</label>
+                    <label>Inhalt (Typ)</label>
                     <select id="add-tile-content">
                         <option value="">&mdash; Keine &mdash;</option>
-                        <option value="temp-current">Temperatur &ndash; Aktueller Wert</option>
-                        <option value="temp-graph">Temperatur &ndash; Graph</option>
-                        <option value="energy-current">Energie &ndash; Aktueller Wert</option>
-                        <option value="energy-graph">Energie &ndash; Graph</option>
-                        <option value="device-graph">Graph &ndash; Alle Metriken eines Geräts</option>
-                        <option value="type-graph">Graph &ndash; Alle Metriken eines Typs</option>
-                        <option value="switch-light">Schalter &ndash; Licht</option>
-                        <option value="switch-shutter">Schalter &ndash; Rollladen</option>
                     </select>
                 </div>
-                <div class="settings-group">
-                    <label>Datenpunkt</label>
-                    <select id="add-tile-datapoint" size="1" style="height: auto;">
-                        <!-- API: Options dynamically injected via tile.js -->
-                    </select>
-                </div>
+                
+                <!-- Wird über tile.js dynamisch gefüllt -->
+                <div id="add-tile-dp-container"></div>
+
                 <div class="tile-modal-actions">
                     <button id="tile-modal-confirm" class="btn-primary">Hinzufügen</button>
                     <button id="tile-modal-cancel" class="btn-outline">Abbrechen</button>
@@ -137,25 +117,15 @@
                     <input id="settings-tile-label" type="text">
                 </div>
                 <div class="settings-group">
-                    <label>Inhalt</label>
+                    <label>Inhalt (Typ)</label>
                     <select id="settings-tile-content">
                         <option value="">&mdash; Keine &mdash;</option>
-                        <option value="temp-current">Temperatur &ndash; Aktueller Wert</option>
-                        <option value="temp-graph">Temperatur &ndash; Graph</option>
-                        <option value="energy-current">Energie &ndash; Aktueller Wert</option>
-                        <option value="energy-graph">Energie &ndash; Graph</option>
-                        <option value="device-graph">Graph &ndash; Alle Metriken eines Geräts</option>
-                        <option value="type-graph">Graph &ndash; Alle Metriken eines Typs</option>
-                        <option value="switch-light">Schalter &ndash; Licht</option>
-                        <option value="switch-shutter">Schalter &ndash; Rollladen</option>
                     </select>
                 </div>
-                <div class="settings-group">
-                    <label>Datenpunkt</label>
-                    <select id="settings-tile-datapoint" size="1" style="height: auto;">
-                        <!-- API: Options dynamically injected via tile.js -->
-                    </select>
-                </div>
+                
+                <!-- Wird über tile.js dynamisch gefüllt -->
+                <div id="settings-tile-dp-container"></div>
+
                 <div class="tile-modal-actions">
                     <button id="tile-settings-delete" class="btn-danger">Löschen</button>
                     <div style="flex-grow:1"></div>
@@ -178,7 +148,6 @@
     <script src="js/modules/tile.js"></script>
     <script src="js/modules/datapoint.js"></script>
     <!-- SUB-MAINS -->
-    <script src="js/dashboard.js"></script>
     <script src="js/locations.js"></script>
     <script src="js/devices.js"></script>
     <script src="js/datapointActuators.js"></script>

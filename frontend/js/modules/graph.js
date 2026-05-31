@@ -41,6 +41,10 @@ class Graph {
                         <span class="chart-date-sep">-</span>
                         <span class="chart-date-to">--.--.----</span>
                     </div>
+                    <div style="flex:1;"></div>
+                    <button class="chart-legend-btn" title="Legende anzeigen">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                    </button>
                     ${metricsHTML}
                     <div class="chart-controls">
                         <button class="chart-nav-btn" data-dir="-1">◀</button>
@@ -49,6 +53,13 @@ class Graph {
                         <button class="chart-range-btn ${this.range === 30 ? 'active' : ''}" data-range="30">1M</button>
                         <button class="chart-nav-btn" data-dir="1">▶</button>
                     </div>
+                </div>
+                <div class="chart-legend-overlay hidden">
+                    <div class="legend-header">
+                        <span>Legende</span>
+                        <button class="legend-close-btn" title="Schliessen">&times;</button>
+                    </div>
+                    <div class="chart-legend-items"></div>
                 </div>
                 <div class="chart-body">
                     <div class="chart-y-axis">
@@ -88,6 +99,14 @@ class Graph {
             });
         }
         
+        // Legenden-Overlay umschalten
+        const legendBtn = this.container.querySelector('.chart-legend-btn');
+        const legendOverlay = this.container.querySelector('.chart-legend-overlay');
+        const legendCloseBtn = this.container.querySelector('.legend-close-btn');
+
+        if (legendBtn && legendOverlay) legendBtn.addEventListener('click', () => legendOverlay.classList.toggle('hidden'));
+        if (legendCloseBtn && legendOverlay) legendCloseBtn.addEventListener('click', () => legendOverlay.classList.add('hidden'));
+
         // Zeitbereich-Tasten
         this.container.querySelectorAll('.chart-range-btn').forEach(btn => {
             btn.onclick = () => {
@@ -112,19 +131,33 @@ class Graph {
     }
 
     async updateChart() {
-        if (!this.datapoints || this.datapoints.length === 0) return;
         const dateFrom = this.container.querySelector('.chart-date-from');
         const dateTo = this.container.querySelector('.chart-date-to');
         const errorMsg = this.container.querySelector('.chart-error-message');
         const svg = this.container.querySelector('.chart-svg');
 
-        // Lade die SI-Einheit aus den Sensor-Metadaten (nur einmalig nötig)
-        if (this.unit === undefined) {
+        if (!this.datapoints || this.datapoints.length === 0 || this.datapoints[0] === '') {
+            if (errorMsg) {
+                errorMsg.textContent = "Kein Datenpunkt konfiguriert";
+                errorMsg.classList.remove('hidden');
+            }
+            if (svg) svg.style.opacity = '0.1';
+            this.drawPaths([]);
+            return;
+        }
+
+        // Lade die SI-Einheit und Namen aus den Sensor-Metadaten (nur einmalig nötig)
+        if (this.unit === undefined || !this.sensorNames) {
             try {
                 const sensors = await window.API.getSensors();
                 const sensor = sensors.find(s => s.id === this.datapoints[0]);
                 this.unit = sensor && sensor.unit ? sensor.unit : '';
-            } catch (e) { this.unit = ''; }
+                
+                this.sensorNames = this.datapoints.map(dpId => {
+                    const s = sensors.find(x => x.id === dpId);
+                    return s ? s.name : 'Unbekannt';
+                });
+            } catch (e) { this.unit = ''; this.sensorNames = this.datapoints.map((_, i) => `Serie ${i + 1}`); }
         }
 
         try {
@@ -167,7 +200,10 @@ class Graph {
             let allFilteredData = [];
             
             sensorValuesArray.forEach((sensorValues) => {
-                if (!sensorValues) return;
+                if (!sensorValues) {
+                    allFilteredData.push([]);
+                    return;
+                }
                 const filteredData = sensorValues
                     .filter(entry => {
                         const dTime = new Date(entry.timestamp);
@@ -177,7 +213,7 @@ class Graph {
                         val: entry[this.activeMetric] !== undefined ? entry[this.activeMetric] : entry.value,
                         timestamp: entry.timestamp
                     }));
-                if (filteredData.length > 0) allFilteredData.push(filteredData);
+                allFilteredData.push(filteredData);
             });
 
             // Header Beschriftung (exakte Tage ohne Überhang)
@@ -254,7 +290,7 @@ class Graph {
                 });
             }
 
-            if (allFilteredData.length === 0) {
+        if (allFilteredData.every(arr => arr.length === 0)) {
                 if (errorMsg) {
                     errorMsg.textContent = "Keine Daten vorhanden";
                     errorMsg.classList.remove('hidden');
@@ -311,10 +347,19 @@ class Graph {
         if (yMinEl) yMinEl.textContent = renderMin.toFixed(1) + u;
 
         const colors = ['var(--accent-blue)', 'var(--accent-green)', 'var(--accent-yellow)', 'var(--accent-red)', '#cba6f7', '#f38ba8'];
+        const legendContainer = this.container.querySelector('.chart-legend-items');
+        const legendBtn = this.container.querySelector('.chart-legend-btn');
+        if (legendContainer) legendContainer.innerHTML = '';
 
         dataArray.forEach((data, index) => {
-            if (!data || !data.length) return;
             const color = colors[index % colors.length];
+            const sName = (this.sensorNames && this.sensorNames[index]) ? this.sensorNames[index] : `Serie ${index + 1}`;
+
+            if (legendContainer) {
+                legendContainer.innerHTML += `<div style="display:flex; align-items:center; gap:6px;"><span style="width:12px;height:12px;border-radius:50%;background:${color};"></span>${sName}</div>`;
+            }
+
+            if (!data || !data.length) return;
 
             const pathPoints = data.map((d, i) => {
                 const x = (i / Math.max(1, data.length - 1)) * width;
@@ -328,13 +373,13 @@ class Graph {
                     pt.className = 'chart-data-point';
                     pt.style.left = `${px}%`;
                     pt.style.bottom = `${py}%`;
-                    pt.style.borderColor = color;
+                    pt.style.backgroundColor = color;
 
                     const dTime = new Date(d.timestamp);
                     const dateStr = dTime.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric' });
                     const timeStr = dTime.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
                     
-                    pt.title = `Serie ${index + 1}\n${dateStr} ${timeStr}\nWert: ${d.val}${u}`;
+                    pt.title = `${sName}\n${dateStr} ${timeStr}\nWert: ${d.val}${u}`;
                     pointsContainer.appendChild(pt);
                 }
 

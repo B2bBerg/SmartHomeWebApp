@@ -11,6 +11,10 @@ DECLARE
     v_loc_id uuid;
     v_wohn_id uuid;
     v_technik_id uuid;
+    v_kueche_id uuid;
+    v_schlaf_id uuid;
+    v_bad_id uuid;
+    v_buero_id uuid;
     
     v_bus_wifi uuid;
     v_bus_zigbee uuid;
@@ -20,6 +24,8 @@ DECLARE
     v_model_hue uuid;
     v_model_emeter uuid;
     v_model_wmeter uuid;
+    v_model_shutter3 uuid;
+    v_model_temp uuid;
     
     v_dev_shelly1 uuid;
     v_dev_shelly25 uuid;
@@ -29,14 +35,23 @@ DECLARE
     
     v_ch_do01 uuid;
     v_ch_do02 uuid;
+    v_ch_do03 uuid;
     v_ch_di01 uuid;
     v_ch_di02 uuid;
     v_ch_ai01 uuid;
     v_ch_ai02 uuid;
+    v_manuf_id uuid;
+    
+    r RECORD;
+    new_dev uuid;
 BEGIN
     -- 2. Standorte laden (Erstellt durch location.sql)
     SELECT location_id INTO v_wohn_id FROM location WHERE location_name = 'Wohnzimmer' LIMIT 1;
     SELECT location_id INTO v_technik_id FROM location WHERE location_name = 'Technikraum' LIMIT 1;
+    SELECT location_id INTO v_kueche_id FROM location WHERE location_name = 'Küche' LIMIT 1;
+    SELECT location_id INTO v_schlaf_id FROM location WHERE location_name = 'Schlafzimmer' LIMIT 1;
+    SELECT location_id INTO v_bad_id FROM location WHERE location_name = 'Badezimmer' LIMIT 1;
+    SELECT location_id INTO v_buero_id FROM location WHERE location_name = 'Büro' LIMIT 1;
     
     -- Fallback
     SELECT location_id INTO v_loc_id FROM location LIMIT 1;
@@ -59,24 +74,42 @@ BEGIN
     SELECT model_type_id INTO v_model_shelly25 FROM model_type WHERE model_name = 'Shelly 2.5' LIMIT 1;
     SELECT model_type_id INTO v_model_hue FROM model_type WHERE model_name = 'Hue Color Ambiance' LIMIT 1;
     
+    -- 4a. Hersteller sicherstellen (Verhindert Absturz, falls Tabelle leer ist)
+    SELECT manufacturer_id INTO v_manuf_id FROM manufacturer LIMIT 1;
+    IF v_manuf_id IS NULL THEN
+        INSERT INTO manufacturer (manufacturer_name) VALUES ('SmartHome Systems') RETURNING manufacturer_id INTO v_manuf_id;
+    END IF;
+
     -- Modelle für Zähler suchen oder anlegen
     SELECT model_type_id INTO v_model_emeter FROM model_type WHERE model_name = 'Shelly 3EM' LIMIT 1;
     IF v_model_emeter IS NULL THEN
         INSERT INTO model_type (model_name, manufacturer_id) 
-        SELECT 'Shelly 3EM', manufacturer_id FROM manufacturer WHERE manufacturer_name = 'Shelly' LIMIT 1
+        VALUES ('Shelly 3EM', v_manuf_id)
         RETURNING model_type_id INTO v_model_emeter;
     END IF;
 
     SELECT model_type_id INTO v_model_wmeter FROM model_type WHERE model_name = 'Smart Water Meter' LIMIT 1;
     IF v_model_wmeter IS NULL THEN
         INSERT INTO model_type (model_name, manufacturer_id) 
-        SELECT 'Smart Water Meter', manufacturer_id FROM manufacturer LIMIT 1
+        VALUES ('Smart Water Meter', v_manuf_id)
         RETURNING model_type_id INTO v_model_wmeter;
+    END IF;
+
+    SELECT model_type_id INTO v_model_shutter3 FROM model_type WHERE model_name = 'Smart Shutter 3-Way' LIMIT 1;
+    IF v_model_shutter3 IS NULL THEN
+        INSERT INTO model_type (model_name, manufacturer_id) VALUES ('Smart Shutter 3-Way', v_manuf_id) RETURNING model_type_id INTO v_model_shutter3;
+    END IF;
+
+    SELECT model_type_id INTO v_model_temp FROM model_type WHERE model_name = 'Smart Temp Sensor' LIMIT 1;
+    IF v_model_temp IS NULL THEN
+        INSERT INTO model_type (model_name, manufacturer_id) VALUES ('Smart Temp Sensor', v_manuf_id) RETURNING model_type_id INTO v_model_temp;
     END IF;
 
     -- 5. Referenz-IDs für Kanal-Typen auflösen (aus channelType.sql)
     SELECT channel_id INTO v_ch_do01 FROM channel_type WHERE channel_name = 'DO_01';
     SELECT channel_id INTO v_ch_do02 FROM channel_type WHERE channel_name = 'DO_02';
+    IF NOT EXISTS (SELECT 1 FROM channel_type WHERE channel_name = 'DO_03') THEN INSERT INTO channel_type (channel_name, description) VALUES ('DO_03', 'Digital Output 3'); END IF;
+    SELECT channel_id INTO v_ch_do03 FROM channel_type WHERE channel_name = 'DO_03';
     SELECT channel_id INTO v_ch_di01 FROM channel_type WHERE channel_name = 'DI_01';
     SELECT channel_id INTO v_ch_di02 FROM channel_type WHERE channel_name = 'DI_02';
     SELECT channel_id INTO v_ch_ai01 FROM channel_type WHERE channel_name = 'AI_01';
@@ -163,4 +196,48 @@ BEGIN
         RAISE NOTICE 'Device Smart Water Meter eingefügt.';
     END IF;
 
+    -- ==========================================
+    -- 6. Dynamische Raumbestückung (Alle Räume)
+    -- ==========================================
+    FOR r IN 
+        SELECT * FROM (VALUES 
+            ('Küche'::text, v_kueche_id::uuid, 'AA:01'::text), 
+            ('Schlafzimmer'::text, v_schlaf_id::uuid, 'AA:02'::text), 
+            ('Badezimmer'::text, v_bad_id::uuid, 'AA:03'::text), 
+            ('Büro'::text, v_buero_id::uuid, 'AA:04'::text), 
+            ('Wohnzimmer'::text, v_wohn_id::uuid, 'AA:05'::text),
+            ('Technikraum'::text, v_technik_id::uuid, 'AA:06'::text)
+        ) AS t(r_name, r_id, mac_pfx) 
+        WHERE r_id IS NOT NULL 
+    LOOP
+        -- 1. Deckenlicht (falls noch keins existiert)
+        IF NOT EXISTS (SELECT 1 FROM devices WHERE location_id = r.r_id AND device_name ILIKE 'Deckenlicht%') THEN
+            INSERT INTO devices (device_name, serial_number, mac_address, status, model_type_id, bus_type_id, location_id)
+            VALUES ('Deckenlicht ' || r.r_name, 'L-' || r.r_name, (r.mac_pfx || ':00:00:00:01')::macaddr, 'ONLINE', v_model_shelly1, v_bus_wifi, r.r_id)
+            RETURNING device_id INTO new_dev;
+            INSERT INTO device_channel (device_id, channel_id, channel_number, description, can_switch) VALUES 
+            (new_dev, v_ch_do01, 1, 'Licht Relais', false);
+        END IF;
+
+        -- 2. 3-Way Storen (Auf/Ab/Stop) - NICHT im Technikraum!
+        IF r.r_name != 'Technikraum' THEN
+            IF NOT EXISTS (SELECT 1 FROM devices WHERE location_id = r.r_id AND device_name ILIKE 'Storen%') THEN
+                INSERT INTO devices (device_name, serial_number, mac_address, status, model_type_id, bus_type_id, location_id)
+                VALUES ('Storen ' || r.r_name, 'S3-' || r.r_name, (r.mac_pfx || ':00:00:00:02')::macaddr, 'ONLINE', v_model_shutter3, v_bus_wifi, r.r_id)
+                RETURNING device_id INTO new_dev;
+                INSERT INTO device_channel (device_id, channel_id, channel_number, description) VALUES 
+                (new_dev, v_ch_do01, 1, 'Auf'), (new_dev, v_ch_do02, 2, 'Ab'), (new_dev, v_ch_do03, 3, 'Stop');
+            END IF;
+        END IF;
+
+        -- 3. Temp Sensor
+        IF NOT EXISTS (SELECT 1 FROM devices WHERE location_id = r.r_id AND device_name ILIKE 'Raumklima%') THEN
+            INSERT INTO devices (device_name, serial_number, mac_address, status, model_type_id, bus_type_id, location_id)
+            VALUES ('Raumklima ' || r.r_name, 'T-' || r.r_name, (r.mac_pfx || ':00:00:00:03')::macaddr, 'ONLINE', v_model_temp, v_bus_zigbee, r.r_id)
+            RETURNING device_id INTO new_dev;
+            INSERT INTO device_channel (device_id, channel_id, channel_number, description) VALUES 
+            (new_dev, v_ch_ai01, 1, 'Temperatur');
+        END IF;
+    END LOOP;
+    
 END $$;
