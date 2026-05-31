@@ -6,4 +6,5 @@ export class IDashboardRepository {
     async deleteDashboard(id) { throw new Error("Method not implemented"); }
     async getDashboardTilesBySlug(slug) { throw new Error("Method not implemented"); }
     async saveDashboardTiles(slug, tiles) { throw new Error("Method not implemented"); }
+    async getTileTypes() { throw new Error("Method not implemented"); }
 }

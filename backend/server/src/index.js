@@ -25,6 +25,11 @@ import { DashboardService } from './core/services/DashboardService.js';
 import { DashboardController } from './adapter/in/web/controller/DashboardController.js';
 import { createDashboardRoutes } from './adapter/in/web/routes/dashboardRoutes.js';
 
+import { PostgresDatapointAdapter } from './adapter/out/db/PostgresDatapointAdapter.js';
+import { DatapointService } from './core/services/DatapointService.js';
+import { DatapointController } from './adapter/in/web/controller/DatapointController.js';
+import { createDatapointRoutes } from './adapter/in/web/routes/datapointRoutes.js';
+
 // Importiere die zentrale Error-Handling Middleware
 import { errorHandler } from './adapter/in/web/middlewares/errorHandler.js';
 
@@ -56,30 +61,35 @@ const addressRepository = new PostgresAddressAdapter(dbPool);
 const deviceRepository = new PostgresDeviceAdapter(dbPool);
 const networkDiscoveryAdapter = new MockNetworkDiscoveryAdapter();
 const dashboardRepository = new PostgresDashboardAdapter(dbPool);
+const datapointRepository = new PostgresDatapointAdapter(dbPool);
 
 // 2. Erstelle den Core-Service und gib ihm den Adapter als Abhängigkeit
 const locationService = new LocationService(locationRepository);
 const addressService = new AddressService(addressRepository);
 const deviceService = new DeviceService(deviceRepository, networkDiscoveryAdapter);
 const dashboardService = new DashboardService(dashboardRepository);
+const datapointService = new DatapointService(datapointRepository);
 
 // 3. Erstelle den Inbound-Adapter (Controller) und gib ihm den Service
 const locationController = new LocationController(locationService);
 const addressController = new AddressController(addressService);
 const deviceController = new DeviceController(deviceService);
 const dashboardController = new DashboardController(dashboardService);
+const datapointController = new DatapointController(datapointService);
 
 // 4. Erstelle die Routen und gib ihnen den Controller
 const locationRoutes = createLocationRoutes(locationController);
 const addressRoutes = createAddressRoutes(addressController);
 const deviceRoutes = createDeviceRoutes(deviceController);
 const dashboardRoutes = createDashboardRoutes(dashboardController);
+const datapointRoutes = createDatapointRoutes(datapointController);
 
 // --- Routen registrieren ---
 app.use('/api', locationRoutes);
 app.use('/api', addressRoutes);
 app.use('/api', deviceRoutes);
 app.use('/api', dashboardRoutes);
+app.use('/api', datapointRoutes);
 
 // --- Zentrale Fehlerbehandlung (muss nach den Routen registriert werden!) ---
 app.use(errorHandler);

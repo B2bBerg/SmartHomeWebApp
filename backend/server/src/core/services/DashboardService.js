@@ -11,6 +11,10 @@ export class DashboardService extends IDashboardService {
         return await this.dashboardRepository.getAllDashboards();
     }
 
+    async getTileTypes() {
+        return await this.dashboardRepository.getTileTypes();
+    }
+
     async getDashboard(idOrSlug) {
         let dashboardData;
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
@@ -32,8 +36,9 @@ export class DashboardService extends IDashboardService {
     async saveDashboard(idOrSlug, dashboardData) {
         const dashboard = new Dashboard({ ...dashboardData, slug: idOrSlug });
         
-        // Auto-Link Location: Falls das Dashboard zu einem Standort gehört (slug: dashboard_room_<uuid> etc.)
-        if (idOrSlug && idOrSlug.startsWith('dashboard_')) {
+        // Auto-Link Location: Die Zuweisung der locationId sollte idealerweise explizit im Payload 
+        // erfolgen. Fallback-Logik für Abwärtskompatibilität ("Magic Slugs"):
+        if (!dashboard.locationId && idOrSlug && idOrSlug.startsWith('dashboard_')) {
             const parts = idOrSlug.split('_');
             if (parts.length >= 3) {
                 const potentialLocationId = parts.slice(2).join('_'); // Extrahiert die UUID

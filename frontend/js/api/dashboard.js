@@ -18,6 +18,10 @@ export const DashboardAPI = {
         return await fetchApi(`/dashboard/${encodeURIComponent(slug)}`, { method: 'DELETE' });
     },
 
+    getTileTypes: async () => {
+        return await fetchApi('/dashboard/tile-types');
+    },
+
     // --- Subdashboards / Tiles für das Grid-System ---
     getDashboardTiles: async (slug = 'main') => {
         return await fetchApi(`/dashboard/${encodeURIComponent(slug)}/tiles`);

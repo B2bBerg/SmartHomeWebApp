@@ -9,17 +9,33 @@ export class PostgresDashboardAdapter extends IDashboardRepository {
     async getAllDashboards() {
         const query = `
             SELECT 
-                app_page_id as id,
-                name,
-                slug,
-                location_id as "locationId",
-                user_id as "userId",
-                sort_order as "sortOrder"
-            FROM app_page
-            ORDER BY sort_order ASC, name ASC
+                p.app_page_id as id,
+                p.name,
+                p.slug,
+                p.location_id as "locationId",
+                p.user_id as "userId",
+                p.sort_order as "sortOrder"
+            FROM app_page p
+            LEFT JOIN location l ON p.location_id = l.location_id
+            WHERE p.location_id IS NULL OR l.is_active = true
+            ORDER BY p.sort_order ASC, p.name ASC
         `;
         const result = await this.pool.query(query);
         return result.rows;
+    }
+
+    async getTileTypes() {
+        let res = await this.pool.query('SELECT tile_type_id as id, name, description FROM tile_type ORDER BY name');
+        // Automatisches Einfügen der Basis-Typen, falls die Datenbank leer ist
+        if (res.rowCount === 0) {
+            const defaults = ['Value', 'Graph', 'Switch', 'Shutter 2-Way', 'Shutter 3-Way'];
+            for (const t of defaults) {
+                const check = await this.pool.query('SELECT tile_type_id FROM tile_type WHERE name = $1', [t]);
+                if (check.rowCount === 0) await this.pool.query('INSERT INTO tile_type (name) VALUES ($1)', [t]);
+            }
+            res = await this.pool.query('SELECT tile_type_id as id, name, description FROM tile_type ORDER BY name');
+        }
+        return res.rows;
     }
 
     async getDashboardBySlug(slug) {
@@ -31,30 +47,66 @@ export class PostgresDashboardAdapter extends IDashboardRepository {
     }
 
     async getDashboardTilesBySlug(slug) {
-        const query = `
+        console.log(`[DB] getDashboardTilesBySlug called for slug: "${slug}"`);
+        
+        // 1. Hole alle Kacheln ohne komplexe JSON_AGG (Kugelsicher)
+        const tileQuery = `
             SELECT 
-                COALESCE(
-                    (SELECT json_agg(
-                        json_build_object(
-                            'id', t.tile_id,
-                            'tileTypeName', tt.name,
-                            'label', t.label,
-                            'col', t.col_pos,
-                            'row', t.row_pos,
-                            'colSpan', t.col_span,
-                            'rowSpan', t.row_span,
-                            'contentType', t.config ->> 'contentType',
-                            'datapoint', t.config ->> 'datapoint'
-                        ) ORDER BY t.row_pos, t.col_pos
-                    ) FROM tile t
-                    JOIN tile_type tt ON t.tile_type_id = tt.tile_type_id
-                    WHERE t.app_page_id = (SELECT app_page_id FROM app_page WHERE slug = $1)),
-                    '[]'::json
-                ) as tiles
+                t.tile_id as id,
+                tt.name as "tileTypeName",
+                t.label,
+                t.col_pos as col,
+                t.row_pos as row,
+                t.col_span as "colSpan",
+                t.row_span as "rowSpan",
+                t.config
+            FROM tile t
+            JOIN tile_type tt ON t.tile_type_id = tt.tile_type_id
+            JOIN app_page p ON t.app_page_id = p.app_page_id
+            WHERE p.slug = $1
+            ORDER BY t.row_pos, t.col_pos
         `;
-        const result = await this.pool.query(query, [slug]);
-        if (result.rowCount === 0) return [];
-        return result.rows[0].tiles;
+        const tileRes = await this.pool.query(tileQuery, [slug]);
+        console.log(`[DB] Found ${tileRes.rowCount} tiles for slug "${slug}"`);
+
+        if (tileRes.rowCount === 0) return [];
+
+        const tiles = tileRes.rows;
+
+        // 2. Hole alle Datenpunkte für diese Kacheln
+        const tileIds = tiles.map(t => t.id);
+        const dpQuery = `
+            SELECT tile_id, role, datapoint_id
+            FROM tile_datapoint
+            WHERE tile_id = ANY($1::uuid[])
+        `;
+        const dpRes = await this.pool.query(dpQuery, [tileIds]);
+        
+        // 3. Mapping in JavaScript (100% sicher und einfach zu debuggen)
+        for (const t of tiles) {
+            const config = t.config || {};
+            t.contentType = config.contentType || t.tileTypeName;
+            t.unitFilter = config.unitFilter || null;
+            
+            // Datapoints aggregieren
+            t.datapoint = config.datapoint || {};
+            const dpsForTile = dpRes.rows.filter(dp => dp.tile_id === t.id);
+            dpsForTile.forEach(dp => {
+                if (t.datapoint[dp.role] && !t.datapoint[dp.role].includes(dp.datapoint_id)) {
+                    t.datapoint[dp.role] += `,${dp.datapoint_id}`;
+                } else if (!t.datapoint[dp.role]) {
+                    t.datapoint[dp.role] = dp.datapoint_id;
+                }
+            });
+
+            // UnitFilter Fallback für das Frontend
+            if (t.unitFilter) t.datapoint.unitFilter = t.unitFilter;
+            
+            delete t.config; // Backend-intern, wird nicht ans Frontend gesendet
+        }
+
+        console.log(`[DB] Successfully mapped ${tiles.length} tiles to JSON.`);
+        return tiles;
     }
 
     async _getDashboard(column, value) {
@@ -72,7 +124,8 @@ export class PostgresDashboardAdapter extends IDashboardRepository {
                 p.user_id as "userId",
                 p.sort_order as "sortOrder"
             FROM app_page p
-            WHERE ${column} = $1
+            LEFT JOIN location l ON p.location_id = l.location_id
+            WHERE p.${column} = $1 AND (p.location_id IS NULL OR l.is_active = true)
         `;
 
         const result = await this.pool.query(query, [value]);
@@ -144,79 +197,101 @@ export class PostgresDashboardAdapter extends IDashboardRepository {
             }
             const pageId = pageRes.rows[0].app_page_id;
 
-            // Simple mapping from frontend contentType to backend tile_type name
-            const contentTypeToTileType = (contentType) => {
-                if (!contentType) return 'Default';
-                if (contentType.includes('graph')) return 'Graph';
-                if (contentType.includes('switch')) return 'Switch';
-                if (contentType.includes('current')) return 'Current Value';
-                return 'Default';
-            };
+            if (!tiles || tiles.length === 0) {
+                await client.query('DELETE FROM tile_datapoint WHERE tile_id IN (SELECT tile_id FROM tile WHERE app_page_id = $1)', [pageId]);
+                await client.query('DELETE FROM tile WHERE app_page_id = $1', [pageId]);
+                await client.query('COMMIT');
+                return await this.getDashboardTilesBySlug(slug);
+            }
 
-            const activeTileIds = [];
+            // 1. Resolve & create tile types using JSON array (Bulk Insert)
+            const tileTypes = [...new Set(tiles.map(t => t.contentType || 'Value'))].map(name => ({ name }));
+            await client.query(`
+                INSERT INTO tile_type (name)
+                SELECT name FROM json_to_recordset($1::json) AS x(name varchar)
+                ON CONFLICT (name) DO NOTHING
+            `, [JSON.stringify(tileTypes)]);
 
-            for (const tile of tiles || []) {
-                let tileId = tile.id;
-                if (tileId && tileId.startsWith('tile-tmp-')) {
-                    tileId = null; // It's a new tile
+            // 2. Prepare payload for Tiles Bulk Upsert
+            const tilePayload = tiles.map(t => ({
+                tile_id: (t.id && !t.id.startsWith('tile-tmp-')) ? t.id : null,
+                app_page_id: pageId,
+                tile_type_name: t.contentType || 'Value',
+                label: t.label || '',
+                col_pos: t.col || 0,
+                row_pos: t.row || 0,
+                col_span: t.colSpan || 1,
+                row_span: t.rowSpan || 1,
+                config: { 
+                    contentType: t.contentType || null,
+                    unitFilter: t.unitFilter || (t.datapoint && t.datapoint.unitFilter) || null
                 }
+            }));
 
-                const config = {
-                    contentType: tile.contentType || null,
-                    datapoint: tile.datapoint || null
-                };
+            // Execute Bulk Upsert for Tiles
+            const upsertRes = await client.query(`
+                WITH payload AS (
+                    SELECT * FROM json_to_recordset($1::json) AS x(
+                        tile_id uuid, app_page_id uuid, tile_type_name varchar, label varchar, 
+                        col_pos smallint, row_pos smallint, col_span smallint, row_span smallint, config jsonb
+                    )
+                )
+                INSERT INTO tile (tile_id, app_page_id, tile_type_id, label, col_pos, row_pos, col_span, row_span, config, updated_at)
+                SELECT 
+                    COALESCE(p.tile_id, uuidv7()), 
+                    p.app_page_id, 
+                    tt.tile_type_id, 
+                    p.label, p.col_pos, p.row_pos, p.col_span, p.row_span, p.config, NOW()
+                FROM payload p
+                JOIN tile_type tt ON tt.name = p.tile_type_name
+                ON CONFLICT (tile_id) DO UPDATE SET
+                    tile_type_id = EXCLUDED.tile_type_id,
+                    label = EXCLUDED.label,
+                    col_pos = EXCLUDED.col_pos,
+                    row_pos = EXCLUDED.row_pos,
+                    col_span = EXCLUDED.col_span,
+                    row_span = EXCLUDED.row_span,
+                    config = EXCLUDED.config,
+                    updated_at = NOW()
+                RETURNING tile_id, label, col_pos, row_pos
+            `, [JSON.stringify(tilePayload)]);
 
-                const tileTypeName = contentTypeToTileType(tile.contentType);
-                let typeRes = await client.query('SELECT tile_type_id FROM tile_type WHERE name = $1', [tileTypeName]);
-                if (typeRes.rowCount === 0) {
-                    // Robustes Fallback: Bevor es knallt, den ersten verfügbaren Typ nehmen
-                    typeRes = await client.query('SELECT tile_type_id FROM tile_type LIMIT 1');
-                    if (typeRes.rowCount === 0) {
-                        throw new Error(`Keine Tile-Typen in der Datenbank konfiguriert.`);
-                    }
+            const activeTileIds = upsertRes.rows.map(r => r.tile_id);
+
+            // 3. Prepare payload for Datapoints
+            const dpPayload = [];
+            for (const t of tiles) {
+                let actualTileId = t.id && !t.id.startsWith('tile-tmp-') ? t.id : null;
+                if (!actualTileId) {
+                    const matchedRow = upsertRes.rows.find(r => r.label === (t.label || '') && r.col_pos === (t.col || 0) && r.row_pos === (t.row || 0));
+                    if (matchedRow) actualTileId = matchedRow.tile_id;
                 }
-                const typeId = typeRes.rows[0].tile_type_id;
-
-                if (!tileId) {
-                    const res = await client.query(
-                        `INSERT INTO tile (app_page_id, tile_type_id, label, col_pos, row_pos, col_span, row_span, config) 
-                         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING tile_id`,
-                        [pageId, typeId, tile.label || '', tile.col || 0, tile.row || 0, tile.colSpan || 1, tile.rowSpan || 1, config]
-                    );
-                    tileId = res.rows[0].tile_id;
-                } else {
-                    await client.query(
-                        `UPDATE tile SET tile_type_id = $1, label = $2, col_pos = $3, row_pos = $4, col_span = $5, row_span = $6, config = $7, updated_at = NOW()
-                         WHERE tile_id = $8`,
-                        [typeId, tile.label || '', tile.col || 0, tile.row || 0, tile.colSpan || 1, tile.rowSpan || 1, config, tileId]
-                    );
-                }
-                
-                activeTileIds.push(tileId);
-
-                // Datenpunkte (Verknüpfung Kachel <-> Sensor/Aktor) überschreiben
-                await client.query('DELETE FROM tile_datapoint WHERE tile_id = $1', [tileId]);
-                if (config.datapoint) {
-                    const datapointIds = config.datapoint.split(',');
-                    for (const dpId of datapointIds) {
-                        if (dpId) { // Ensure not to insert empty strings
-                            await client.query(
-                                'INSERT INTO tile_datapoint (tile_id, datapoint_id, role) VALUES ($1, $2, $3)',
-                                [tileId, dpId, 'default'] // Role is not used in frontend yet, so 'default' is fine
-                            );
+                if (actualTileId && t.datapoint && typeof t.datapoint === 'object') {
+                    for (const [role, dpValue] of Object.entries(t.datapoint)) {
+                        if (!dpValue || role === 'unitFilter') continue; // Ignorieren, verhindert UUID-Crash in Postgres!
+                        const dpIds = Array.isArray(dpValue) ? dpValue : dpValue.split(',');
+                        for (const dpId of dpIds) {
+                            if (dpId.trim()) dpPayload.push({ tile_id: actualTileId, datapoint_id: dpId.trim(), role });
                         }
                     }
                 }
             }
 
-            // Orphan-Kacheln und Verknüpfungen bereinigen
+            // Bulk Delete & Insert Datapoints
             if (activeTileIds.length > 0) {
-                await client.query('DELETE FROM tile_datapoint WHERE tile_id IN (SELECT tile_id FROM tile WHERE app_page_id = $1 AND tile_id != ALL($2::uuid[]))', [pageId, activeTileIds]);
-                await client.query('DELETE FROM tile WHERE app_page_id = $1 AND tile_id != ALL($2::uuid[])', [pageId, activeTileIds]);
-            } else if ((tiles || []).length === 0) { // If an empty array is sent, delete all tiles
-                await client.query('DELETE FROM tile_datapoint WHERE tile_id IN (SELECT tile_id FROM tile WHERE app_page_id = $1)', [pageId]);
-                await client.query('DELETE FROM tile WHERE app_page_id = $1', [pageId]);
+                await client.query('DELETE FROM tile_datapoint WHERE tile_id = ANY($1::uuid[])', [activeTileIds]);
             }
+            if (dpPayload.length > 0) {
+                await client.query(`
+                    INSERT INTO tile_datapoint (tile_id, datapoint_id, role)
+                    SELECT tile_id, datapoint_id, role 
+                    FROM json_to_recordset($1::json) AS x(tile_id uuid, datapoint_id uuid, role varchar)
+                `, [JSON.stringify(dpPayload)]);
+            }
+
+            // 4. Orphan-Kacheln und Verknüpfungen bereinigen
+            await client.query('DELETE FROM tile_datapoint WHERE tile_id IN (SELECT tile_id FROM tile WHERE app_page_id = $1 AND tile_id != ALL($2::uuid[]))', [pageId, activeTileIds]);
+            await client.query('DELETE FROM tile WHERE app_page_id = $1 AND tile_id != ALL($2::uuid[])', [pageId, activeTileIds]);
 
             await client.query('COMMIT');
             return await this.getDashboardTilesBySlug(slug);
