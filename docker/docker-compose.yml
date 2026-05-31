@@ -70,6 +70,7 @@ services:
       - ../backend/db/Inserts/testInserts/location.sql:/docker-entrypoint-initdb.d/14_location.sql:ro
       - ../backend/db/Inserts/testInserts/device.sql:/docker-entrypoint-initdb.d/15_device.sql:ro
       - ../backend/db/Inserts/testInserts/datapoints.sql:/docker-entrypoint-initdb.d/16_datapoints.sql:ro
+      - ../backend/db/Inserts/testInserts/dashboard.sql:/docker-entrypoint-initdb.d/17_dashboard.sql:ro
     environment:
       POSTGRES_USER: ${POSTGRES_USER?Bitte POSTGRES_USER in .env setzen}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD?Bitte POSTGRES_PASSWORD in .env setzen}
